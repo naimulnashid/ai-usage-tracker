@@ -1,0 +1,31 @@
+{
+  "name": "ai-usage-dashboard",
+  "version": "0.12.0",
+  "private": true,
+  "description": "Local dashboard for Claude Code and Codex token usage, estimated cost, and runtime.",
+  "license": "MIT",
+  "scripts": {
+    "dev": "next dev -H 127.0.0.1 -p 7842",
+    "dev:lan": "next dev -H 0.0.0.0 -p 7842",
+    "build": "next build",
+    "start": "next start -H 127.0.0.1 -p 7842",
+    "start:lan": "next start -H 0.0.0.0 -p 7842",
+    "typecheck": "tsc --noEmit",
+    "parse": "tsx scripts/dump-usage.ts",
+    "parse:codex": "tsx scripts/dump-codex-usage.ts"
+  },
+  "dependencies": {
+    "geist": "^1.7.2",
+    "next": "^15.5.25",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "recharts": "^3.10.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

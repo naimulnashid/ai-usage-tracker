@@ -1,0 +1,70 @@
+# Changelog
+
+All notable changes to this project are documented here.
+Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
+versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.12.0] - Unreleased
+
+First public release. Earlier versions were developed privately; this entry
+summarises where the project stands rather than replaying that history.
+
+### Features
+
+- Dashboards for **Claude Code** and **Codex**, one route per agent, sharing
+  every chart, table and card.
+- Overview: estimated spend, tokens and runtime; daily spend with unusual days
+  flagged; cost and token detail by model; twelve activity cards including
+  streaks, peak hour, peak tokens and longest chat; daily tokens and daily spend
+  stacked by model; a six-month heat map.
+- Projects: a share-of-spend donut and a ranked project list; per-project detail
+  with daily tables and every session ranked by cost.
+- Claude Code parsing that de-duplicates streaming partials and replayed session
+  history globally, recovers placeholder output counts, includes nested subagent
+  transcripts and prices cache writes by TTL.
+- Codex parsing from cumulative running totals, with cached input and reasoning
+  tokens handled so nothing is billed twice, auto-review threads counted as
+  their own band, and a per-file reconciliation check.
+- A local daily archive (`data/`) so days survive the agents deleting old
+  transcripts.
+- Editable rate cards, unpriced models called out, project merges and display
+  names, per-agent project logos.
+- A password gate that fails closed; CLI parsers (`npm run parse`,
+  `npm run parse:codex`); an optional Windows background service.
+
+### Security
+
+- Upgraded Next.js to 15.5.25 for GHSA-p293-qw3h-jr36 (unauthenticated remote
+  code execution on Windows-hosted servers) and GHSA-2xp9-vwfh-vxw4, and sharp
+  to 0.35.4.
+- The server now listens on `127.0.0.1` by default. Network access is opt-in:
+  `npm run dev:lan` / `start:lan`, `-Lan` for the Windows service,
+  `DASHBOARD_LAN=1` for the `.bat` launcher.
+- Session cookies are signed with a PBKDF2-derived key, optionally mixed with a
+  new `SESSION_SECRET`, so a captured cookie can no longer be used to test
+  password guesses offline. **Existing sessions are invalidated once; sign in
+  again.**
+- Failed logins are throttled per client and globally, answering 429 with
+  `Retry-After`.
+
+### Changed
+
+- Days are bucketed at the machine's own UTC offset by default instead of a
+  fixed one, and the heat map's first weekday is configurable (`weekStartsOn`,
+  Monday by default).
+- Personal configuration is local and gitignored: `config/settings.json`,
+  `config/projects.json`, `config/codex-projects.json` and the project-logo
+  folders' contents, each with a committed template.
+- The sidebar uses the vendors' official marks from `public/agent-marks/`,
+  unmodified, and falls back to the agent's initials when a file is missing.
+
+### Fixed
+
+- The Codex project detail page labelled its API-equivalent figure as "Total
+  estimated spend", called requests "messages", and pointed its merge tooltip
+  at Claude Code's config file.
+
+### Removed
+
+- Legacy PowerShell report scripts, which did not de-duplicate and overstated
+  usage.

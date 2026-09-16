@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "ai-usage-dashboard",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 7842
+    },
+    {
+      "name": "ai-usage-dashboard-prod",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["start"],
+      "port": 7842
+    }
+  ]
+}

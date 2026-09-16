@@ -1,0 +1,15 @@
+{
+  "_comment": "Copy to config/projects.json (gitignored) to use. Project-level overrides for Claude Code, which keys projects by working directory - so renaming or moving a folder starts a brand-new project and splits its history. Use `merge` to stitch those back together, and `displayNames` to override the label. Every key starting with `_` is documentation and is ignored.",
+
+  "merge": {
+    "_comment": "\"<source directory>\": \"<target directory>\" - the source's sessions, tokens, cost and runtime are folded into the target. Use the directory names exactly as they appear under ~/.claude/projects. Chains are followed (A->B->C all land on C); a cycle is ignored and logged as a warning.",
+
+    "C--Users-you-Projects-old-name": "C--Users-you-Projects-new-name"
+  },
+
+  "displayNames": {
+    "_comment": "\"<directory>\": \"<label>\" - overrides the name shown in the UI, which otherwise comes from the transcript's `cwd` field. Applies to the target of a merge. Useful when two spellings encode to the same directory name (`My App` and `My_App` both become `My-App`) and the parser picks the one you don't want.",
+
+    "C--Users-you-Projects-new-name": "New Name"
+  }
+}

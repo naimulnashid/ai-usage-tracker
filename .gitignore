@@ -1,0 +1,73 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# next.js
+.next/
+out/
+build/
+next-env.d.ts
+.vercel/
+
+# production
+dist/
+
+# typescript build artifacts
+*.tsbuildinfo
+
+# env - every variant, except the committed template
+.env
+.env.*
+!.env.example
+
+# logs
+logs/
+*.log
+npm-debug.log*
+
+# os
+.DS_Store
+Thumbs.db
+
+# editor
+.vscode/
+.idea/
+
+# Claude Code: personal settings and notes stay local
+.claude/settings.local.json
+.claude/worktrees/
+CLAUDE.local.md
+
+# ---------------------------------------------------------------------------
+# Transcripts and anything derived from them. The app READS agent transcripts
+# from your home directory at runtime and must NEVER copy, cache, or commit
+# them - they contain real code and paths from your other projects. These
+# patterns are a backstop against a stray copy landing in the repo.
+# ---------------------------------------------------------------------------
+.claude/projects/
+**/.claude/projects/
+*.jsonl
+*.sqlite
+*.sqlite-*
+*.db
+
+# parser output snapshots (embed real project paths)
+*.usage.json
+usage-snapshot*.json
+
+# local daily-aggregate archive (project names + paths)
+data/
+
+# ---------------------------------------------------------------------------
+# Your own setup. Each has a committed *.example.json to copy from.
+# ---------------------------------------------------------------------------
+config/projects.json
+config/codex-projects.json
+config/settings.json
+
+# Project logos are named after your projects, so they stay local too.
+public/claude_code_project_logos/*
+!public/claude_code_project_logos/.gitkeep
+public/codex_project_logos/*
+!public/codex_project_logos/.gitkeep

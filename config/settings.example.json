@@ -1,0 +1,17 @@
+{
+  "_comment": "Copy to config/settings.json (gitignored) to change any of these. Every key is optional: leave one out and its default applies. No code changes or rebuild needed - hit Refresh.",
+
+  "_localUtcOffsetHours": "Transcript timestamps are UTC; days are bucketed at this offset so 'today' matches your calendar. Leave it out to use this machine's current offset. Pin it (e.g. 0 for UTC, 5.5, -7) if the machine's zone is not the one you think in, or to stop daylight-saving switches shifting a few hours between days. Changing it re-buckets days going forward; days already in data/ keep the offset they were archived with.",
+
+  "weekStartsOn": "monday",
+  "_weekStartsOn": "First row of the activity heat map: \"monday\", \"sunday\" or \"saturday\".",
+
+  "maxIdleGapMinutes": 30,
+  "_maxIdleGapMinutes": "Runtime is the sum of wall-clock gaps between consecutive log lines in a session. A gap longer than this is assumed to be you stepping away, and is excluded.",
+
+  "suspiciousOutputTokens": 5,
+  "_suspiciousOutputTokens": "After de-duplication, a message from a real model whose output_tokens is below this - despite substantial input/cache context - is flagged 'possibly inaccurate'.",
+
+  "suspiciousContextTokens": 1000,
+  "_suspiciousContextTokens": "Minimum input+cache_read tokens for the low-output flag to apply. Prevents flagging genuinely tiny turns."
+}

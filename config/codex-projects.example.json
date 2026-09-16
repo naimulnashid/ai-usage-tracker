@@ -1,0 +1,15 @@
+{
+  "_comment": "Copy to config/codex-projects.json (gitignored) to use. Project-level overrides for Codex, mirroring projects.example.json. Codex keys a project by the working directory recorded in its rollout files, so renaming or moving a folder starts a brand-new project and splits its history. Use `merge` to stitch those back together, and `displayNames` to override the label. Every key starting with `_` is documentation and is ignored.",
+
+  "merge": {
+    "_comment": "\"<source project id>\": \"<target project id>\" - the source's sessions, tokens, cost and runtime are folded into the target. Ids are the slugified working directory: C:\\Users\\you\\Projects\\Old Name becomes C--Users-you-Projects-Old-Name. Chains are followed (A->B->C all land on C); a cycle is ignored and logged as a warning.",
+
+    "C--Users-you-Projects-Old-Name": "C--Users-you-Projects-New-Name"
+  },
+
+  "displayNames": {
+    "_comment": "\"<project id>\": \"<label>\" - overrides the name shown in the UI, which otherwise comes from the last segment of the working directory.",
+
+    "C--Users-you-Projects-New-Name": "New Name"
+  }
+}
