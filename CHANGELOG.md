@@ -6,6 +6,14 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **The rate card's age is on the page.** The Cost by model panel now names the
+  file its rates came from and the date they were last verified. Every money
+  figure in this dashboard is a token count multiplied by that file, and
+  nothing on screen said whether it had been checked last week or last year.
+- `.nvmrc`, naming the newest Node version CI tests.
+
 ### Fixed
 
 - **Every page scrolled a long way past its footer.** The screen-reader tables

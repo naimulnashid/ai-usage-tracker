@@ -66,6 +66,25 @@ export function formatDateLong(iso: string): string {
   });
 }
 
+/**
+ * "Aug 19, 2026" - a date that is a fact about a file rather than a data point.
+ *
+ * `formatDateLong` leads with a weekday, which is what you want on a chart
+ * tooltip ("was that a Tuesday?") and noise on something like a rate card's
+ * last-verified stamp. Same UTC pinning: these are bare `YYYY-MM-DD` strings,
+ * and `new Date('2026-08-19')` is midnight UTC, which formats as the 18th
+ * anywhere west of Greenwich.
+ */
+export function formatDateStamp(iso: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+  return new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
 export function formatClockTime(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return '-';

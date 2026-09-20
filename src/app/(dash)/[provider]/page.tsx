@@ -18,6 +18,7 @@ import {
   displayModel,
   formatCount,
   formatDateShort,
+  formatDateStamp,
   formatDuration,
   formatTokens,
   formatUsd,
@@ -317,7 +318,24 @@ export default function OverviewPage() {
         <div className="panel-head">
           <div>
             <h2 className="panel-title">Cost by model</h2>
-            <p className="panel-sub">Estimated spend per model across every project.</p>
+            {/* Where the rates came from and when they were last checked.
+                Every figure on this page is these numbers multiplied by a rate
+                card that is a committed JSON file, and a reader had no way to
+                tell whether that card was checked last week or last year. It
+                sits here rather than under the headline because this is the
+                panel that is explicitly about money per model, and one quiet
+                line in one place is not the standing notice this UI keeps
+                deliberately refusing to add. */}
+            <p className="panel-sub">
+              Estimated spend per model across every project.
+              {report.pricingLastVerified && (
+                <>
+                  {' '}
+                  Rates from <code>{provider.pricingFile}</code>, last verified{' '}
+                  {formatDateStamp(report.pricingLastVerified)}.
+                </>
+              )}
+            </p>
           </div>
         </div>
         <CostByModelChart perModel={perModel} replayKey={version} />

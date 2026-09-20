@@ -138,6 +138,13 @@ export interface SkeletonMetrics {
   scoreCard: number;
   headline: number;
   dailySpend: number;
+  /**
+   * The Cost by model panel. It was a flat 393 at every width until its
+   * subtitle gained the rate card's name and last-verified date, which wraps
+   * to a second line on a narrow shell - so it is a mid-range like the rest
+   * now. A good example of why adding one sentence to a panel means measuring
+   * it again: the copy change is invisible in a diff of this file.
+   */
   costByModel: number;
   tokenTable: number;
   /**
@@ -247,7 +254,7 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
       scoreCard: 129, // grid 840 in 6 rows @997 / 415 in 3 rows @1680
       headline: 278, // 282 / 275
       dailySpend: 466, // 499 / 433
-      costByModel: 393, // stable across widths
+      costByModel: 405, // 417 / 393 - the rate-card line wraps at the narrow width
       tokenTable: 510, // 530 / 491
       dailyTokens: 659, // 671 / 647
       dailySpendByModel: 659, // 671 / 647 - same as its tokens twin here
@@ -302,7 +309,7 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
       scoreCard: 129, // same as Claude Code: 840 / 415, both measured
       headline: 290, // 306 / 275
       dailySpend: 466, // 499 / 433
-      costByModel: 393, // stable across widths
+      costByModel: 405, // 417 / 393 - the rate-card line wraps at the narrow width
       tokenTable: 353, // 373 / 334 - two models, not five
       dailyTokens: 578, // 603 / 553
       dailySpendByModel: 565, // 577 / 553 - one legend row fewer than the

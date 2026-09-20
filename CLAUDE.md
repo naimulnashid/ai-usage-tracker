@@ -1264,6 +1264,20 @@ A model string found in the transcripts but missing from the rate card is
 reported as **unpriced** — surfaced explicitly in the UI, never silently
 counted as $0. `<synthetic>` is deliberately priced at zero (no API call).
 
+**Each card's `lastVerified` date is shown in the UI**, in the Cost by model
+panel's subtitle, beside the name of the file it came from. Every money figure
+on the page is a token count multiplied by that card, and a reader had no way
+to tell whether it was checked last week or last year. It sits there rather
+than under the headline because that panel is the one explicitly about money
+per model, and it appears once — a date in one subtitle is not the standing
+notice this UI keeps refusing to add.
+
+Adding that sentence made the panel wrap to two lines on a narrow shell, which
+moved `skeleton.costByModel` off a constant it had held at every width. Re-read
+*Loading skeletons* before changing any panel's copy: a one-sentence edit is
+invisible in a diff of `providers.ts` and still invalidates a measurement
+there.
+
 Codex rates as of the card's `lastVerified` date: GPT-5.6 Sol
 `$5 / $0.50 cached / $30`, GPT-5.3 Codex `$1.75 / $0.175 cached / $14`. See the
 Codex pricing caveats above for fast mode, which is not detected.
@@ -1518,6 +1532,13 @@ npm test              # node:test via tsx; see tests/
 npm run lint          # eslint . - `lint:fix` applies what it can
 npm run format:check  # prettier --check . - `format` writes
 ```
+
+**`.nvmrc` says 22, which is not what this machine runs.** It names the newest
+LTS that CI actually tests (the matrix is 20 and 22), so a contributor running
+`nvm use` lands on a version the build is proven against rather than on
+whatever is newest. `engines` stays `>=20` because nothing here needs more.
+Note the gap that leaves: development happens on Node 24, which CI never
+exercises — if that ever matters, widen the matrix rather than the `.nvmrc`.
 
 **Lint and format config.** ESLint 9 flat config (`eslint.config.mjs`) loads
 `eslint-config-next` through `FlatCompat`, because that package is still
