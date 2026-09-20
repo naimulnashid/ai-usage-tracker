@@ -41,6 +41,14 @@ export function UnpricedNotice({ models }: { models: string[] }) {
   );
 }
 
+/**
+ * Warnings from the parse, verbatim.
+ *
+ * This used to announce "N files could not be read", which was only ever true
+ * for some of them: the same list carries a missing transcript directory, a
+ * cycle in the merge rules, and an archive that could not be written. Naming
+ * them all as unreadable files sent people looking for a file that was fine.
+ */
 export function ParseWarnings({ warnings }: { warnings: string[] }) {
   if (!warnings.length) return null;
   return (
@@ -48,10 +56,11 @@ export function ParseWarnings({ warnings }: { warnings: string[] }) {
       <InfoIcon />
       <div>
         <strong>
-          {warnings.length} file{warnings.length === 1 ? '' : 's'} could not be read
+          {warnings.length === 1
+            ? 'The parse reported a problem'
+            : `The parse reported ${warnings.length} problems`}
         </strong>{' '}
-        and {warnings.length === 1 ? 'was' : 'were'} skipped. Totals below exclude{' '}
-        {warnings.length === 1 ? 'it' : 'them'}.
+        and carried on. Anything it could not read is missing from the totals below.
         <ul style={{ margin: '8px 0 0', paddingLeft: 20 }}>
           {warnings.slice(0, 4).map((warning) => (
             <li key={warning} style={{ fontSize: 13.5 }}>

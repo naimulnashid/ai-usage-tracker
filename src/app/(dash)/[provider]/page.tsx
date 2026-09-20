@@ -8,7 +8,9 @@ import { CostByModelChart } from '@/components/CostByModelChart';
 import { ModelBreakdownTable } from '@/components/ModelBreakdownTable';
 import { ScoreCards } from '@/components/ScoreCards';
 import { ActivityHeatmap } from '@/components/ActivityHeatmap';
+import { EmptyState } from '@/components/EmptyState';
 import { InfoTip } from '@/components/InfoTip';
+import { isEmptyReport, noteworthyWarnings } from '@/lib/report-state';
 import { DailyTokensByModelChart } from '@/components/DailyTokensByModelChart';
 import { DailySpendByModelChart } from '@/components/DailySpendByModelChart';
 import {
@@ -147,6 +149,16 @@ export default function OverviewPage() {
 
   if (!report) return null;
 
+  // A parse that worked and found nothing is its own state, not a page of
+  // zeroes with a warning box on top.
+  if (isEmptyReport(report)) {
+    return (
+      <div className="page-enter" style={{ paddingTop: 34 }}>
+        <EmptyState warnings={report.diagnostics.warnings} />
+      </div>
+    );
+  }
+
   const { combined, perModel, daily } = report.global;
   const coverage = report.coverage;
   const modelCount = Object.keys(perModel).length;
@@ -247,7 +259,8 @@ export default function OverviewPage() {
 
       <div className="rise" style={{ animationDelay: '60ms' }}>
         <UnpricedNotice models={report.diagnostics.unpricedModels} />
-        <ParseWarnings warnings={report.diagnostics.warnings} />
+        {/* "Nothing found" belongs to the empty state above, not here. */}
+        <ParseWarnings warnings={noteworthyWarnings(report.diagnostics.warnings)} />
       </div>
 
       {/* ---- Daily combined spend trend ---------------------------------- */}

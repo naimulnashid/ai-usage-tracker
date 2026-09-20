@@ -6,7 +6,9 @@ import { useProvider } from '@/components/ProviderScope';
 import { CountUp } from '@/components/CountUp';
 import { RUNTIME_TOOLTIP } from '@/components/Notices';
 import { ProjectLogo } from '@/components/ProjectLogo';
+import { EmptyState } from '@/components/EmptyState';
 import { InfoTip } from '@/components/InfoTip';
+import { isEmptyReport } from '@/lib/report-state';
 import { ProjectShareChart } from '@/components/ProjectShareChart';
 import {
   displayModel,
@@ -55,6 +57,30 @@ export default function ProjectsPage() {
     return (
       <div style={{ paddingTop: 34 }} className="notice notice-warn">
         <div>{error ?? 'No data.'}</div>
+      </div>
+    );
+  }
+
+  if (isEmptyReport(report)) {
+    return (
+      <div className="page-enter" style={{ paddingTop: 34 }}>
+        <EmptyState warnings={report.diagnostics.warnings} />
+      </div>
+    );
+  }
+
+  // Usage with no project is possible: a transcript whose working directory
+  // never appeared. The donut and the list would both be blank, so say so.
+  if (report.projects.length === 0) {
+    return (
+      <div className="page-enter" style={{ paddingTop: 34 }}>
+        <section className="card panel empty-state rise">
+          <h2 className="panel-title">No projects to show</h2>
+          <p className="panel-sub empty-state-lead">
+            This agent recorded usage, but none of it could be attributed to a
+            working directory. The Overview still has the totals.
+          </p>
+        </section>
       </div>
     );
   }
