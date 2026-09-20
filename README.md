@@ -234,6 +234,10 @@ first time.
 
 Don't expose this to the internet. It was never designed for that.
 
+[`SECURITY.md`](SECURITY.md) covers the rest of the trade-offs behind that
+list — why the cookie can't be `Secure` over plain HTTP, and what else is
+deliberate rather than an oversight.
+
 ---
 
 ## Running in the background on Windows
@@ -455,6 +459,19 @@ src/components/      Charts, tables and cards
 [`CLAUDE.md`](CLAUDE.md) documents the data model in depth: every quirk of
 both log formats the parsers handle, and the UI conventions that keep the
 two agents apart. Read it before changing a parser.
+
+---
+
+## Security
+
+Found something exploitable? Please report it through
+[private vulnerability reporting](https://github.com/naimulnashid/ai-usage-tracker/security/advisories/new)
+rather than a public issue, so it stays private until there's a fix.
+
+[`SECURITY.md`](SECURITY.md) has the rest: what's in scope, and which things
+that look like findings are deliberate — plain HTTP on a LAN, the session
+cookie that can't be `Secure` because of it, and login throttling that resets
+when the process does.
 
 ---
 
