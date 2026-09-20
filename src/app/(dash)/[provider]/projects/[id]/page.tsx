@@ -36,8 +36,10 @@ function decodeParam(raw: string): string {
 
 export default function ProjectDetailPage() {
   const provider = useProvider();
-  const sk = provider.skeleton;
-  const detail = sk.detail;
+  // Every skeleton height on this page is a `detail` one: the panels it shares
+  // with the overview are genuinely shorter here, because a project uses fewer
+  // models than the agent does. See SkeletonMetrics.detail.
+  const detail = provider.skeleton.detail;
   const params = useParams<{ id: string }>();
   // `useParams` already decodes, so decoding again is both unnecessary and a
   // way to throw URIError on a literal `%` in the URL - which used to blank
@@ -59,8 +61,9 @@ export default function ProjectDetailPage() {
       <div style={{ paddingTop: 26 }} role="status" aria-busy="true">
         <span className="sr-only">Loading this project…</span>
 
-        {/* "← All projects" */}
-        <div className="skeleton" style={{ height: 17, width: 110, marginBottom: 16 }} />
+        {/* "← All projects" - 24px is the real link's height at every width.
+            It was 17px, which quietly shifted the whole page up by ~10px. */}
+        <div className="skeleton" style={{ height: 24, width: 110, marginBottom: 16 }} />
 
         {/* Headline card: logo, name, path, then the three totals. */}
         <div className="skeleton" style={{ height: detail.headline, marginBottom: 22 }} />
@@ -82,19 +85,23 @@ export default function ProjectDetailPage() {
           <div className="skeleton" style={{ height: 13, width: 170 }} />
         </div>
 
-        {/* Same grid class and cell count as the real one, so it wraps alike. */}
+        {/* Same grid class as the real one, so it wraps alike - but the
+            PROJECT's model count, not the agent's. A project uses a subset,
+            and the agent-wide count wrapped to an extra row at 997px. */}
         <div className="stat-grid">
-          {Array.from({ length: sk.modelCards }, (_, i) => (
+          {Array.from({ length: detail.modelCards }, (_, i) => (
             <div key={i} className="skeleton" style={{ height: 149 }} />
           ))}
         </div>
 
-        {/* The two stacked charts are the same components as the overview's. */}
-        <div className="skeleton" style={{ height: sk.dailyTokens, marginBottom: 22 }} />
-        <div className="skeleton" style={{ height: sk.dailySpendByModel, marginBottom: 22 }} />
+        {/* The two stacked charts are the same components as the overview's,
+            but not the same height: fewer models here, so fewer legend rows.
+            These used to borrow the overview's numbers and ran ~60px tall. */}
+        <div className="skeleton" style={{ height: detail.dailyTokens, marginBottom: 22 }} />
+        <div className="skeleton" style={{ height: detail.dailySpendByModel, marginBottom: 22 }} />
 
         {/* Totals by model, the per-day-per-model table, then sessions. */}
-        <div className="skeleton" style={{ height: sk.tokenTable, marginBottom: 22 }} />
+        <div className="skeleton" style={{ height: detail.tokenTable, marginBottom: 22 }} />
         <div className="skeleton" style={{ height: detail.modelDailyTable, marginBottom: 22 }} />
         <div className="skeleton" style={{ height: detail.sessionsTable }} />
       </div>
@@ -103,8 +110,13 @@ export default function ProjectDetailPage() {
 
   if (error || !report) {
     return (
-      <div className="notice notice-warn" style={{ marginTop: 34 }}>
-        <div>{error ?? 'No data.'}</div>
+      <div style={{ paddingTop: 34 }}>
+        {/* The project's name lives in the report, which is what failed - so
+            the title names the agent instead of guessing. */}
+        <h1 className="sr-only">{provider.label} project</h1>
+        <div className="notice notice-warn">
+          <div>{error ?? 'No data.'}</div>
+        </div>
       </div>
     );
   }

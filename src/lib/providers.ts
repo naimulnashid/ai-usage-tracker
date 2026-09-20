@@ -172,22 +172,44 @@ export interface SkeletonMetrics {
   /**
    * PROJECT DETAIL page.
    *
-   * **These are derived, not measured**, unlike everything above. The page is
-   * behind the password gate, so the usual recipe - mount the skeleton under
-   * the real CSS and compare `offsetTop` - has not been run on it. Each value
-   * starts from the measured overview panel that shares its component and
-   * adjusts for what differs (a shorter chart, a taller headline). Expect tens
-   * of pixels of drift, not hundreds, and re-measure properly when you can.
+   * **Measured, like the rest** - this used to say "derived, not measured",
+   * which it was until the page was finally measured in a signed-in browser.
+   * The recipe is the usual one, with one difference forced by the page: the
+   * skeleton only appears on a COLD load (Refresh keeps the stale data on
+   * screen), so it is caught by racing a fresh load rather than by mounting
+   * markup. Loading each project in an iframe sized to the target width is the
+   * tidy way to do it - the iframe's own viewport drives the media queries, so
+   * 997px and 1680px are exact rather than approximated.
    *
-   * The two long tables are a different case: their height follows the number
-   * of days and sessions, which the skeleton cannot know, so they are capped
-   * at roughly a screen. Everything above them still lands without moving;
-   * below them it will shift.
+   * **Three of these depend on the PROJECT, not just the agent**, which is the
+   * thing that makes this page different from the other two. A project uses
+   * some subset of the models the agent has ever used, and the stat grid, the
+   * two stacked charts and the token table all grow a row per model. So unlike
+   * the overview's numbers - which describe one known page - these are the
+   * mean across every project measured at both widths, and a project at the
+   * edge of that range will still move a little. Claude Code was measured
+   * across three projects (2, 4 and 4 models), Codex across both of its.
+   *
+   * That is also why `modelCards` is here rather than reusing the agent-wide
+   * `modelCards` above. The overview shows every model, a project does not: at
+   * 997px the agent's five cells wrap to three rows where a four-model project
+   * takes two, which was 166px of error on its own.
+   *
+   * The two long tables stay capped: their height follows the number of days
+   * and sessions, which the skeleton cannot know. Everything above them lands
+   * without moving; below them it shifts. `sessionsTable` is NOT one of those
+   * - the table shows twelve rows before its show-more, so it is a constant
+   * for any project with at least twelve sessions, and measured as one.
    */
   detail: {
     headline: number;
     dailySpend: number;
     combinedTable: number;
+    /** The typical PROJECT's model count, not the agent's. See above. */
+    modelCards: number;
+    dailyTokens: number;
+    dailySpendByModel: number;
+    tokenTable: number;
     modelDailyTable: number;
     sessionsTable: number;
   };
@@ -234,13 +256,17 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
       dailySpendByModel: 659, // 671 / 647 - same as its tokens twin here
       heatmap: 457, // 403 / 512
       projectDonut: 458, // 522 / 393 - ten legend rows, one column at 997px
-      // Derived from the overview's measured panels - see SkeletonMetrics.detail.
+      // Measured across three projects (2, 4 and 4 models) at both widths.
       detail: {
-        headline: 364, // overview headline plus the logo, name and path block
-        dailySpend: 446, // the same panel with a 280px chart instead of 300px
+        headline: 374, // 368/389/413 @997, 358 flat @1680 - the cwd path wraps
+        dailySpend: 446, // 479 / 413, identical on every project
         combinedTable: 560, // capped: one screen of a table as long as the data
-        modelDailyTable: 620, // capped, for the same reason
-        sessionsTable: 620, // twelve rows, the count shown before expanding
+        modelCards: 4, // the projects' own model counts, not the agent's five
+        dailyTokens: 581, // 624/624/530 @997, 600/600/506 @1680
+        dailySpendByModel: 569, // 600/600/506 at both widths
+        tokenTable: 383, // 425/425/321 @997, 410/410/305 @1680
+        modelDailyTable: 620, // capped, as above
+        sessionsTable: 868, // 876 / 860 - twelve rows, flat across projects
       },
     },
   },
@@ -290,12 +316,17 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
       heatmap: 432, // 353 / 512
       projectDonut: 405, // 417 / 393 - two projects, so the ring governs
       // Derived from the overview's measured panels - see SkeletonMetrics.detail.
+      // Measured across both Codex projects at both widths.
       detail: {
-        headline: 376, // Codex's headline runs taller, as it does on the overview
-        dailySpend: 446,
-        combinedTable: 560,
-        modelDailyTable: 620,
-        sessionsTable: 620,
+        headline: 374, // 368/413 @997, 358 flat @1680 - same as Claude Code's
+        dailySpend: 446, // 479 / 413, identical to Claude Code's
+        combinedTable: 560, // capped: one screen of a table as long as the data
+        modelCards: 2, // a Codex project uses both models, so this matches above
+        dailyTokens: 578, // 603 / 553
+        dailySpendByModel: 553, // flat at both widths and on both projects
+        tokenTable: 313, // 321 / 305 - two models, not five
+        modelDailyTable: 620, // capped, as above
+        sessionsTable: 1017, // 1251/1095 @997, 860 @1680 - thread names wrap
       },
     },
   },
