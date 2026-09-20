@@ -319,6 +319,8 @@ src/lib/rail.ts                      Sidebar state + the before-paint init scrip
 src/middleware.ts                    The single auth gate in front of every route.
 scripts/dump-usage.ts                CLI: `npm run parse`.       -> out/usage-report.json
 scripts/dump-codex-usage.ts          CLI: `npm run parse:codex`. -> out/codex-usage-report.json
+scripts/run-tests.mjs                CLI: `npm test`. Discovers tests/*.test.ts.
+tests/                               node:test suites; fixtures are written at run time.
 scripts/*.ps1, *.vbs, *.bat          Windows background service and launchers.
 src/app/(dash)/[provider]/           The pages. One copy, two agents.
 src/components/ScoreIcon.tsx         The twelve Activity card icons. Hand-drawn; the rules
@@ -1158,22 +1160,33 @@ only.
   projects. Read at runtime only. `out/` and `data/` are gitignored for the same
   reason (the reports embed real `cwd` paths).
 
+## Input guards: what a malformed line can and cannot do
+
+The rule at the top of the Claude Code section — degrade, never crash — is now
+enforced in one place per concern, shared by both parsers (`parser.ts`):
+
+| Helper | Guards against |
+|---|---|
+| `isRecord()` | Valid JSON that is not an object (`null`, a number, an array). Reading a field off one used to throw and abort the **rest of that file**; it is now counted in `linesUnparseable` and skipped. |
+| `parseTimestampMs()` | Absurd dates. `Date.parse` accepts `+275760-09-13T00:00:00Z`, and adding a timezone offset to it overflows `Date`, so `toISOString()` threw `RangeError` out of the parse and onto the page. Anything before 2000 or more than a year ahead is treated as no timestamp, counted in `diagnostics.implausibleTimestamps`; its tokens still count, under `(unknown date)`. |
+| `toTokenCount()` | Negative, fractional, non-numeric counts. One negative value used to flow into the totals as negative cost and then into the archive, where it outlived the line that caused it. |
+| `localDate()` / `localHour()` | A backstop for the same overflow, so no future caller can reintroduce it. |
+| `sanitizeDays()` (`history.ts`) | A hand-edited or truncated archive. Days that cannot be read are dropped with a warning instead of throwing; missing numbers coerce to 0. |
+
+Each of these has a test that fails if the guard is removed.
+
 ## Known issues
 
 Found in the pre-release audit and not yet fixed. Check before assuming the code
 already handles them:
 
-- **Parser robustness.** A JSON `null` line aborts the rest of that file; a
-  syntactically valid but extreme timestamp throws `RangeError` out of the whole
-  report; negative token counts are accepted; archived day entries are not
-  shape-checked.
 - **Accessibility.** `--text-faint` fails WCAG AA contrast for small text; charts
   have no accessible names or table fallback; models are distinguished by colour
   alone; most `.info-tip`s are not keyboard-focusable.
 - **States.** The project detail skeleton is generic; there is no dedicated
   empty state, and `ParseWarnings` describes every warning as an unreadable
   file.
-- **Hygiene.** No tests, lint config or CI yet.
+- **Hygiene.** No lint or formatter config yet.
 
 ## Running
 
@@ -1185,7 +1198,17 @@ npm run parse:codex   # Codex       -> out/codex-usage-report.json
 npm run dev           # dashboard at http://localhost:7842 (this machine only), lands on /claude
 npm run dev:lan       # the same, reachable from your network - set SESSION_SECRET first
 npm run typecheck
+npm test              # node:test via tsx; see tests/
 ```
+
+**Tests build their fixtures at run time** (`tests/helpers.ts` writes JSONL into
+a temp directory and deletes it afterwards). Nothing derived from a real
+transcript is ever committed, and `*.jsonl` is gitignored anyway, so a committed
+fixture would not survive a fresh clone. Each documented trap above has a test
+named after it; if you change a parser, that is where to look first.
+
+`.github/workflows/ci.yml` runs typecheck, tests and build on Windows and
+Ubuntu, on Node 20 and 22.
 
 Neither parse script needs a password — they are CLIs that read disk directly
 and never go through the HTTP layer. They are also the fastest way to check a

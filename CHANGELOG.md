@@ -4,6 +4,25 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- One malformed line can no longer take down a report. JSON that is valid but
+  not an object (`null`, a number, an array) is skipped instead of aborting the
+  rest of that file; an out-of-range timestamp is treated as undated instead of
+  throwing `RangeError` out of the whole parse; negative and fractional token
+  counts are refused; and unreadable days in the local archive are dropped with
+  a warning instead of throwing.
+- `npm run parse` / `parse:codex` report an `implausible timestamps` count.
+
+### Added
+
+- A test suite (`npm test`, Node's built-in runner) covering both parsers'
+  documented traps and these guards, the archive's one-directional merge, the
+  session cookie and pricing.
+- CI: typecheck, tests and build on Windows and Ubuntu, Node 20 and 22.
+
 ## [0.12.0] - Unreleased
 
 First public release. Earlier versions were developed privately; this entry

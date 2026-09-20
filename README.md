@@ -287,6 +287,21 @@ disk directly and never touch the web app.
 
 ---
 
+## Development
+
+```bash
+npm run typecheck
+npm test          # node:test, via tsx
+npm run build
+```
+
+The tests cover both parsers' documented quirks, the local archive, the login
+gate and pricing. Fixtures are generated at run time in a temp directory —
+nothing from a real transcript is ever committed. CI runs the same three
+commands on Windows and Ubuntu, on Node 20 and 22.
+
+---
+
 ## How the numbers are derived
 
 ### Claude Code
