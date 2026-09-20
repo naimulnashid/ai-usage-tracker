@@ -1,0 +1,10 @@
+{
+  // Next compiles the app's JSX with React's automatic runtime, but `tsx`
+  // follows tsconfig.json, where `jsx` is "preserve" for Next's benefit - and
+  // falls back to the classic runtime, which needs `React` in scope in every
+  // component. Tests therefore run against this override instead.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx"
+  }
+}

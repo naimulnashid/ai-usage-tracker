@@ -1175,18 +1175,54 @@ enforced in one place per concern, shared by both parsers (`parser.ts`):
 
 Each of these has a test that fails if the guard is removed.
 
+## Accessibility rules that are easy to undo by accident
+
+`tests/contrast.test.ts` and `tests/a11y.test.tsx` enforce all of this, so a
+regression fails before it ships rather than after someone complains.
+
+- **Contrast is measured, not judged.** `--text-faint` carries most of the small
+  text on the page and must clear **4.5:1** on every background it sits on
+  (`--bg`, `--surface`, `--surface-hover`, `--tooltip-bg`). It was `#6b6b75`,
+  which measured 3.6-4.0:1 and failed AA outright.
+- **Every model shade and heat-map step clears 3:1** against the panel (WCAG
+  1.4.11). That floor compresses the ramp - neighbouring bands differ by about
+  1.2:1 - so the encoding "darker = more expensive" survives, but **colour can
+  never be the only way to read a band**. The test also checks that ordering:
+  a dearer model may never be lighter than a cheaper one.
+- **Charts carry their numbers as text.** `ChartFigure` wraps every chart in a
+  `<figure>` with a visually hidden caption and a `.sr-only` table of the same
+  series. Recharts' `accessibilityLayer` makes the plot keyboard-reachable but
+  leaves it unnamed and its contents drawn, not written; the figure supplies
+  the name and the table supplies the data. Keep the row count sane - summarise
+  (active days only, top N) and say so in the caption.
+- **The heat map's grid is `aria-hidden`.** It used to be `role="img"`, which
+  hid its ~180 per-day `title`s and left a screen reader with a label and
+  nothing else. The table fallback is the data now.
+- **`.info-tip` is a `<button>`**, named by `aria-label` and explained through
+  `aria-describedby`. It used to be a `<span>` with an `aria-label`: not
+  focusable, and not reliably announced. `InfoTip` is the only way to add one.
+  The visible bubble stays CSS `::after` from `data-tip`, because `display`
+  toggling is what keeps it out of `.table-scroll`'s scroll width.
+- **A swatch on its own says nothing.** Any colour-only cell (the Models columns
+  in the sessions and daily tables) carries an `.sr-only` list of the names
+  beside it, and the swatches are `aria-hidden`.
+- **Charts hold no hex literals.** They use the tokens, so both agents re-theme;
+  a test greps for `#rrggbb` in `src/components/*Chart.tsx` and fails on one.
+- **Loading is announced.** Each skeleton is `role="status" aria-busy="true"`
+  with an `.sr-only` line, so the wait is not silence.
+
 ## Known issues
 
 Found in the pre-release audit and not yet fixed. Check before assuming the code
 already handles them:
 
-- **Accessibility.** `--text-faint` fails WCAG AA contrast for small text; charts
-  have no accessible names or table fallback; models are distinguished by colour
-  alone; most `.info-tip`s are not keyboard-focusable.
-- **States.** The project detail skeleton is generic; there is no dedicated
-  empty state, and `ParseWarnings` describes every warning as an unreadable
-  file.
+- **States.** The project detail skeleton is generic (three blocks for a
+  nine-section page); there is no dedicated empty state, and `ParseWarnings`
+  describes every warning as an unreadable file even when it is not.
 - **Hygiene.** No lint or formatter config yet.
+- **Not verified in a browser.** The accessibility work above is enforced at the
+  markup and token level. Nobody has yet run it past a screen reader or an axe
+  audit on a signed-in page.
 
 ## Running
 

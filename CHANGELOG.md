@@ -6,6 +6,22 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Accessibility
+
+- Small text now clears WCAG AA contrast: `--text-faint` moves from `#6b6b75`
+  (3.6-4.0:1, a failure) to `#7d7d87` (4.55:1 at worst). The charts' axis and
+  tooltip colours are tokens instead of their own copies of those hex values.
+- Every model shade and heat-map step clears 3:1 against the panel, with the
+  price ordering intact. The darkest bands used to sit at 1.5-2.2:1, which is
+  close to invisible against near-black.
+- Every chart is wrapped in a named `<figure>` with a screen-reader table of the
+  same numbers, so the data no longer exists only as a picture. The heat map's
+  grid is hidden from assistive tech in favour of that table, instead of
+  swallowing its own per-day labels behind `role="img"`.
+- The "i" explainers are real buttons: keyboard-reachable, named, and announced
+  through `aria-describedby`. Colour-only swatch columns carry the model names
+  for screen readers, and the loading skeletons announce themselves.
+
 ### Fixed
 
 - One malformed line can no longer take down a report. JSON that is valid but
