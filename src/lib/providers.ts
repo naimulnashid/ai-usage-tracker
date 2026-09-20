@@ -16,10 +16,8 @@ export const PROVIDER_IDS = ['claude', 'codex'] as const;
 
 export interface ProviderMeta {
   id: ProviderId;
-  /** Full name, used in headings and page titles. */
+  /** Full name, used in headings, page titles and the sidebar. */
   label: string;
-  /** Sidebar label, kept short enough not to wrap. */
-  short: string;
   /** URL prefix. Always `/${id}`. */
   basePath: string;
 
@@ -33,23 +31,25 @@ export interface ProviderMeta {
   projectsFile: string;
 
   /**
-   * Whether the cost figure is what you were actually charged.
+   * Headline label for the big number, and the whole of how the cost basis is
+   * carried in the UI.
    *
-   * Claude Code usage is billed per token, so the estimate tracks a real bill.
+   * Claude Code usage is billed per token, so its estimate tracks a real bill.
    * Codex here runs on a flat ChatGPT subscription, so its figure is "what
    * these tokens would have cost through the API" — a comparison number, not a
-   * charge. The UI must never present the two as the same kind of thing.
-   */
-  costBasis: 'billed' | 'api-equivalent';
-  /**
-   * Headline label for the big number.
+   * charge. **The UI must never present the two as the same kind of thing**,
+   * and this label is the entire mechanism for that: "API-equivalent spend"
+   * rather than "Total estimated spend".
    *
-   * This is where the cost basis is carried in the UI - "API-equivalent spend"
-   * rather than "Total estimated spend". There is deliberately NO standing
-   * banner explaining it: the full explanation lives in README.md and
-   * CLAUDE.md, on the same reasoning as the output-token residue - a permanent
-   * notice about a known, documented framing trains the reader to ignore
-   * notices, which costs more than the ambiguity does.
+   * There is deliberately NO standing banner explaining it. The full
+   * explanation lives in README.md and CLAUDE.md, on the same reasoning as the
+   * output-token residue - a permanent notice about a known, documented
+   * framing trains the reader to ignore notices, which costs more than the
+   * ambiguity does.
+   *
+   * (There used to be a `costBasis: 'billed' | 'api-equivalent'` beside this,
+   * carrying the same distinction as data. Nothing ever read it - the label
+   * does all the work - so it went, and its reasoning moved here.)
    */
   costLabel: string;
 
@@ -219,15 +219,12 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
   claude: {
     id: 'claude',
     label: 'Claude Code',
-    short: 'Claude Code',
     basePath: '/claude',
 
     transcriptHint: '%USERPROFILE%\\.claude\\projects\\',
     transcriptEnvVar: 'CLAUDE_CONFIG_DIR',
     pricingFile: 'config/pricing.json',
     projectsFile: 'config/projects.json',
-
-    costBasis: 'billed',
     costLabel: 'Total estimated spend',
 
     hasCacheWrites: true,
@@ -274,15 +271,12 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
   codex: {
     id: 'codex',
     label: 'Codex',
-    short: 'Codex',
     basePath: '/codex',
 
     transcriptHint: '%USERPROFILE%\\.codex\\sessions\\',
     transcriptEnvVar: 'CODEX_HOME',
     pricingFile: 'config/codex-pricing.json',
     projectsFile: 'config/codex-projects.json',
-
-    costBasis: 'api-equivalent',
     costLabel: 'API-equivalent spend',
 
     // Codex reports a `cache_write_input_tokens` field but it has been 0 on

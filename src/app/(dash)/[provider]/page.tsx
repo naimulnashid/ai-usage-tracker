@@ -35,16 +35,15 @@ export default function OverviewPage() {
      *
      * The numbers come from `provider.skeleton`, per agent, because the two
      * pages are genuinely different shapes: Codex has two models where Claude
-     * Code has five (a one-row stat grid against a three-row one at 997px), a
-     * token table ~150px shorter, and a standing cost-basis notice that Claude
-     * Code has no equivalent of. One shared set of numbers would be wrong for
-     * one agent by a couple of hundred pixels - the exact failure this skeleton
-     * was rewritten to fix.
+     * Code has five (a one-row stat grid against a three-row one at 997px) and
+     * a token table ~150px shorter. One shared set of numbers would be wrong
+     * for one agent by a couple of hundred pixels - the exact failure this
+     * skeleton was rewritten to fix.
      *
      * Spacing below comes from the real rules (.headline-card and .panel
      * margin-bottom 22, .section-title margin 0 0 18 with a 40 top, .stat-grid
-     * margin-bottom 34, .score-grid margin-bottom 26). See
-     * OverviewSkeletonMetrics for how to re-measure.
+     * margin-bottom 34, .score-grid margin-bottom 26). See `SkeletonMetrics`
+     * in providers.ts for how to re-measure.
      */
     const sk = provider.skeleton;
     return (

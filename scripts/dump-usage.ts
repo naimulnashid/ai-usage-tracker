@@ -1,11 +1,13 @@
 /**
- * Phase 1 inspection script.
+ * Claude Code inspection script — the counterpart to `dump-codex-usage.ts`.
  *
  *   npm run parse            -> writes out/usage-report.json + prints a summary
  *   npm run parse -- --quiet -> writes the JSON only
  *
- * The JSON it writes is the exact structure the Next.js API route will serve,
- * so anything verified here is what the UI will render.
+ * The JSON it writes is the exact structure `/api/usage/claude` serves, so
+ * anything verified here is what the UI renders — and this needs no password,
+ * because it reads disk directly rather than going through the HTTP layer.
+ * That makes it the fastest way to check a parser change.
  */
 import fs from 'node:fs';
 import path from 'node:path';

@@ -214,18 +214,6 @@ a:hover {
   white-space: nowrap;
 }
 
-/* The same file the browser uses as the favicon, so the two cannot drift.
-   The mark carries its own black tile and border - that reads as a badge here
-   because the tile matches the topbar, and keeps one mark for both places. */
-.brand-mark {
-  width: 22px;
-  height: 22px;
-  flex-shrink: 0;
-  border-radius: 5px;
-  /* Inherits the lit quality the old accent dot had. */
-  filter: drop-shadow(0 0 10px var(--accent-glow));
-}
-
 .nav {
   display: flex;
   gap: 6px;
