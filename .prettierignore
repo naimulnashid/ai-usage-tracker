@@ -1,0 +1,14 @@
+# Build output and local data
+.next/
+out/
+data/
+logs/
+node_modules/
+
+# Vendor artwork, committed byte-identical to the files the vendors publish
+public/agent-marks/
+
+# Prose whose line breaks are deliberate. Prettier does not reflow comments,
+# but it does rewrap Markdown, and these are hand-wrapped at 80 with tables
+# that it would reformat into something harder to read in a diff.
+*.md

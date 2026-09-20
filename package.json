@@ -13,7 +13,11 @@
     "typecheck": "tsc --noEmit",
     "parse": "tsx scripts/dump-usage.ts",
     "parse:codex": "tsx scripts/dump-codex-usage.ts",
-    "test": "node scripts/run-tests.mjs"
+    "test": "node scripts/run-tests.mjs",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "geist": "^1.7.2",
@@ -23,9 +27,14 @@
     "recharts": "^3.10.1"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.7",
     "@types/node": "^22.10.2",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^15.5.25",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.8",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   },

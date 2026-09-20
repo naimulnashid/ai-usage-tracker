@@ -1,0 +1,18 @@
+# Keeps editors in step with .prettierrc.json and .gitattributes.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.md]
+# Two trailing spaces are a line break in Markdown.
+trim_trailing_whitespace = false
+
+[*.{bat,ps1,vbs}]
+# Windows scripts are CRLF; cmd.exe is unforgiving about line endings.
+end_of_line = crlf

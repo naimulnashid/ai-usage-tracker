@@ -56,9 +56,9 @@ export function ProjectLogo({ name, size = 38 }: { name: string; size?: number }
       aria-hidden
     >
       {src ? (
-        // eslint-disable-next-line @next/next/no-img-element -- a user-dropped
-        // file of unknown dimensions; next/image would need a loader config for
-        // no benefit on a localhost-only page.
+        // A user-dropped file of unknown dimensions; next/image would need a
+        // loader config for no benefit on a localhost-only page. The rule is
+        // off repo-wide, with the reasoning, in eslint.config.mjs.
         <img src={src} alt="" className="project-logo-img" onError={() => setSrc(null)} />
       ) : (
         <span className="project-logo-fallback num">{initialsOf(name)}</span>
