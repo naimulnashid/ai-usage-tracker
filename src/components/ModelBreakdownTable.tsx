@@ -10,6 +10,7 @@ import {
 } from '@/lib/format';
 import { modelColor } from '@/lib/model-colors';
 import { useProvider } from './ProviderScope';
+import { InfoTip } from './InfoTip';
 import { RUNTIME_TOOLTIP } from './Notices';
 
 const REASONING_TIP =
@@ -45,9 +46,7 @@ export function ModelBreakdownTable({
             {provider.hasReasoningTokens && (
               <th>
                 Reasoning{' '}
-                <span className="info-tip" data-tip={REASONING_TIP} aria-label="About reasoning tokens">
-                  i
-                </span>
+                <InfoTip label="About reasoning tokens" text={REASONING_TIP} />
               </th>
             )}
             {provider.hasCacheWrites && <th>Cache write</th>}
@@ -55,9 +54,7 @@ export function ModelBreakdownTable({
             <th>Total tokens</th>
             <th>
               Runtime{' '}
-              <span className="info-tip" data-tip={RUNTIME_TOOLTIP} aria-label="About runtime">
-                i
-              </span>
+              <InfoTip label="About runtime" text={RUNTIME_TOOLTIP} />
             </th>
             <th>Cost</th>
           </tr>

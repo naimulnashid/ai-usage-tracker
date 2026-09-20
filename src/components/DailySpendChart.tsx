@@ -21,6 +21,7 @@ import {
   formatUsd,
 } from '@/lib/format';
 import { COMBINED_COLOR, WARN_COLOR } from '@/lib/model-colors';
+import { ChartFigure } from './ChartFigure';
 
 interface Point {
   date: string;
@@ -49,21 +50,21 @@ function ChartTooltip({ active, payload }: TooltipContentProps) {
   return (
     <div
       style={{
-        background: '#131317',
-        border: `1px solid ${point.spike ? WARN_COLOR : '#2e2e37'}`,
+        background: 'var(--tooltip-bg)',
+        border: `1px solid ${point.spike ? WARN_COLOR : 'var(--border-bright)'}`,
         borderRadius: 10,
         padding: '12px 15px',
         boxShadow: '0 12px 34px rgba(0,0,0,0.95)',
         fontSize: 14,
       }}
     >
-      <div style={{ color: '#fafafa', fontWeight: 600, marginBottom: 8 }}>
+      <div style={{ color: 'var(--text)', fontWeight: 600, marginBottom: 8 }}>
         {formatDateLong(point.date)}
       </div>
       <div className="num" style={{ color: COMBINED_COLOR, fontSize: 21, fontWeight: 650 }}>
         {formatUsd(point.cost)}
       </div>
-      <div className="num" style={{ color: '#9a9aa4', marginTop: 6 }}>
+      <div className="num" style={{ color: 'var(--text-muted)', marginTop: 6 }}>
         {formatTokens(point.tokens)} tokens · {formatDuration(point.runtime)}
       </div>
       {point.spike && (
@@ -102,6 +103,18 @@ export function DailySpendChart({
   }
 
   return (
+    <ChartFigure
+      label="Daily combined spend, all models and projects."
+      summary={`${data.length} day${data.length === 1 ? '' : 's'}, oldest first.`}
+      columns={[
+        { header: 'Date', cell: (row: Point) => formatDateLong(row.date) },
+        { header: 'Spend', cell: (row: Point) => formatUsd(row.cost) },
+        { header: 'Tokens', cell: (row: Point) => formatTokens(row.tokens) },
+        { header: 'Runtime', cell: (row: Point) => formatDuration(row.runtime) },
+        { header: 'Above trend', cell: (row: Point) => (row.spike ? 'yes' : 'no') },
+      ]}
+      rows={data}
+    >
     <div className="chart-wrap" style={{ minHeight: height }}>
       <ResponsiveContainer width="100%" height={height} key={replayKey}>
         <AreaChart data={data} margin={{ top: 10, right: 12, bottom: 4, left: 4 }}>
@@ -111,19 +124,19 @@ export function DailySpendChart({
               <stop offset="100%" stopColor={COMBINED_COLOR} stopOpacity={0.02} />
             </linearGradient>
           </defs>
-          <CartesianGrid stroke="#1e1e24" vertical={false} />
+          <CartesianGrid stroke="var(--border)" vertical={false} />
           <XAxis
             dataKey="date"
             tickFormatter={formatDateShort}
-            tick={{ fill: '#6b6b75', fontSize: 13 }}
-            axisLine={{ stroke: '#1e1e24' }}
+            tick={{ fill: 'var(--text-faint)', fontSize: 13 }}
+            axisLine={{ stroke: 'var(--border)' }}
             tickLine={false}
             minTickGap={22}
             dy={6}
           />
           <YAxis
             tickFormatter={(v: number) => formatUsd(v, { compact: true })}
-            tick={{ fill: '#6b6b75', fontSize: 13 }}
+            tick={{ fill: 'var(--text-faint)', fontSize: 13 }}
             axisLine={false}
             tickLine={false}
             width={62}
@@ -162,5 +175,6 @@ export function DailySpendChart({
         </AreaChart>
       </ResponsiveContainer>
     </div>
+    </ChartFigure>
   );
 }

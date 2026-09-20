@@ -15,6 +15,7 @@ import {
 import type { UsageCell } from '@/lib/types';
 import { displayModel, formatDuration, formatTokens, formatUsd } from '@/lib/format';
 import { modelColor } from '@/lib/model-colors';
+import { ChartFigure } from './ChartFigure';
 
 interface Row {
   model: string;
@@ -34,8 +35,8 @@ function ChartTooltip({ active, payload }: TooltipContentProps) {
   return (
     <div
       style={{
-        background: '#131317',
-        border: '1px solid #2e2e37',
+        background: 'var(--tooltip-bg)',
+        border: '1px solid var(--border-bright)',
         borderRadius: 10,
         padding: '12px 15px',
         boxShadow: '0 12px 34px rgba(0,0,0,0.95)',
@@ -47,7 +48,7 @@ function ChartTooltip({ active, payload }: TooltipContentProps) {
           display: 'flex',
           alignItems: 'center',
           gap: 9,
-          color: '#fafafa',
+          color: 'var(--text)',
           fontWeight: 600,
           marginBottom: 8,
         }}
@@ -66,11 +67,11 @@ function ChartTooltip({ active, payload }: TooltipContentProps) {
         {row.unpriced ? 'unpriced' : formatUsd(row.cost)}
       </div>
       {!row.unpriced && (
-        <div className="num" style={{ color: '#9a9aa4', marginTop: 4, fontSize: 13.5 }}>
+        <div className="num" style={{ color: 'var(--text-muted)', marginTop: 4, fontSize: 13.5 }}>
           {row.share.toFixed(1)}% of total cost
         </div>
       )}
-      <div className="num" style={{ color: '#9a9aa4', marginTop: 6 }}>
+      <div className="num" style={{ color: 'var(--text-muted)', marginTop: 6 }}>
         {formatTokens(row.tokens)} tokens · {formatDuration(row.runtime)}
       </div>
     </div>
@@ -116,6 +117,17 @@ export function CostByModelChart({
   }
 
   return (
+    <ChartFigure
+      label="Estimated spend per model across every project."
+      columns={[
+        { header: 'Model', cell: (row: Row) => row.label },
+        { header: 'Spend', cell: (row: Row) => (row.unpriced ? 'unpriced' : formatUsd(row.cost)) },
+        { header: 'Share', cell: (row: Row) => (row.unpriced ? '—' : `${row.share.toFixed(1)}%`) },
+        { header: 'Tokens', cell: (row: Row) => formatTokens(row.tokens) },
+        { header: 'Runtime', cell: (row: Row) => formatDuration(row.runtime) },
+      ]}
+      rows={data}
+    >
     <div className="chart-wrap" style={{ minHeight: height }}>
       <ResponsiveContainer width="100%" height={height} key={replayKey}>
         <BarChart
@@ -123,18 +135,18 @@ export function CostByModelChart({
           layout="vertical"
           margin={{ top: 4, right: 26, bottom: 4, left: 4 }}
         >
-          <CartesianGrid stroke="#1e1e24" horizontal={false} />
+          <CartesianGrid stroke="var(--border)" horizontal={false} />
           <XAxis
             type="number"
             tickFormatter={(v: number) => formatUsd(v, { compact: true })}
-            tick={{ fill: '#6b6b75', fontSize: 13 }}
-            axisLine={{ stroke: '#1e1e24' }}
+            tick={{ fill: 'var(--text-faint)', fontSize: 13 }}
+            axisLine={{ stroke: 'var(--border)' }}
             tickLine={false}
           />
           <YAxis
             type="category"
             dataKey="label"
-            tick={{ fill: '#9a9aa4', fontSize: 14 }}
+            tick={{ fill: 'var(--text-muted)', fontSize: 14 }}
             axisLine={false}
             tickLine={false}
             width={116}
@@ -148,5 +160,6 @@ export function CostByModelChart({
         </BarChart>
       </ResponsiveContainer>
     </div>
+    </ChartFigure>
   );
 }

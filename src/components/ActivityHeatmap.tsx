@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import type { DailyEntry, WeekStart } from '@/lib/types';
 import { formatDateLong, formatDuration, formatTokens, formatUsd } from '@/lib/format';
 import { HEATMAP_RAMP, heatmapColor } from '@/lib/model-colors';
+import { ChartFigure } from './ChartFigure';
 
 /**
  * Six months of history. `WEEKS` is the single source of truth for the column
@@ -121,13 +122,40 @@ export function ActivityHeatmap({
     return { cells: flat, months: monthMarks, max: peak, total: sum, activeDays: active };
   }, [daily, offsetHours, startDay]);
 
+  /*
+   * The grid is decoration for assistive tech, and the table below carries the
+   * data instead.
+   *
+   * It used to be `role="img"` with a label, which hides every cell - so the
+   * ~180 per-day `title`s went with it and a screen reader got the label and
+   * nothing else. Active days only: an empty cell says nothing a total does
+   * not, and 180 rows of "no usage" is worse than useless to page through.
+   */
+  const activeCells = cells.filter((cell) => !cell.future && (cell.entry?.combined.costUsd ?? 0) > 0);
+
   return (
+    <ChartFigure
+      label={`Daily spend over the last ${RANGE_LABEL}, as a heat map.`}
+      summary={`${activeCells.length} day${activeCells.length === 1 ? '' : 's'} with usage.`}
+      columns={[
+        { header: 'Date', cell: (cell: Cell) => formatDateLong(cell.date) },
+        { header: 'Spend', cell: (cell: Cell) => formatUsd(cell.entry?.combined.costUsd ?? 0) },
+        {
+          header: 'Tokens',
+          cell: (cell: Cell) => formatTokens(cell.entry?.combined.totalTokens ?? 0),
+        },
+        {
+          header: 'Runtime',
+          cell: (cell: Cell) => formatDuration(cell.entry?.combined.runtimeSeconds ?? 0),
+        },
+      ]}
+      rows={activeCells}
+    >
     <div>
       <div className="heatmap-scroll">
         <div
           className="heatmap-plot"
-          role="img"
-          aria-label={`Daily spend over the last ${RANGE_LABEL}`}
+          aria-hidden="true"
           style={{
             gridTemplateColumns: `var(--hm-daycol) repeat(${WEEKS}, minmax(var(--hm-min), 1fr))`,
           }}
@@ -194,5 +222,6 @@ export function ActivityHeatmap({
         </span>
       </div>
     </div>
+    </ChartFigure>
   );
 }

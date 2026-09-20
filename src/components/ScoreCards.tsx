@@ -3,6 +3,7 @@
 import type { ActivityStats, SessionRecord, UsageCell } from '@/lib/types';
 import { CountUp } from './CountUp';
 import { ScoreIcon, type ScoreIconName } from './ScoreIcon';
+import { InfoTip } from './InfoTip';
 import {
   displayModel,
   formatCount,
@@ -257,9 +258,7 @@ export function ScoreCards({
               <ScoreIcon name={card.icon} />
               {card.label}
               {card.tip && (
-                <span className="info-tip" data-tip={card.tip} tabIndex={0} aria-label={card.tip}>
-                  i
-                </span>
+                <InfoTip label={`About ${card.label.toLowerCase()}`} text={card.tip} />
               )}
             </div>
             <div className="score-value">{card.value}</div>

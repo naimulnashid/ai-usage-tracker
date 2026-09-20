@@ -12,6 +12,7 @@ import {
 import type { ProjectSummary } from '@/lib/types';
 import { formatTokens, formatUsd } from '@/lib/format';
 import { ProjectLogo } from '@/components/ProjectLogo';
+import { ChartFigure } from './ChartFigure';
 
 interface Slice {
   id: string;
@@ -66,8 +67,8 @@ function ChartTooltip({ active, payload }: TooltipContentProps) {
   return (
     <div
       style={{
-        background: '#131317',
-        border: '1px solid #2e2e37',
+        background: 'var(--tooltip-bg)',
+        border: '1px solid var(--border-bright)',
         borderRadius: 10,
         padding: '12px 15px',
         boxShadow: '0 12px 34px rgba(0,0,0,0.95)',
@@ -80,7 +81,7 @@ function ChartTooltip({ active, payload }: TooltipContentProps) {
           display: 'flex',
           alignItems: 'center',
           gap: 9,
-          color: '#fafafa',
+          color: 'var(--text)',
           fontWeight: 600,
           marginBottom: 8,
         }}
@@ -91,11 +92,11 @@ function ChartTooltip({ active, payload }: TooltipContentProps) {
       <div className="num" style={{ color: 'var(--accent)', fontSize: 21, fontWeight: 650 }}>
         {slice.share.toFixed(1)}%
       </div>
-      <div className="num" style={{ color: '#9a9aa4', marginTop: 6 }}>
+      <div className="num" style={{ color: 'var(--text-muted)', marginTop: 6 }}>
         {formatUsd(slice.cost)} · {formatTokens(slice.tokens)} tokens
       </div>
       {slice.projects > 1 && (
-        <div style={{ color: '#6b6b75', marginTop: 4, fontSize: 13 }}>
+        <div style={{ color: 'var(--text-faint)', marginTop: 4, fontSize: 13 }}>
           the {slice.projects} smallest projects, combined
         </div>
       )}
@@ -183,6 +184,21 @@ export function ProjectShareChart({
   const onSliceLeave = () => setActive(null);
 
   return (
+    <ChartFigure
+      label="Share of spend by project."
+      summary={
+        collapse
+          ? `Top ${MAX_SLICES} projects, with the remaining ${rest.length} summed as Others.`
+          : `All ${ranked.length} project${ranked.length === 1 ? '' : 's'}.`
+      }
+      columns={[
+        { header: 'Project', cell: (slice: Slice) => slice.name },
+        { header: 'Spend', cell: (slice: Slice) => formatUsd(slice.cost) },
+        { header: 'Share', cell: (slice: Slice) => `${slice.share.toFixed(1)}%` },
+        { header: 'Tokens', cell: (slice: Slice) => formatTokens(slice.tokens) },
+      ]}
+      rows={data}
+    >
     <div className="donut-layout">
       <div className="donut-ring" style={{ height }}>
         <ResponsiveContainer width="100%" height={height}>
@@ -262,5 +278,6 @@ export function ProjectShareChart({
         ))}
       </ul>
     </div>
+    </ChartFigure>
   );
 }

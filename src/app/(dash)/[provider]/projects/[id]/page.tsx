@@ -13,6 +13,7 @@ import { ModelBreakdownTable } from '@/components/ModelBreakdownTable';
 import { SessionsTable } from '@/components/SessionsTable';
 import { RUNTIME_TOOLTIP, UnpricedNotice } from '@/components/Notices';
 import { ProjectLogo } from '@/components/ProjectLogo';
+import { InfoTip } from '@/components/InfoTip';
 import {
   displayModel,
   formatCount,
@@ -31,7 +32,10 @@ export default function ProjectDetailPage() {
 
   if (initialLoading) {
     return (
-      <div style={{ paddingTop: 34 }}>
+      <div style={{ paddingTop: 34 }} role="status" aria-busy="true">
+        {/* The skeleton is silent otherwise: a screen reader hears nothing
+            between navigation and the data landing. */}
+        <span className="sr-only">Loading this project…</span>
         <div className="skeleton" style={{ height: 190, marginBottom: 22 }} />
         <div className="skeleton" style={{ height: 340, marginBottom: 22 }} />
         <div className="skeleton" style={{ height: 300 }} />
@@ -126,14 +130,10 @@ export default function ProjectDetailPage() {
                   <code style={{ color: 'var(--accent)' }}>{source}</code>
                 </span>
               ))}{' '}
-              <span
-                className="info-tip"
-                data-tip={`${provider.label} keys projects by working directory, so renaming or moving a folder starts a new project and splits its history. These directories are stitched back together by ${provider.projectsFile}.`}
-                tabIndex={0}
-                aria-label="About merged projects"
-              >
-                i
-              </span>
+              <InfoTip
+                label="About merged projects"
+                text={`${provider.label} keys projects by working directory, so renaming or moving a folder starts a new project and splits its history. These directories are stitched back together by ${provider.projectsFile}.`}
+              />
             </div>
           )}
         </div>
@@ -174,9 +174,7 @@ export default function ProjectDetailPage() {
           <div>
             <div className="headline-side-label">
               Total runtime{' '}
-              <span className="info-tip" data-tip={RUNTIME_TOOLTIP} aria-label="About runtime">
-                i
-              </span>
+              <InfoTip label="About runtime" text={RUNTIME_TOOLTIP} />
             </div>
             <div className="headline-side-value num">
               <CountUp

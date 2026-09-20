@@ -11,6 +11,7 @@ import {
 } from '@/lib/format';
 import { modelColor } from '@/lib/model-colors';
 import { useProvider } from './ProviderScope';
+import { InfoTip } from './InfoTip';
 import { RUNTIME_TOOLTIP } from './Notices';
 
 /**
@@ -47,9 +48,7 @@ export function CombinedDailyTable({
             <th>Tokens</th>
             <th>
               Runtime{' '}
-              <span className="info-tip" data-tip={RUNTIME_TOOLTIP} aria-label="About runtime">
-                i
-              </span>
+              <InfoTip label="About runtime" text={RUNTIME_TOOLTIP} />
             </th>
             <th>Cost</th>
             <th style={{ width: 150 }}>Share of peak day</th>
@@ -72,8 +71,13 @@ export function CombinedDailyTable({
                         className="model-swatch"
                         title={displayModel(model)}
                         style={{ background: modelColor(model) }}
+                        aria-hidden
                       />
                     ))}
+                    {/* Colour-only otherwise: this cell would read as empty. */}
+                    <span className="sr-only">
+                      {models.map((model) => displayModel(model)).join(', ')}
+                    </span>
                   </span>
                 </td>
                 <td className="num">{formatCount(row.combined.messages)}</td>
@@ -159,9 +163,7 @@ export function ModelDailyTable({ daily }: { daily: DailyEntry[] }) {
             <th>{provider.cacheReadLabel}</th>
             <th>
               Runtime{' '}
-              <span className="info-tip" data-tip={RUNTIME_TOOLTIP} aria-label="About runtime">
-                i
-              </span>
+              <InfoTip label="About runtime" text={RUNTIME_TOOLTIP} />
             </th>
             <th>Cost</th>
           </tr>

@@ -8,6 +8,7 @@ import { CostByModelChart } from '@/components/CostByModelChart';
 import { ModelBreakdownTable } from '@/components/ModelBreakdownTable';
 import { ScoreCards } from '@/components/ScoreCards';
 import { ActivityHeatmap } from '@/components/ActivityHeatmap';
+import { InfoTip } from '@/components/InfoTip';
 import { DailyTokensByModelChart } from '@/components/DailyTokensByModelChart';
 import { DailySpendByModelChart } from '@/components/DailySpendByModelChart';
 import {
@@ -49,7 +50,10 @@ export default function OverviewPage() {
      */
     const sk = provider.skeleton;
     return (
-      <div style={{ paddingTop: 34 }}>
+      <div style={{ paddingTop: 34 }} role="status" aria-busy="true">
+        {/* The skeleton is silent otherwise: a screen reader hears nothing
+            between navigation and the data landing. */}
+        <span className="sr-only">Loading the dashboard…</span>
         {/* Headline card. */}
         <div className="skeleton" style={{ height: sk.headline, marginBottom: 22 }} />
 
@@ -225,9 +229,7 @@ export default function OverviewPage() {
           <div>
             <div className="headline-side-label">
               Total runtime{' '}
-              <span className="info-tip" data-tip={RUNTIME_TOOLTIP} aria-label="About runtime">
-                i
-              </span>
+              <InfoTip label="About runtime" text={RUNTIME_TOOLTIP} />
             </div>
             <div className="headline-side-value num">
               <CountUp

@@ -6,6 +6,7 @@ import { useProvider } from '@/components/ProviderScope';
 import { CountUp } from '@/components/CountUp';
 import { RUNTIME_TOOLTIP } from '@/components/Notices';
 import { ProjectLogo } from '@/components/ProjectLogo';
+import { InfoTip } from '@/components/InfoTip';
 import { ProjectShareChart } from '@/components/ProjectShareChart';
 import {
   displayModel,
@@ -28,7 +29,10 @@ export default function ProjectsPage() {
      * was 81px short each.
      */
     return (
-      <div style={{ paddingTop: 34 }}>
+      <div style={{ paddingTop: 34 }} role="status" aria-busy="true">
+        {/* The skeleton is silent otherwise: a screen reader hears nothing
+            between navigation and the data landing. */}
+        <span className="sr-only">Loading your projects…</span>
         {/* Share-of-spend donut. Measured per agent: the ring is a fixed
             260px, but at a narrow shell the legend drops to one column and
             Claude Code's twelve projects make it much the taller of the two.
@@ -197,13 +201,7 @@ export default function ProjectsPage() {
               <span>{formatTokens(project.combined.totalTokens)} tokens</span>
               <span>
                 {formatDuration(project.combined.runtimeSeconds)}{' '}
-                <span
-                  className="info-tip"
-                  data-tip={RUNTIME_TOOLTIP}
-                  aria-label="About runtime"
-                >
-                  i
-                </span>
+                <InfoTip label="About runtime" text={RUNTIME_TOOLTIP} />
               </span>
               <span>{formatCount(project.sessions.length)} sessions</span>
               <span>{formatCount(project.daily.length)} active days</span>

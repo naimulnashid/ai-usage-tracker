@@ -18,6 +18,7 @@ import {
   formatTokens,
 } from '@/lib/format';
 import { byPriceDesc, modelColor } from '@/lib/model-colors';
+import { ChartFigure } from './ChartFigure';
 
 type Row = { date: string } & Record<string, number | string>;
 
@@ -31,8 +32,8 @@ function ChartTooltip({ active, payload, label }: TooltipContentProps) {
   return (
     <div
       style={{
-        background: '#131317',
-        border: '1px solid #2e2e37',
+        background: 'var(--tooltip-bg)',
+        border: '1px solid var(--border-bright)',
         borderRadius: 10,
         padding: '12px 15px',
         boxShadow: '0 12px 34px rgba(0,0,0,0.95)',
@@ -40,7 +41,7 @@ function ChartTooltip({ active, payload, label }: TooltipContentProps) {
         minWidth: 220,
       }}
     >
-      <div style={{ color: '#fafafa', fontWeight: 600, marginBottom: 9 }}>
+      <div style={{ color: 'var(--text)', fontWeight: 600, marginBottom: 9 }}>
         {formatDateLong(String(label))}
       </div>
       {entries.map((entry) => (
@@ -53,7 +54,7 @@ function ChartTooltip({ active, payload, label }: TooltipContentProps) {
             marginBottom: 5,
           }}
         >
-          <span style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#9a9aa4' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)' }}>
             <span
               className="model-swatch"
               style={{ background: modelColor(String(entry.dataKey)) }}
@@ -61,14 +62,14 @@ function ChartTooltip({ active, payload, label }: TooltipContentProps) {
             />
             {displayModel(String(entry.dataKey))}
           </span>
-          <span className="num" style={{ color: '#fafafa', fontWeight: 550 }}>
+          <span className="num" style={{ color: 'var(--text)', fontWeight: 550 }}>
             {formatTokens(entry.value as number)}
           </span>
         </div>
       ))}
       <div
         style={{
-          borderTop: '1px solid #2e2e37',
+          borderTop: '1px solid var(--border-bright)',
           marginTop: 9,
           paddingTop: 8,
           display: 'flex',
@@ -76,7 +77,7 @@ function ChartTooltip({ active, payload, label }: TooltipContentProps) {
           gap: 16,
         }}
       >
-        <span style={{ color: '#9a9aa4' }}>Total</span>
+        <span style={{ color: 'var(--text-muted)' }}>Total</span>
         <span className="num" style={{ color: 'var(--accent)', fontWeight: 650 }}>
           {formatTokens(total)}
         </span>
@@ -132,23 +133,39 @@ export function DailyTokensByModelChart({
     .filter((row) => row.cell && row.cell.totalTokens > 0);
 
   return (
-    <>
+    <ChartFigure
+      label="Daily token volume, stacked by model, most expensive band first."
+      summary={`${data.length} day${data.length === 1 ? '' : 's'}, oldest first, one column per model.`}
+      columns={[
+        { header: 'Date', cell: (row: Row) => formatDateLong(String(row.date)) },
+        ...models.map((model) => ({
+          header: displayModel(model),
+          cell: (row: Row) => formatTokens(Number(row[model] ?? 0)),
+        })),
+        {
+          header: 'Total',
+          cell: (row: Row) =>
+            formatTokens(models.reduce((sum, model) => sum + Number(row[model] ?? 0), 0)),
+        },
+      ]}
+      rows={data}
+    >
       <div className="chart-wrap" style={{ minHeight: height }}>
         <ResponsiveContainer width="100%" height={height} key={replayKey}>
           <BarChart data={data} margin={{ top: 10, right: 12, bottom: 4, left: 4 }}>
-            <CartesianGrid stroke="#1e1e24" vertical={false} />
+            <CartesianGrid stroke="var(--border)" vertical={false} />
             <XAxis
               dataKey="date"
               tickFormatter={formatDateShort}
-              tick={{ fill: '#6b6b75', fontSize: 13 }}
-              axisLine={{ stroke: '#1e1e24' }}
+              tick={{ fill: 'var(--text-faint)', fontSize: 13 }}
+              axisLine={{ stroke: 'var(--border)' }}
               tickLine={false}
               minTickGap={20}
               dy={6}
             />
             <YAxis
               tickFormatter={(v: number) => formatTokens(v)}
-              tick={{ fill: '#6b6b75', fontSize: 13 }}
+              tick={{ fill: 'var(--text-faint)', fontSize: 13 }}
               axisLine={false}
               tickLine={false}
               width={64}
@@ -192,6 +209,6 @@ export function DailyTokensByModelChart({
           );
         })}
       </div>
-    </>
+    </ChartFigure>
   );
 }

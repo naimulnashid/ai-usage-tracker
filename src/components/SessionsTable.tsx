@@ -11,6 +11,7 @@ import {
 } from '@/lib/format';
 import { modelColor } from '@/lib/model-colors';
 import { useProvider } from './ProviderScope';
+import { InfoTip } from './InfoTip';
 import { RUNTIME_TOOLTIP } from './Notices';
 
 const INITIAL_ROWS = 12;
@@ -40,23 +41,14 @@ export function SessionsTable({ sessions }: { sessions: SessionSummary[] }) {
               <th>Tokens</th>
               <th>
                 Runtime{' '}
-                <span
-                  className="info-tip"
-                  data-tip={RUNTIME_TOOLTIP}
-                  aria-label="About runtime"
-                >
-                  i
-                </span>
+                <InfoTip label="About runtime" text={RUNTIME_TOOLTIP} />
               </th>
               <th>
                 Open span{' '}
-                <span
-                  className="info-tip"
-                  data-tip="First-to-last timestamp of the session file. Includes idle time, so it is always at least the runtime figure - shown for comparison only."
-                  aria-label="About open span"
-                >
-                  i
-                </span>
+                <InfoTip
+                  label="About open span"
+                  text="First-to-last timestamp of the session file. Includes idle time, so it is always at least the runtime figure - shown for comparison only."
+                />
               </th>
               <th>Cost</th>
             </tr>
@@ -122,8 +114,14 @@ export function SessionsTable({ sessions }: { sessions: SessionSummary[] }) {
                         className="model-swatch"
                         title={displayModel(model)}
                         style={{ background: modelColor(model) }}
+                        aria-hidden
                       />
                     ))}
+                    {/* The swatches are colour only; this cell would otherwise
+                        be empty to a screen reader. */}
+                    <span className="sr-only">
+                      {session.models.map((model) => displayModel(model)).join(', ')}
+                    </span>
                   </span>
                 </td>
                 <td className="num">{formatCount(session.messages)}</td>
