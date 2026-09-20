@@ -462,6 +462,16 @@ two agents apart. Read it before changing a parser.
 
 ---
 
+## Contributing
+
+Bug reports, parser fixes and reports from macOS or Linux are all welcome —
+[`CONTRIBUTING.md`](CONTRIBUTING.md) has the setup, the checks CI runs, and the
+one rule that matters most here: **nothing derived from a real transcript ever
+goes in a commit, an issue or a pull request.** This tool reads your actual
+code and file paths, and this repository is public.
+
+---
+
 ## Security
 
 Found something exploitable? Please report it through

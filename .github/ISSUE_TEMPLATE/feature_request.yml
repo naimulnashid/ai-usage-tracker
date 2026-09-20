@@ -1,0 +1,47 @@
+name: Feature request
+description: Suggest something the dashboard should show or do.
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Worth knowing before you write: this is deliberately a **local-only**
+        tool. No database, no telemetry, no outbound network calls — a content
+        security policy enforces that last one. Suggestions that need a server,
+        an account or a third-party API are unlikely to fit, however useful
+        they'd be.
+
+        Same rule as everywhere else: no real project names, paths or spend
+        figures in a public issue.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to find out?
+      description: >
+        The question you wanted the dashboard to answer, rather than the widget
+        you imagined. It often has a cheaper answer than the one you had in
+        mind.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you add or change?
+
+  - type: dropdown
+    id: agent
+    attributes:
+      label: Does this apply to both agents?
+      description: >
+        Both parsers emit the same shape, so anything added usually has to make
+        sense for Claude Code and Codex alike — including that Codex's cost is
+        API-equivalent rather than a bill.
+      options:
+        - Both
+        - Claude Code only
+        - Codex only
+        - Not sure
+    validations:
+      required: true

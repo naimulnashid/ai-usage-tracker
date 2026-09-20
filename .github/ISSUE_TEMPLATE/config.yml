@@ -1,0 +1,16 @@
+# Blank issues stay enabled: the two forms cover the common cases, and a
+# report that fits neither should not have to be squeezed into one.
+blank_issues_enabled: true
+contact_links:
+  - name: Report a vulnerability privately
+    url: https://github.com/naimulnashid/ai-usage-tracker/security/advisories/new
+    about: >
+      Anything exploitable goes here rather than a public issue — it stays
+      private until there is a fix. SECURITY.md lists what is in scope, and
+      which things that look like findings are deliberate.
+  - name: How the numbers are derived
+    url: https://github.com/naimulnashid/ai-usage-tracker/blob/main/CLAUDE.md
+    about: >
+      Before reporting a figure as wrong: both agents' logs have traps that
+      make correct numbers look wrong (and wrong ones look right). They are
+      documented here, with the measurements behind them.
