@@ -291,6 +291,35 @@ disk directly and never touch the web app.
 
 ---
 
+## Trying it without your own data
+
+```bash
+npm run demo:data
+```
+
+Writes a synthetic transcript tree for both agents to `./demo-data` and prints
+the command to run the dashboard against it. Useful for taking a screenshot,
+trying a change, or seeing what the thing looks like before pointing it at
+your own machine.
+
+It is not a set of mock screens: the fake transcripts go through the real
+parsers, so every figure is computed the way yours are. That means the
+generator has to reproduce the awkward parts of both formats — Claude Code's
+streaming partials and replayed sessions, Codex's cumulative counters and
+repeated readings — or the demo would show numbers no real parse could
+produce. It is seeded, so the same command always gives the same dashboard.
+
+> **Set `DASHBOARD_DATA_DIR` when you do this**, as the printed command does.
+> The dashboard keeps a daily archive under `data/` so history survives the
+> agents deleting old transcripts, and without that variable these invented
+> days are merged into it. The merge keeps whichever copy has more messages,
+> so a fabricated day can overwrite a real one, and the archive is the one
+> thing here that cannot rebuild itself from disk.
+
+Delete `./demo-data` when you are done; it is gitignored either way.
+
+---
+
 ## Development
 
 ```bash

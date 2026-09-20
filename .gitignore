@@ -71,3 +71,6 @@ public/claude_code_project_logos/*
 !public/claude_code_project_logos/.gitkeep
 public/codex_project_logos/*
 !public/codex_project_logos/.gitkeep
+
+# Synthetic demo transcripts (npm run demo:data) and the archive they build.
+demo-data/

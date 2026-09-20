@@ -437,6 +437,7 @@ src/middleware.ts                    The single auth gate in front of every rout
 scripts/dump-usage.ts                CLI: `npm run parse`.       -> out/usage-report.json
 scripts/dump-codex-usage.ts          CLI: `npm run parse:codex`. -> out/codex-usage-report.json
 scripts/run-tests.mjs                CLI: `npm test`. Discovers tests/*.test.ts.
+scripts/make-demo-data.ts            CLI: `npm run demo:data`. Synthetic transcripts for both agents.
 tests/                               node:test suites; fixtures are written at run time.
 scripts/*.ps1, *.vbs, *.bat          Windows background service and launchers.
 src/app/(dash)/[provider]/           The pages. One copy, two agents.
@@ -1418,6 +1419,41 @@ enforced in one place per concern, shared by both parsers (`parser.ts`):
 
 Each of these has a test that fails if the guard is removed.
 
+## The demo tree, and the archive it must not touch
+
+`npm run demo:data` writes a synthetic `~/.claude/projects` and
+`~/.codex/sessions` into `./demo-data`, and prints the env vars that point the
+dashboard at them. It exists because every screenshot of this dashboard is
+otherwise a screenshot of somebody's real projects and spend, which the privacy
+rules make uncommittable — so there were no screenshots at all.
+
+**It is not mock data, and it cannot be.** The output goes through the real
+parsers, so the generator has to produce transcripts that survive them: Claude
+Code streaming partials with a growing `output_tokens` and a recoverable
+placeholder, replayed history shared between files, nested subagent
+transcripts, cache writes split by TTL; Codex cumulative totals with a repeated
+reading, cached tokens inside input, reasoning inside output, auto-review
+threads under their own model. Get one of those wrong and the demo shows
+numbers no real parse could produce.
+
+The diagnostics are how you know it is honest. A demo parse should report
+duplicate lines skipped and output tokens recovered on the Claude Code side,
+and **`files reconciled: N ok / 0 mismatched`** on the Codex side — that last
+one fails immediately if the cumulative arithmetic in the generator drifts from
+what the parser expects.
+
+It is seeded (`seed` at the top of the script), so the same command produces
+the same dashboard and a diff in a screenshot means something really changed.
+
+**`DASHBOARD_DATA_DIR` is what makes this safe, and it is new for this.**
+`historyPath()` used to be hard-wired to `process.cwd()/data`, so pointing
+`CLAUDE_CONFIG_DIR` at a demo tree would have folded invented days into the
+real archive — and since the merge keeps whichever copy has more messages, a
+fabricated day could permanently overwrite a real one. The archive is the only
+part of this tool that does not rebuild itself from disk, so that damage does
+not come back. Anything that reads demo transcripts must set that variable;
+the generator prints it as part of the command for exactly that reason.
+
 ## The four states a page can be in
 
 Loading, failed, empty, and has-data. The middle two used to be told apart by
@@ -1552,6 +1588,7 @@ npm ci
 cp .env.example .env.local   # then set DASHBOARD_PASSWORD - the app fails closed without it
 npm run parse         # Claude Code -> out/usage-report.json, plus a printed summary
 npm run parse:codex   # Codex       -> out/codex-usage-report.json
+npm run demo:data     # synthetic transcripts for both agents -> ./demo-data
 npm run dev           # dashboard at http://localhost:7842 (this machine only), lands on /claude
 npm run dev:lan       # the same, reachable from your network - set SESSION_SECRET first
 npm run typecheck

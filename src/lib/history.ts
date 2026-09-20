@@ -60,8 +60,22 @@ const ARCHIVE_FILES: Record<ProviderId, string> = {
   codex: 'codex-history.json',
 };
 
+/**
+ * Where the daily archive lives.
+ *
+ * `DASHBOARD_DATA_DIR` moves it, and that exists for one specific reason:
+ * pointing `CLAUDE_CONFIG_DIR` or `CODEX_HOME` at a demo tree without it would
+ * fold synthetic days into your real archive — and the merge keeps whichever
+ * version has more messages, so a fabricated day could permanently overwrite
+ * a real one. The archive is the one part of this tool that does not rebuild
+ * itself from disk, so that damage is not recoverable.
+ *
+ * `scripts/make-demo-data.ts` prints the command with this variable already
+ * set. Anything reading demo transcripts must set it too.
+ */
 export function historyPath(provider: ProviderId = 'claude'): string {
-  return path.join(process.cwd(), 'data', ARCHIVE_FILES[provider] ?? ARCHIVE_FILES.claude);
+  const dir = process.env.DASHBOARD_DATA_DIR?.trim() || path.join(process.cwd(), 'data');
+  return path.join(dir, ARCHIVE_FILES[provider] ?? ARCHIVE_FILES.claude);
 }
 
 function emptyHistory(): HistoryFile {
