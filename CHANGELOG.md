@@ -22,8 +22,23 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   through `aria-describedby`. Colour-only swatch columns carry the model names
   for screen readers, and the loading skeletons announce themselves.
 
+### States
+
+- A parse that finds nothing now says so: which agent, where it looked, and how
+  to point it somewhere else. It used to render `$0.00` across a dozen cards
+  with a warning claiming a file could not be read.
+- Warnings are described honestly. "Nothing found" is left to the empty state,
+  and the rest are no longer all announced as unreadable files - the same list
+  carries merge-rule cycles and archive failures.
+- Render errors keep the dashboard's chrome and offer a retry instead of
+  blanking the page, and an unknown agent segment gets a real page.
+- The project detail page's loading skeleton mirrors the page section by
+  section, instead of three grey boxes standing in for nine sections.
+
 ### Fixed
 
+- A project id containing `%` no longer blanks the page: the page was decoding
+  a parameter that arrives decoded.
 - One malformed line can no longer take down a report. JSON that is valid but
   not an object (`null`, a number, an array) is skipped instead of aborting the
   rest of that file; an out-of-range timestamp is treated as undated instead of

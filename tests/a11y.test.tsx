@@ -14,7 +14,10 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import { ChartFigure } from '../src/components/ChartFigure';
+import { EmptyState } from '../src/components/EmptyState';
 import { InfoTip } from '../src/components/InfoTip';
+import { ProviderScope } from '../src/components/ProviderScope';
+import { PROVIDERS } from '../src/lib/providers';
 
 const render = (element: React.ReactElement) => renderToStaticMarkup(element);
 
@@ -95,5 +98,41 @@ describe('ChartFigure', () => {
     );
     assert.doesNotMatch(empty, /<table/);
     assert.match(empty, /Nothing yet\./);
+  });
+});
+
+describe('EmptyState', () => {
+  const html = render(
+    <ProviderScope provider={PROVIDERS.claude}>
+      <EmptyState warnings={['Cannot read projects directory /nowhere: ENOENT']} />
+    </ProviderScope>,
+  );
+
+  it('says which agent found nothing, rather than showing zeroes', () => {
+    assert.match(html, /No Claude Code usage found yet/);
+  });
+
+  it('says where it looked and how to point it elsewhere', () => {
+    assert.match(html, /Looked in/);
+    assert.match(html, /USERPROFILE/);
+    assert.match(html, /\.claude/);
+    assert.match(html, /CLAUDE_CONFIG_DIR/);
+  });
+
+  it('tucks the raw warning away instead of leading with it', () => {
+    assert.match(html, /<details[^>]*class="empty-state-details"/);
+    assert.match(html, /What the parser reported \(1\)/);
+    assert.match(html, /ENOENT/);
+  });
+
+  it('shows no details block when the parse had nothing to report', () => {
+    const quiet = render(
+      <ProviderScope provider={PROVIDERS.codex}>
+        <EmptyState />
+      </ProviderScope>,
+    );
+    assert.doesNotMatch(quiet, /<details/);
+    assert.match(quiet, /No Codex usage found yet/);
+    assert.match(quiet, /CODEX_HOME/);
   });
 });

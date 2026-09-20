@@ -1175,6 +1175,29 @@ enforced in one place per concern, shared by both parsers (`parser.ts`):
 
 Each of these has a test that fails if the guard is removed.
 
+## The four states a page can be in
+
+Loading, failed, empty, and has-data. The middle two used to be told apart by
+the reader rather than the code, which is how a fresh install came to look
+broken:
+
+- **Empty is its own state.** `isEmptyReport()` (`src/lib/report-state.ts`) is
+  the single rule - no projects, no messages, no tokens, no runtime - and
+  `EmptyState` says which agent found nothing, where it looked, and which
+  environment variable moves that. Before, the page rendered `$0.00` across a
+  dozen cards with "No dated activity found." in every chart.
+- **"Nothing found" is not a warning.** A missing transcript directory is the
+  normal state of a fresh install, so `noteworthyWarnings()` keeps it out of
+  the warning box and the empty state carries it instead.
+- **`ParseWarnings` no longer calls everything a file.** The same list carries
+  merge-rule cycles and archive write failures; announcing "N files could not
+  be read" sent people looking for a file that was fine.
+- **Render errors are caught.** `(dash)/[provider]/error.tsx` keeps the chrome
+  and offers a retry; `app/not-found.tsx` handles an unknown agent segment.
+  Before, one exception - a literal `%` in a project id was enough - left a
+  blank page. That particular one is fixed at the source too: `useParams`
+  already decodes, so the page no longer decodes a second time.
+
 ## Accessibility rules that are easy to undo by accident
 
 `tests/contrast.test.ts` and `tests/a11y.test.tsx` enforce all of this, so a
@@ -1216,9 +1239,13 @@ regression fails before it ships rather than after someone complains.
 Found in the pre-release audit and not yet fixed. Check before assuming the code
 already handles them:
 
-- **States.** The project detail skeleton is generic (three blocks for a
-  nine-section page); there is no dedicated empty state, and `ParseWarnings`
-  describes every warning as an unreadable file even when it is not.
+- **The project detail skeleton's heights are derived, not measured.** Every
+  other skeleton constant came from mounting the markup under the real CSS and
+  reading `offsetTop`; these were worked out from the overview panels that
+  share the same components, because the page is behind the password gate. See
+  `SkeletonMetrics.detail`, and re-measure when convenient. The two long tables
+  there are capped on purpose - their height follows the number of days and
+  sessions, which a skeleton cannot know.
 - **Hygiene.** No lint or formatter config yet.
 - **Not verified in a browser.** The accessibility work above is enforced at the
   markup and token level. Nobody has yet run it past a screen reader or an axe
