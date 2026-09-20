@@ -86,13 +86,26 @@ describe('ChartFigure', () => {
   });
 
   it('carries the same numbers as a table, for anyone not reading the picture', () => {
-    assert.match(html, /<table class="sr-only">/);
     assert.match(html, /<caption>Daily combined spend\.<\/caption>/);
     assert.match(html, /<th scope="col">Date<\/th>/);
     assert.match(html, /<th scope="col">Spend<\/th>/);
     assert.match(html, /<th scope="row">Mon, Aug 3 2026<\/th>/);
     assert.match(html, /<td>\$2\.25<\/td>/);
     assert.equal((html.match(/<tr>/g) ?? []).length, 3, 'one header row plus one per data row');
+  });
+
+  it('hides the table by WRAPPING it, never by classing the table itself', () => {
+    // This test used to assert `<table class="sr-only">`, which was the bug.
+    // `.sr-only` hides a box by shrinking it to 1px and clipping the overflow,
+    // and neither applies to a `display: table` box - a table sizes to its
+    // content and ignores `overflow`. The table stayed full height, invisible
+    // behind `clip-path` but still laid out: two of them put ~1200px of empty
+    // scroll below the footer on the overview.
+    assert.match(html, /<div class="sr-only"><table>/);
+    assert.doesNotMatch(html, /<table[^>]*class="[^"]*sr-only/);
+    // And not by killing the table's own semantics, which is the other way to
+    // make the symptom go away.
+    assert.doesNotMatch(html, /<table[^>]*style="[^"]*display:\s*block/);
   });
 
   it('omits the table when there is nothing to put in it', () => {

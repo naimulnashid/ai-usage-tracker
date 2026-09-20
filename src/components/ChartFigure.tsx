@@ -54,34 +54,46 @@ export function ChartFigure<Row>({
         {summary ? ` ${summary}` : ''}
       </figcaption>
       {children}
+      {/* The WRAPPER carries `sr-only`, not the table.
+          `.sr-only` hides a box by shrinking it to 1px and clipping the
+          overflow - and `overflow` does not apply to a `display: table` box, nor
+          does a 1px `width`/`height`, since a table sizes to its content. The
+          class on the table itself therefore left a full-size table laid out,
+          invisible behind `clip-path` but still occupying its real height: two
+          of these added ~1200px of empty scroll below the footer on the
+          overview. A `<div>` is a block container, so it genuinely clips.
+          Do NOT fix this by putting `display: block` on the table instead -
+          that strips the table semantics this element exists to provide. */}
       {rows.length > 0 && (
-        <table className="sr-only">
-          <caption>{label}</caption>
-          <thead>
-            <tr>
-              {columns.map((column) => (
-                <th key={column.header} scope="col">
-                  {column.header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, index) => (
-              <tr key={index}>
-                {columns.map((column, columnIndex) =>
-                  columnIndex === 0 ? (
-                    <th key={column.header} scope="row">
-                      {column.cell(row)}
-                    </th>
-                  ) : (
-                    <td key={column.header}>{column.cell(row)}</td>
-                  ),
-                )}
+        <div className="sr-only">
+          <table>
+            <caption>{label}</caption>
+            <thead>
+              <tr>
+                {columns.map((column) => (
+                  <th key={column.header} scope="col">
+                    {column.header}
+                  </th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((row, index) => (
+                <tr key={index}>
+                  {columns.map((column, columnIndex) =>
+                    columnIndex === 0 ? (
+                      <th key={column.header} scope="row">
+                        {column.cell(row)}
+                      </th>
+                    ) : (
+                      <td key={column.header}>{column.cell(row)}</td>
+                    ),
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </figure>
   );
