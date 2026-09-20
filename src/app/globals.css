@@ -14,7 +14,15 @@
 
   --text: #fafafa;
   --text-muted: #9a9aa4;
-  --text-faint: #6b6b75;
+  /* 4.55:1 against the panel at its worst, so the small text it carries
+     (section titles, table headers, axis ticks, card sub-labels) clears WCAG
+     AA. It was #6b6b75, which measured 3.6-4.0:1 and failed. */
+  --text-faint: #7d7d87;
+
+  /* Chart and explainer tooltips. Tokens rather than literals, so the charts
+     stop carrying their own copies of these two values. */
+  --tooltip-bg: #131317;
+  --tooltip-border: #2e2e37;
 
   /* The accent. One per agent, used for every primary action, active state,
      link, focus ring, and the combined-spend headline.
@@ -32,12 +40,16 @@
 
   /* Activity heat-map ramp, "no activity" first. Kept here rather than in TS
      for the same reason as the accent - see src/lib/model-colors.ts. */
+  /* Every step from --hm-1 up clears 3:1 against the panel (WCAG 1.4.11), and
+     luminance still rises with intensity. The old low end (1.45:1 and 2.34:1)
+     was invisible to anyone who could not pick it out of near-black. --hm-0 is
+     the absence of data, so it stays dark. */
   --hm-0: #161318;
-  --hm-1: #4a2314;
-  --hm-2: #7c3a1f;
-  --hm-3: #ae552f;
-  --hm-4: #d97757;
-  --hm-5: #f19c7c;
+  --hm-1: #9d4224; /* 3.05:1 */
+  --hm-2: #be4f2b; /* 4.09:1 */
+  --hm-3: #d3603b; /* 5.19:1 */
+  --hm-4: #d97757; /* 6.34:1 - the accent */
+  --hm-5: #e39981; /* 8.61:1 */
 
   /* Reserved for genuine anomalies only - never decoration. */
   --warn: #f87171;
@@ -72,11 +84,11 @@
   --accent-fill: rgba(16, 163, 127, 0.24);
 
   --hm-0: #131817;
-  --hm-1: #0c3a30;
-  --hm-2: #0d604c;
-  --hm-3: #0f8568;
-  --hm-4: #10a37f;
-  --hm-5: #3fc4a0;
+  --hm-1: #0a6b53; /* 3.05:1 */
+  --hm-2: #0d8165; /* 4.09:1 */
+  --hm-3: #0e9372; /* 5.12:1 */
+  --hm-4: #10a37f; /* 6.19:1 - the accent */
+  --hm-5: #13c197; /* 8.57:1 */
 }
 
 * {
@@ -1296,6 +1308,15 @@ table.data tfoot td {
 }
 
 /* Tooltip for the runtime assumption */
+/* Wraps the button and the copy of its text that only assistive tech reads. */
+.info-tip-wrap {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* A real <button>, not a decorated <span>: it has to be reachable by keyboard,
+   and its tooltip is announced through aria-describedby. The visible bubble is
+   still CSS (see ::after below). */
 .info-tip {
   position: relative;
   display: inline-flex;
@@ -1303,13 +1324,22 @@ table.data tfoot td {
   justify-content: center;
   width: 17px;
   height: 17px;
+  padding: 0;
+  background: none;
   border-radius: 50%;
   border: 1px solid var(--border-bright);
   color: var(--text-faint);
+  font-family: inherit;
   font-size: 11px;
   font-weight: 700;
+  line-height: 1;
   cursor: help;
   transition: color 180ms var(--ease), border-color 180ms var(--ease);
+}
+
+.info-tip:focus-visible {
+  color: var(--accent);
+  border-color: var(--accent);
 }
 .info-tip:hover {
   color: var(--accent);
@@ -1334,7 +1364,7 @@ table.data tfoot td {
   width: 290px;
   padding: 11px 13px;
   border-radius: var(--radius-sm);
-  background: #131317;
+  background: var(--tooltip-bg);
   border: 1px solid var(--border-bright);
   color: var(--text-muted);
   font-size: 13px;
@@ -1352,6 +1382,27 @@ table.data tfoot td {
 .info-tip:focus-visible::after {
   display: block;
   animation: tipIn 180ms var(--ease) both;
+}
+
+/* Visible to assistive tech only. Used for the text behind an info tip, the
+   name behind a colour swatch, chart captions and their table fallbacks.
+   1px and clipped, so it cannot add width to a `.table-scroll` the way a
+   laid-out-but-invisible box would. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* A chart plus its caption and table fallback. */
+.chart-figure {
+  margin: 0;
 }
 
 @keyframes tipIn {
