@@ -200,8 +200,57 @@ function pickProjectCwd(id: string, counts: Map<string, number>): string | null 
   return best;
 }
 
-function toInt(value: unknown): number {
-  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+/** The bucket for usage whose line carried no usable timestamp. */
+export const UNKNOWN_DATE = '(unknown date)';
+
+/**
+ * A token count from a transcript, as a non-negative integer.
+ *
+ * Anything else - a string, a null, a fraction, a negative - becomes 0 rather
+ * than being trusted. A single negative value would otherwise flow straight
+ * into the totals and out the other side as negative cost, and then into the
+ * archive, where it would outlive the line that caused it.
+ */
+export function toTokenCount(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return 0;
+  return Math.floor(value);
+}
+
+/**
+ * The earliest timestamp worth believing. Both agents postdate it by years, so
+ * anything older is a corrupt or synthetic line rather than old history.
+ */
+const EARLIEST_PLAUSIBLE_MS = Date.parse('2000-01-01T00:00:00Z');
+/** Clock skew is real; a year of it is not. */
+const MAX_FUTURE_SKEW_MS = 365 * 86_400_000;
+
+/**
+ * A line's `timestamp`, or null when it is missing, unparseable or absurd.
+ *
+ * The absurd case is the one worth spelling out: `Date.parse` happily accepts
+ * "+275760-09-13T00:00:00Z", and adding a timezone offset to that overflows
+ * the Date range, so `toISOString()` throws `RangeError` - out of the parser,
+ * out of the API route, and onto the page as a failed report. One malformed
+ * line must never cost the whole dashboard.
+ */
+export function parseTimestampMs(raw: unknown): number | null {
+  if (typeof raw !== 'string' || !raw) return null;
+  const parsed = Date.parse(raw);
+  if (!Number.isFinite(parsed)) return null;
+  if (parsed < EARLIEST_PLAUSIBLE_MS) return null;
+  if (parsed > Date.now() + MAX_FUTURE_SKEW_MS) return null;
+  return parsed;
+}
+
+/**
+ * True for a JSON line that can be read as an object.
+ *
+ * `JSON.parse` returns null for the literal `null`, and a number for a bare
+ * number - both of which used to reach field access and throw, aborting the
+ * rest of the file with it.
+ */
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 /**
@@ -216,17 +265,17 @@ function readTokens(usage: Record<string, unknown>): TokenCounts {
   let cacheWrite5m = 0;
   let cacheWrite1h = 0;
 
-  if (creation && typeof creation === 'object') {
-    cacheWrite5m = toInt(creation.ephemeral_5m_input_tokens);
-    cacheWrite1h = toInt(creation.ephemeral_1h_input_tokens);
+  if (isRecord(creation)) {
+    cacheWrite5m = toTokenCount(creation.ephemeral_5m_input_tokens);
+    cacheWrite1h = toTokenCount(creation.ephemeral_1h_input_tokens);
   } else {
-    cacheWrite5m = toInt(usage.cache_creation_input_tokens);
+    cacheWrite5m = toTokenCount(usage.cache_creation_input_tokens);
   }
 
   return {
-    input: toInt(usage.input_tokens),
-    output: toInt(usage.output_tokens),
-    cacheRead: toInt(usage.cache_read_input_tokens),
+    input: toTokenCount(usage.input_tokens),
+    output: toTokenCount(usage.output_tokens),
+    cacheRead: toTokenCount(usage.cache_read_input_tokens),
     cacheWrite5m,
     cacheWrite1h,
   };
@@ -258,24 +307,30 @@ async function readFileRecords(
       if (!line) continue;
       diagnostics.linesRead += 1;
 
-      let entry: Record<string, unknown>;
+      let parsedLine: unknown;
       try {
-        entry = JSON.parse(line) as Record<string, unknown>;
+        parsedLine = JSON.parse(line);
       } catch {
         // A truncated or malformed line is skipped, never fatal. Claude Code's
         // schema is internal and can change; the parser degrades instead of dying.
         diagnostics.linesUnparseable += 1;
         continue;
       }
+      // Valid JSON that is not an object (`null`, a number, an array) is just
+      // as unusable, and reaching field access on it would abort the file.
+      if (!isRecord(parsedLine)) {
+        diagnostics.linesUnparseable += 1;
+        continue;
+      }
+      const entry: Record<string, unknown> = parsedLine;
 
-      const tsRaw = typeof entry.timestamp === 'string' ? entry.timestamp : null;
-      let timestampMs: number | null = null;
-      if (tsRaw) {
-        const parsed = Date.parse(tsRaw);
-        if (!Number.isNaN(parsed)) {
-          timestampMs = parsed;
-          if (firstTimestampMs === null || parsed < firstTimestampMs) firstTimestampMs = parsed;
-        }
+      const timestampMs = parseTimestampMs(entry.timestamp);
+      const tsRaw = timestampMs !== null && typeof entry.timestamp === 'string' ? entry.timestamp : null;
+      if (timestampMs === null && typeof entry.timestamp === 'string' && entry.timestamp) {
+        diagnostics.implausibleTimestamps = (diagnostics.implausibleTimestamps ?? 0) + 1;
+      }
+      if (timestampMs !== null && (firstTimestampMs === null || timestampMs < firstTimestampMs)) {
+        firstTimestampMs = timestampMs;
       }
 
       if (typeof entry.cwd === 'string' && entry.cwd) {
@@ -345,12 +400,22 @@ function addTokens(cell: UsageCell, tokens: TokenCounts, cost: number) {
   cell.costUsd += cost;
 }
 
+/**
+ * The local calendar day for a UTC instant, or `UNKNOWN_DATE` when the shifted
+ * instant falls outside the range a `Date` can represent. Callers already drop
+ * implausible timestamps; this is the backstop that keeps a date from ever
+ * throwing out of a parse.
+ */
 export function localDate(timestampMs: number, offsetHours: number): string {
-  return new Date(timestampMs + offsetHours * 3_600_000).toISOString().slice(0, 10);
+  const shifted = timestampMs + offsetHours * 3_600_000;
+  if (!Number.isFinite(shifted) || Math.abs(shifted) > 8.64e15) return UNKNOWN_DATE;
+  return new Date(shifted).toISOString().slice(0, 10);
 }
 
-function localHour(timestampMs: number, offsetHours: number): number {
-  return new Date(timestampMs + offsetHours * 3_600_000).getUTCHours();
+function localHour(timestampMs: number, offsetHours: number): number | null {
+  const shifted = timestampMs + offsetHours * 3_600_000;
+  if (!Number.isFinite(shifted) || Math.abs(shifted) > 8.64e15) return null;
+  return new Date(shifted).getUTCHours();
 }
 
 /** Days apart between two YYYY-MM-DD keys, treating both as UTC midnight. */
@@ -748,10 +813,11 @@ export async function buildUsageReport(options: ParseOptions = {}): Promise<Usag
       const date =
         record.timestampMs !== null
           ? localDate(record.timestampMs, settings.localUtcOffsetHours)
-          : '(unknown date)';
+          : UNKNOWN_DATE;
 
       if (record.timestampMs !== null) {
-        hourHistogram[localHour(record.timestampMs, settings.localUtcOffsetHours)] += 1;
+        const hour = localHour(record.timestampMs, settings.localUtcOffsetHours);
+        if (hour !== null) hourHistogram[hour] += 1;
       }
 
       for (const bucket of [
@@ -864,7 +930,7 @@ export async function buildUsageReport(options: ParseOptions = {}): Promise<Usag
   const globalDailyPlain = dailyToPlain(globalDaily);
   const activeDates = globalDailyPlain
     .map((entry) => entry.date)
-    .filter((date) => date !== '(unknown date)');
+    .filter((date) => date !== UNKNOWN_DATE);
   const todayKey = localDate(Date.now(), settings.localUtcOffsetHours);
   const { current, longest } = computeStreaks(activeDates, todayKey);
 

@@ -178,6 +178,13 @@ export interface ParseDiagnostics {
    * treated as a fresh baseline rather than negative usage.
    */
   counterResets?: number;
+  /**
+   * Lines whose `timestamp` parsed but landed outside any plausible window
+   * (before 2000, or more than a year ahead). They still count towards tokens
+   * and cost; they just carry no date, so they bucket under "(unknown date)"
+   * rather than being trusted enough to place on a chart.
+   */
+  implausibleTimestamps?: number;
   /** Model strings with no rate card entry. */
   unpricedModels: string[];
   /**

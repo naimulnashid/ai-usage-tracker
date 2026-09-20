@@ -76,6 +76,7 @@ async function main() {
   console.log(`  files scanned            : ${d.filesScanned}   (failed: ${d.filesFailed})`);
   console.log(`  lines read               : ${d.linesRead.toLocaleString()}`);
   console.log(`  unparseable lines        : ${d.linesUnparseable}`);
+  console.log(`  implausible timestamps   : ${d.implausibleTimestamps ?? 0}`);
   console.log(`  token_count events       : ${d.assistantLines.toLocaleString()}`);
   console.log(`  billed turns counted     : ${d.uniqueMessages.toLocaleString()}`);
   console.log(`  repeated readings skipped: ${d.duplicateLinesSkipped.toLocaleString()}`);

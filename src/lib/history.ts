@@ -90,7 +90,7 @@ export function loadHistory(
       version: HISTORY_VERSION,
       updatedAt: typeof parsed.updatedAt === 'string' ? parsed.updatedAt : '',
       projectMeta: parsed.projectMeta ?? {},
-      days: parsed.days as Record<string, ArchivedDay>,
+      days: sanitizeDays(parsed.days as Record<string, unknown>, file, warnings),
     };
   } catch (error) {
     warnings.push(
@@ -100,6 +100,94 @@ export function loadHistory(
     );
     return emptyHistory();
   }
+}
+
+/* -------------------------------------------------------------------------
+ * Reading back what was written
+ * ---------------------------------------------------------------------- */
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function num(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
+/** A stored cell, with every number coerced. Null when it is not a cell at all. */
+function normalizeCell(value: unknown): UsageCell | null {
+  if (!isObject(value)) return null;
+  return {
+    input: num(value.input),
+    output: num(value.output),
+    cacheRead: num(value.cacheRead),
+    cacheWrite5m: num(value.cacheWrite5m),
+    cacheWrite1h: num(value.cacheWrite1h),
+    reasoning: num(value.reasoning),
+    messages: num(value.messages),
+    runtimeSeconds: num(value.runtimeSeconds),
+    totalTokens: num(value.totalTokens),
+    costUsd: num(value.costUsd),
+    unpriced: value.unpriced === true,
+  };
+}
+
+function normalizeBucket(value: unknown): ArchivedBucket | null {
+  if (!isObject(value)) return null;
+  const combined = normalizeCell(value.combined);
+  if (!combined) return null;
+  const perModel: Record<string, UsageCell> = {};
+  if (isObject(value.perModel)) {
+    for (const [model, cell] of Object.entries(value.perModel)) {
+      const normalized = normalizeCell(cell);
+      if (normalized) perModel[model] = normalized;
+    }
+  }
+  return { perModel, combined };
+}
+
+/**
+ * Validate the archive day by day, dropping the ones that cannot be read.
+ *
+ * The file is on the user's disk and nothing stops it being hand-edited or
+ * truncated. A day missing its `combined` cell used to throw on the next parse
+ * and take the whole dashboard down with it - which is exactly what this
+ * module's "fails soft in every direction" promise says must not happen. A bad
+ * day is now dropped with a warning; the rest of the archive still loads.
+ */
+export function sanitizeDays(
+  days: Record<string, unknown> | undefined,
+  file: string,
+  warnings: string[] = [],
+): Record<string, ArchivedDay> {
+  const out: Record<string, ArchivedDay> = {};
+  const dropped: string[] = [];
+
+  for (const [date, value] of Object.entries(days ?? {})) {
+    const bucket = isObject(value) ? normalizeBucket(value) : null;
+    if (!bucket) {
+      dropped.push(date);
+      continue;
+    }
+    const projects: Record<string, ArchivedBucket> = {};
+    if (isObject((value as Record<string, unknown>).projects)) {
+      for (const [id, project] of Object.entries(
+        (value as Record<string, unknown>).projects as Record<string, unknown>,
+      )) {
+        const normalized = normalizeBucket(project);
+        if (normalized) projects[id] = normalized;
+      }
+    }
+    out[date] = { date, perModel: bucket.perModel, combined: bucket.combined, projects };
+  }
+
+  if (dropped.length) {
+    const shown = dropped.slice(0, 5).join(', ');
+    warnings.push(
+      `Skipped ${dropped.length} unreadable day${dropped.length === 1 ? '' : 's'} in the history archive at ${file} (${shown}${dropped.length > 5 ? ', …' : ''}).`,
+    );
+  }
+  return out;
 }
 
 /** Atomic write, so a crash mid-save cannot leave a truncated archive. */

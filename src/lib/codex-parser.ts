@@ -70,7 +70,15 @@ import os from 'node:os';
 import readline from 'node:readline';
 
 import { costOf, getRate, loadPricing, loadProjectConfig, loadSettings, resolveProjectId } from './pricing';
-import { computeSessionRecords, computeStreaks, localDate } from './parser';
+import {
+  UNKNOWN_DATE,
+  computeSessionRecords,
+  computeStreaks,
+  isRecord,
+  localDate,
+  parseTimestampMs,
+  toTokenCount,
+} from './parser';
 import type {
   ActivityStats,
   DailyEntry,
@@ -225,9 +233,8 @@ const ZERO_TOTALS: RawTotals = {
   total: 0,
 };
 
-function toInt(value: unknown): number {
-  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
-}
+/** Shared with the Claude Code parser: a non-negative integer, or 0. */
+const toInt = toTokenCount;
 
 function readTotals(usage: Record<string, unknown>): RawTotals {
   return {
@@ -363,32 +370,38 @@ async function readFileRecords(
       if (!line) continue;
       diagnostics.linesRead += 1;
 
-      let entry: Record<string, unknown>;
+      let parsedLine: unknown;
       try {
-        entry = JSON.parse(line) as Record<string, unknown>;
+        parsedLine = JSON.parse(line);
       } catch {
         diagnostics.linesUnparseable += 1;
         continue;
       }
+      // `null`, a bare number or an array is valid JSON and unusable here -
+      // and reading a field off it would abort the rest of the file.
+      if (!isRecord(parsedLine)) {
+        diagnostics.linesUnparseable += 1;
+        continue;
+      }
+      const entry: Record<string, unknown> = parsedLine;
 
-      const tsRaw = typeof entry.timestamp === 'string' ? entry.timestamp : null;
-      let timestampMs: number | null = null;
-      if (tsRaw) {
-        const parsed = Date.parse(tsRaw);
-        if (!Number.isNaN(parsed)) {
-          timestampMs = parsed;
-          if (firstTimestampMs === null || parsed < firstTimestampMs) {
-            firstTimestampMs = parsed;
-            firstTimestampRaw = tsRaw;
-          }
-          if (lastTimestampMs === null || parsed > lastTimestampMs) {
-            lastTimestampMs = parsed;
-            lastTimestampRaw = tsRaw;
-          }
+      const timestampMs = parseTimestampMs(entry.timestamp);
+      const tsRaw = timestampMs !== null && typeof entry.timestamp === 'string' ? entry.timestamp : null;
+      if (timestampMs === null && typeof entry.timestamp === 'string' && entry.timestamp) {
+        diagnostics.implausibleTimestamps = (diagnostics.implausibleTimestamps ?? 0) + 1;
+      }
+      if (timestampMs !== null && tsRaw) {
+        if (firstTimestampMs === null || timestampMs < firstTimestampMs) {
+          firstTimestampMs = timestampMs;
+          firstTimestampRaw = tsRaw;
+        }
+        if (lastTimestampMs === null || timestampMs > lastTimestampMs) {
+          lastTimestampMs = timestampMs;
+          lastTimestampRaw = tsRaw;
         }
       }
 
-      const payload = (entry.payload ?? {}) as Record<string, unknown>;
+      const payload = isRecord(entry.payload) ? entry.payload : {};
       const type = entry.type;
 
       if (type === 'session_meta') {
@@ -521,8 +534,10 @@ function addTokens(cell: UsageCell, tokens: TokenCounts, cost: number) {
   cell.costUsd += cost;
 }
 
-function localHour(timestampMs: number, offsetHours: number): number {
-  return new Date(timestampMs + offsetHours * 3_600_000).getUTCHours();
+function localHour(timestampMs: number, offsetHours: number): number | null {
+  const shifted = timestampMs + offsetHours * 3_600_000;
+  if (!Number.isFinite(shifted) || Math.abs(shifted) > 8.64e15) return null;
+  return new Date(shifted).getUTCHours();
 }
 
 interface Bucket {
@@ -711,12 +726,13 @@ export async function buildCodexUsageReport(
       const date =
         event.timestampMs !== null
           ? localDate(event.timestampMs, settings.localUtcOffsetHours)
-          : '(unknown date)';
+          : UNKNOWN_DATE;
       const projectId = resolveProject(event.cwd ?? record.cwd);
       sessionProject ??= projectId;
 
       if (event.timestampMs !== null) {
-        hourHistogram[localHour(event.timestampMs, settings.localUtcOffsetHours)] += 1;
+        const hour = localHour(event.timestampMs, settings.localUtcOffsetHours);
+        if (hour !== null) hourHistogram[hour] += 1;
       }
 
       for (const bucket of bucketsFor(projectId, date)) {
@@ -801,7 +817,7 @@ export async function buildCodexUsageReport(
   const globalDailyPlain = dailyToPlain(globalDaily);
   const activeDates = globalDailyPlain
     .map((entry) => entry.date)
-    .filter((date) => date !== '(unknown date)');
+    .filter((date) => date !== UNKNOWN_DATE);
   const todayKey = localDate(Date.now(), settings.localUtcOffsetHours);
   const { current, longest } = computeStreaks(activeDates, todayKey);
 
