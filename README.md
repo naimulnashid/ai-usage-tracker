@@ -290,10 +290,14 @@ disk directly and never touch the web app.
 ## Development
 
 ```bash
+npm run lint          # eslint
+npm run format:check  # prettier
 npm run typecheck
-npm test          # node:test, via tsx
+npm test              # node:test, via tsx
 npm run build
 ```
+
+`npm run lint:fix` and `npm run format` apply what those two can fix.
 
 The tests cover both parsers' documented quirks, the local archive, the login
 gate and pricing. Fixtures are generated at run time in a temp directory —

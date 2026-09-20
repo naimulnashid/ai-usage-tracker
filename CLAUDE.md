@@ -1246,7 +1246,9 @@ already handles them:
   `SkeletonMetrics.detail`, and re-measure when convenient. The two long tables
   there are capped on purpose - their height follows the number of days and
   sessions, which a skeleton cannot know.
-- **Hygiene.** No lint or formatter config yet.
+- **Nothing here is tested in a browser.** No screen reader, no axe run, no
+  visual check of the empty and error states - they are behind the password
+  gate, so everything above is enforced at the markup, token and unit level.
 - **Not verified in a browser.** The accessibility work above is enforced at the
   markup and token level. Nobody has yet run it past a screen reader or an axe
   audit on a signed-in page.
@@ -1262,7 +1264,26 @@ npm run dev           # dashboard at http://localhost:7842 (this machine only), 
 npm run dev:lan       # the same, reachable from your network - set SESSION_SECRET first
 npm run typecheck
 npm test              # node:test via tsx; see tests/
+npm run lint          # eslint . - `lint:fix` applies what it can
+npm run format:check  # prettier --check . - `format` writes
 ```
+
+**Lint and format config.** ESLint 9 flat config (`eslint.config.mjs`) loads
+`eslint-config-next` through `FlatCompat`, because that package is still
+written in the old `.eslintrc` shape. **Keep `eslint-config-next` pinned to the
+same major as `next`** - `npm install` will happily fetch the next major, which
+lints for a framework version this app is not on. `eslint-config-prettier` goes
+last so nothing fights Prettier over formatting.
+
+`@next/next/no-img-element` is off repo-wide, with the reasoning in the config:
+the three `<img>`s are local files of unknown dimensions on a localhost-only
+page, and `next/image` would need a loader configured to buy nothing.
+
+**Line endings are LF, enforced by `.gitattributes`.** Without it a Windows
+checkout writes CRLF while the repository stores LF, and Prettier - configured
+for LF - rewrites every line of every file it touches, so a one-line change
+shows up as a whole-file diff. Windows scripts (`.bat`, `.ps1`, `.vbs`) stay
+CRLF.
 
 **Tests build their fixtures at run time** (`tests/helpers.ts` writes JSONL into
 a temp directory and deletes it afterwards). Nothing derived from a real

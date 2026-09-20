@@ -22,6 +22,16 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   through `aria-describedby`. Colour-only swatch columns carry the model names
   for screen readers, and the loading skeletons announce themselves.
 
+### Tooling
+
+- ESLint 9 (flat config, via `eslint-config-next`) and Prettier, wired into CI
+  alongside the typecheck, tests and build. The codebase needed no rule
+  suppressions: the first run reported two warnings, both now gone.
+- `.gitattributes` normalises line endings to LF, with Windows scripts kept as
+  CRLF. Without it, Prettier and a Windows checkout disagree on every line of
+  every file.
+- `.editorconfig` keeps editors in step with both.
+
 ### States
 
 - A parse that finds nothing now says so: which agent, where it looked, and how
