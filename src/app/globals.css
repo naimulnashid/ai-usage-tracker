@@ -1190,6 +1190,18 @@ a:hover {
   position: relative;
   width: 100%;
   overflow-x: auto;
+  /* `overflow-x: auto` would otherwise force `overflow-y` to compute as `auto`
+     too, and a tooltip hanging below the header of a SHORT table then raises a
+     vertical scrollbar - 2px of it on Codex's two-model token table, which is
+     the whole documented hover-scrollbar bug in miniature. These tables never
+     need to scroll vertically: they are as tall as their rows. Stating it
+     explicitly trims a bubble that outgrows a very short table instead.
+
+     `hidden` rather than `clip` because the two are the same thing here: a box
+     cannot be a scroll container on one axis and `clip` on the other, so `clip`
+     computes to `hidden` next to `overflow-x: auto`. Writing what it resolves
+     to saves the next person checking. */
+  overflow-y: hidden;
 }
 
 table.data {

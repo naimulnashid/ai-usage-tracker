@@ -58,6 +58,9 @@ describe('the info tip cannot widen the table it sits in', () => {
     // past the panel's edge, invisible, and put 63px of horizontal scroll on
     // the whole page while it was open.
     assert.ok(declares('.table-scroll', 'position', 'relative'));
+    // `overflow-x: auto` forces `overflow-y` to compute as `auto` as well, so
+    // a bubble below the header of a short table raises a vertical scrollbar.
+    assert.ok(declares('.table-scroll', 'overflow-y', 'hidden'));
     assert.ok(declares('.table-scroll .info-tip::after', 'top', 'calc\\(100% \\+ 10px\\)'));
     assert.ok(declares('.table-scroll .info-tip::after', 'bottom', 'auto'));
   });

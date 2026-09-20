@@ -184,15 +184,23 @@ const s = document.createElement('style');
 s.textContent = '.info-tip::after { display: block !important; }';
 document.head.appendChild(s);
 const d = document.documentElement;
-[d.scrollWidth - d.clientWidth, // 0
+[d.scrollWidth - d.clientWidth, // 0: nothing may scroll the PAGE
  ...[...document.querySelectorAll('.table-scroll')]
-   .map((w) => w.scrollHeight - w.clientHeight)]; // 0 each
+   .map((w) => w.offsetWidth - w.clientWidth)]; // 0 each: no vertical scrollbar
 s.remove();
 ```
 
-A table's own `scrollWidth - clientWidth` is NOT expected to be 0 here: these
-tables carry a `min-width: 760px` and scroll horizontally by design on a narrow
-shell. What must be 0 is the document's, and the tables' vertical overflow.
+Two things that are NOT expected to be 0 here, so do not chase them:
+
+- **A table's own `scrollWidth - clientWidth`.** These tables carry a
+  `min-width: 760px` and scroll horizontally by design on a narrow shell.
+- **A table's `scrollHeight - clientHeight`.** `.table-scroll` now pins
+  `overflow-y: hidden`, so a bubble that outgrows a short table is clipped
+  rather than scrolled - the overflow is still *reported*, but no scrollbar is
+  rendered, which is why the check above measures `offsetWidth` instead. Codex's
+  two-model token table clips 2px of one bubble this way. Without the pin,
+  `overflow-x: auto` forces the vertical axis to `auto` and those 2px become a
+  scrollbar that appears on hover.
 
 Note the transform in `tipIn` reads `--tip-x` rather than hard-coding
 `translateX(-50%)`, so a right-anchored bubble does not slide 145px sideways
