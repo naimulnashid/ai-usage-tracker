@@ -64,8 +64,16 @@ export function UsageProvider({ children }: { children: ReactNode }) {
       const response = await fetch(`/api/usage/${providerId}`, { cache: 'no-store' });
       // A session that expired while the tab sat open should send the user to
       // the login screen, not surface a bare "Request failed (401)".
+      //
+      // It carries where they were, the same way `middleware.ts` does for a
+      // request that never had a session - otherwise the one route that throws
+      // people out mid-session is also the one that forgets what they were
+      // looking at, and a deep link into a project becomes the overview. The
+      // value is read off `location`, so it is same-origin by construction, and
+      // the login page refuses anything that is not a same-site path anyway.
       if (response.status === 401) {
-        window.location.href = '/login';
+        const here = `${window.location.pathname}${window.location.search}`;
+        window.location.href = `/login?next=${encodeURIComponent(here)}`;
         return;
       }
       const payload = await response.json();

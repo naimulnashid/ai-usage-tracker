@@ -10,9 +10,17 @@ import { SESSION_COOKIE, configuredPassword, verifySession } from '@/lib/auth';
  * browsers fetch before any session exists; the marks are let through for the
  * same reason and because gating an image only makes it render as a broken
  * login page. None of it leaks anything - they are logos.
+ *
+ * **The exclusions are anchored and their dots escaped.** They were neither:
+ * `icon.svg` matched any path merely STARTING with those characters, and the
+ * `.` matched anything, so `/icon.svgx` or `/iconxsvg-something` read as the
+ * favicon. Probing found no actual bypass - the excluded paths 404 rather than
+ * serving anything - so this closes a hole that was not yet a hole, which is
+ * the only time worth closing one. `_next/image` takes no `$`: it is a route
+ * with a query string, not a file.
  */
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|icon.svg|agent-marks/|favicon.ico).*)'],
+  matcher: ['/((?!_next/static/|_next/image|icon\\.svg$|agent-marks/|favicon\\.ico$).*)'],
 };
 
 /** Only same-site absolute paths may be bounced back to after login. */

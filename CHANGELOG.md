@@ -6,6 +6,29 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Security
+
+- **Security headers on every response.** A content security policy, plus
+  `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy: no-referrer`
+  and `Permissions-Policy`. The policy's `connect-src 'self'` is the one that
+  matters: "this app makes no outbound network calls" was a promise the code
+  kept and nothing enforced, and the browser now refuses instead. An `.svg`
+  path — the agent marks and your project logos, which are files you drop in
+  yourself — gets a tighter policy that allows no script at all.
+- **The login screen can no longer be framed by another site**, which is the
+  clickjacking defence it was missing.
+- **The auth gate's exclusions are anchored.** `icon.svg` and `favicon.ico`
+  were matched as prefixes with an unescaped `.`, so paths like `/icon.svgx`
+  and `/iconxsvg` were treated as the favicon and skipped the password gate.
+  Nothing was actually served through the gap — the paths 404 — but it is shut.
+
+### Fixed
+
+- **An expired session no longer loses your place.** A session that ran out
+  while a tab sat open bounced to the login screen and then to the overview;
+  it now returns you to the page you were on, query string included, the same
+  way a request that never had a session already did.
+
 ### Fixed — the first pass in a real browser
 
 Everything below was found by loading the signed-in dashboard and measuring it,

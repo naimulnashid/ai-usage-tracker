@@ -358,8 +358,10 @@ loading state directly:
   .map((el) => [el.className, el.offsetTop, Math.round(el.getBoundingClientRect().height)]);
 ```
 
-**Catching it is easier than mounting it, and an iframe is how.** Load the page
-in an `<iframe>` sized to the width you are measuring — the iframe's own
+**Catching it is easier than mounting it, and an iframe is how.** (This is why
+the CSP sets `frame-ancestors 'self'` rather than `'none'` — see *Security
+headers*. If framing the app ever stops working, check there first.) Load the
+page in an `<iframe>` sized to the width you are measuring — the iframe's own
 viewport drives the media queries, so 997px and 1680px are exact rather than
 approximated by a resized window — and poll every 40ms for the skeleton and
 again for the real page. One script then measures every project at every width
@@ -1094,6 +1096,41 @@ the window passes, while already-signed-in devices are unaffected because the
 middleware never consults the counter. A restart clears it. The 400ms delay on
 each wrong password stays on top.
 
+### Security headers
+
+`next.config.mjs` sends five on every response. Four are the usual hardening —
+`X-Content-Type-Options`, `Referrer-Policy: no-referrer` (a URL here carries a
+project id), `Permissions-Policy`, and the framing pair below.
+
+**The one that earns its place is `connect-src 'self'`.** "No outbound network
+calls" is this project's central promise and was, until these headers, enforced
+by nothing but the code's good intentions. That directive makes the browser
+refuse instead — and it is not decorative: it blocks a real thing that a real
+session did (see the axe note under *Known issues*).
+
+Three decisions in there that look like mistakes and are not:
+
+- **`script-src 'self' 'unsafe-inline'`.** Next streams its flight payload as
+  inline `<script>` tags whose contents change per render, so they cannot be
+  hashed; noncing them means reading `headers()` in the root layout — to nonce
+  the rail script too — which makes every page dynamic. The directive still
+  does the thing worth doing here, which is to allow no script from anywhere
+  else. If you ever want the strict version, the cost is the SSG, not a hash.
+- **`frame-ancestors 'self'`, not `'none'`,** with `X-Frame-Options:
+  SAMEORIGIN` to agree with it. Clickjacking needs a CROSS-origin frame and
+  both of these refuse every one. `'none'` additionally forbids the app framing
+  itself, which breaks the iframe harness for measuring the skeletons — found
+  by trying it, within a minute of it being wrong. The two headers must move
+  together: `DENY` next to `'self'` overrides it in browsers honouring both.
+- **An `.svg` path gets its own, tighter policy** (`default-src 'none'`). Inside
+  an `<img>` an SVG is inert; opened directly it is a document that can carry
+  script, and both the agent marks and the project logos are files a user drops
+  into `public/` themselves. Matched on the extension rather than the folders,
+  so it does not copy `projectLogoDir` out of the registry. **Next collapses two
+  rules that set the same header, last one wins**, so this REPLACES the main
+  policy for those paths rather than narrowing it — which is why it repeats
+  `frame-ancestors`. The four differently-named headers still apply.
+
 ### Traps
 
 **The cookie must not be `secure`.** This is served over plain HTTP on the LAN.
@@ -1126,6 +1163,12 @@ Checked rather than assumed, in dev *and* against `next build && next start`:
 | Password rotation | edit `.env.local`, restart, **no rebuild**; old password 401s |
 | Old session after rotation **+ restart** | 401 — sessions really are invalidated |
 | Old session after rotation, **no restart** (dev) | still 200 — see the trap below |
+| Session expiring on a deep link | `/login?next=` keeps the path **and** the query |
+| `/icon.svg`, `/agent-marks/*.svg` with no session | 200 — the login screen's own assets |
+| `/icon.svgx`, `/iconxsvg` with no session | **307 to `/login`** — both were let through before the matcher's exclusions were anchored |
+| All five security headers | present on a page, and on an SVG |
+| Loading a script or fetching from a CDN | blocked by the CSP |
+| Framing from another origin | refused; same-origin framing still works |
 
 The cookie derivation and throttling were additionally verified with a script
 against the modules: round-trip, wrong password, tampered signature and expiry,
@@ -1384,6 +1427,17 @@ both agents, and on the empty, failed and render-error states.
   chart.** axe cannot compute contrast for SVG `<text>`. Done by hand, the axis
   labels are `#7d7d87` on `#0a0a0c` = 4.86:1, which passes. This is a gap in
   the tool, not in the page, and it will recur on every run.
+
+**Getting axe into the page is now the hard part, on purpose.** That first run
+pulled axe-core from cdnjs, which the CSP added afterwards refuses — both the
+`<script src>` and a `fetch`, verified. That is the `connect-src`/`script-src`
+pair doing exactly its job, and it is a small comfort that the first thing it
+ever blocked was something this repo's own notes told someone to do. To run it
+again, either drop a copy of `axe.min.js` into `public/` and load it from
+`/axe.min.js` (same origin, so the policy allows it — and `public/` is
+enumerated at server **startup**, so restart first), or comment the header rule
+out of `next.config.mjs` for the run. Do not loosen the policy to make an audit
+convenient.
 
 It also found four real bugs, all now fixed and all invisible to the markup,
 token and unit tests that were supposed to cover this ground. Three were
