@@ -13,10 +13,16 @@ import { after } from 'node:test';
 
 import type { PricingConfig, Settings } from '../src/lib/types';
 
-/** A temp directory that removes itself when the test file finishes. */
+/**
+ * A temp directory that removes itself when the test file finishes.
+ *
+ * The retries are for Windows: the parsers have just closed read streams over
+ * these files, and a handle can outlive the close long enough for `rmSync` to
+ * fail the directory with ENOTEMPTY. CI caught exactly that on Node 20.
+ */
 export function tempDir(prefix = 'aiusage-test-'): string {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-  after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  after(() => fs.rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }));
   return dir;
 }
 
