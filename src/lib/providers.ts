@@ -168,6 +168,29 @@ export interface SkeletonMetrics {
    * column breakpoint changes; a thirteenth project alone will not move it.
    */
   projectDonut: number;
+
+  /**
+   * PROJECT DETAIL page.
+   *
+   * **These are derived, not measured**, unlike everything above. The page is
+   * behind the password gate, so the usual recipe - mount the skeleton under
+   * the real CSS and compare `offsetTop` - has not been run on it. Each value
+   * starts from the measured overview panel that shares its component and
+   * adjusts for what differs (a shorter chart, a taller headline). Expect tens
+   * of pixels of drift, not hundreds, and re-measure properly when you can.
+   *
+   * The two long tables are a different case: their height follows the number
+   * of days and sessions, which the skeleton cannot know, so they are capped
+   * at roughly a screen. Everything above them still lands without moving;
+   * below them it will shift.
+   */
+  detail: {
+    headline: number;
+    dailySpend: number;
+    combinedTable: number;
+    modelDailyTable: number;
+    sessionsTable: number;
+  };
 }
 
 export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
@@ -211,6 +234,14 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
       dailySpendByModel: 659, // 671 / 647 - same as its tokens twin here
       heatmap: 457, // 403 / 512
       projectDonut: 458, // 522 / 393 - ten legend rows, one column at 997px
+      // Derived from the overview's measured panels - see SkeletonMetrics.detail.
+      detail: {
+        headline: 364, // overview headline plus the logo, name and path block
+        dailySpend: 446, // the same panel with a 280px chart instead of 300px
+        combinedTable: 560, // capped: one screen of a table as long as the data
+        modelDailyTable: 620, // capped, for the same reason
+        sessionsTable: 620, // twelve rows, the count shown before expanding
+      },
     },
   },
 
@@ -258,6 +289,14 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
                                  // tokens chart, whose detail column wraps at 997px
       heatmap: 432, // 353 / 512
       projectDonut: 405, // 417 / 393 - two projects, so the ring governs
+      // Derived from the overview's measured panels - see SkeletonMetrics.detail.
+      detail: {
+        headline: 376, // Codex's headline runs taller, as it does on the overview
+        dailySpend: 446,
+        combinedTable: 560,
+        modelDailyTable: 620,
+        sessionsTable: 620,
+      },
     },
   },
 };

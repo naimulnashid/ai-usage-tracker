@@ -24,21 +24,73 @@ import {
 } from '@/lib/format';
 import { modelColor } from '@/lib/model-colors';
 
+/** `useParams` decodes already; only decode a still-encoded id, and never throw. */
+function decodeParam(raw: string): string {
+  if (!raw.includes('%')) return raw;
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+}
+
 export default function ProjectDetailPage() {
   const provider = useProvider();
+  const sk = provider.skeleton;
+  const detail = sk.detail;
   const params = useParams<{ id: string }>();
-  const projectId = decodeURIComponent(String(params?.id ?? ''));
+  // `useParams` already decodes, so decoding again is both unnecessary and a
+  // way to throw URIError on a literal `%` in the URL - which used to blank
+  // the page. Decode only if it is still encoded, and never throw.
+  const projectId = decodeParam(String(params?.id ?? ''));
   const { report, initialLoading, error, version } = useUsage();
 
   if (initialLoading) {
     return (
-      <div style={{ paddingTop: 34 }} role="status" aria-busy="true">
-        {/* The skeleton is silent otherwise: a screen reader hears nothing
-            between navigation and the data landing. */}
+      /*
+       * Mirrors the loaded page section by section, like the other two
+       * skeletons. It used to be three grey boxes for a nine-section page, so
+       * everything jumped when the data landed.
+       *
+       * The heights come from `provider.skeleton.detail`. Read the caveat
+       * there before trusting them: unlike the overview's, they are derived
+       * rather than measured, and the two long tables are deliberately capped.
+       */
+      <div style={{ paddingTop: 26 }} role="status" aria-busy="true">
         <span className="sr-only">Loading this project…</span>
-        <div className="skeleton" style={{ height: 190, marginBottom: 22 }} />
-        <div className="skeleton" style={{ height: 340, marginBottom: 22 }} />
-        <div className="skeleton" style={{ height: 300 }} />
+
+        {/* "← All projects" */}
+        <div className="skeleton" style={{ height: 17, width: 110, marginBottom: 16 }} />
+
+        {/* Headline card: logo, name, path, then the three totals. */}
+        <div className="skeleton" style={{ height: detail.headline, marginBottom: 22 }} />
+
+        {/* Daily total spend, then the combined daily table. */}
+        <div className="skeleton" style={{ height: detail.dailySpend, marginBottom: 22 }} />
+        <div className="skeleton" style={{ height: detail.combinedTable, marginBottom: 22 }} />
+
+        {/* "Breakdown by model" heading. */}
+        <div
+          style={{ height: 21, marginTop: 40, marginBottom: 18, display: 'flex', alignItems: 'center' }}
+        >
+          <div className="skeleton" style={{ height: 13, width: 170 }} />
+        </div>
+
+        {/* Same grid class and cell count as the real one, so it wraps alike. */}
+        <div className="stat-grid">
+          {Array.from({ length: sk.modelCards }, (_, i) => (
+            <div key={i} className="skeleton" style={{ height: 149 }} />
+          ))}
+        </div>
+
+        {/* The two stacked charts are the same components as the overview's. */}
+        <div className="skeleton" style={{ height: sk.dailyTokens, marginBottom: 22 }} />
+        <div className="skeleton" style={{ height: sk.dailySpendByModel, marginBottom: 22 }} />
+
+        {/* Totals by model, the per-day-per-model table, then sessions. */}
+        <div className="skeleton" style={{ height: sk.tokenTable, marginBottom: 22 }} />
+        <div className="skeleton" style={{ height: detail.modelDailyTable, marginBottom: 22 }} />
+        <div className="skeleton" style={{ height: detail.sessionsTable }} />
       </div>
     );
   }
