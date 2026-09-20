@@ -148,9 +148,74 @@ const w = document.querySelector('.table-scroll');
 w.scrollWidth - w.clientWidth; // should be 0 when the table fits
 ```
 
+**That check is necessary and was not sufficient.** It measures the overlay
+while it is HIDDEN, which is the state the `display` rule fixed — and the
+tooltips then spent months broken in the state nobody measured. The first
+browser pass found three more variants of this same bug, all of them live:
+
+- **The bubble inherited `white-space: nowrap` from its `<th>`.** The rule
+  resets `letter-spacing`, `text-transform`, `text-align` and `font-weight`,
+  but not this — so the one tip that sits in a table header rendered its 290px
+  box as a single **~1540px line**. The table gained 1540px of scroll width the
+  moment you hovered it, and the explainer itself was clipped out of view. It
+  now resets `white-space: normal` (1540px → 8px, measured).
+- **`.sr-only` escaped the scroller entirely.** The `aria-describedby` target
+  behind each tip is `position: absolute`, and `.table-scroll` was **not**
+  positioned — so its containing block was the panel OUTSIDE the scroller, it
+  was never clipped, and at 997px it sat at x=1150 against a 982px viewport.
+  That put a horizontal scrollbar on the **whole document**, permanently, not
+  just while hovering. Being 1px wide does not save you: what overflows is
+  where the box IS, not how big it is. `.sr-only` now sets `left: 0; top: 0`.
+- **The bubble was positioned at the tip's LAYOUT position.** In a table wider
+  than its panel that position is out in the part you cannot see, so on a
+  narrow shell the tooltip was drawn past the panel's right edge — invisible,
+  and dragging 63px of page scroll with it. `.table-scroll` is now
+  `position: relative`, which makes it the containing block for both of these,
+  and a bubble inside a table hangs BELOW its tip (above would be outside the
+  scroller's box, since the tips are in header cells) and anchors to its right
+  edge in the last three columns.
+
+So the invariant is stronger than the original check: **measure the page, not
+just the table, and measure it with the overlay SHOWN.**
+
+```js
+// With every bubble forced visible - the state a hover produces.
+const s = document.createElement('style');
+s.textContent = '.info-tip::after { display: block !important; }';
+document.head.appendChild(s);
+const d = document.documentElement;
+[d.scrollWidth - d.clientWidth, // 0
+ ...[...document.querySelectorAll('.table-scroll')]
+   .map((w) => w.scrollHeight - w.clientHeight)]; // 0 each
+s.remove();
+```
+
+A table's own `scrollWidth - clientWidth` is NOT expected to be 0 here: these
+tables carry a `min-width: 760px` and scroll horizontally by design on a narrow
+shell. What must be 0 is the document's, and the tables' vertical overflow.
+
+Note the transform in `tipIn` reads `--tip-x` rather than hard-coding
+`translateX(-50%)`, so a right-anchored bubble does not slide 145px sideways
+for the length of its own entry animation.
+
+### The top bar has to be allowed to shrink
+
+Same family, and the one that had nothing to do with a table. A flex item
+defaults to `min-width: auto`, so it refuses to shrink below its content: at
+997px with the rail expanded the shell is 730px and the bar wanted 766px, so it
+pushed **Refresh 36px past the viewport edge** and wrapped "Sign out" onto two
+lines. `.topbar-inner` and `.topbar-spacer` now carry `min-width: 0`, and
+`.refresh-meta` ellipsises — the status line is what gives way, because the two
+controls are the point of the bar and the timestamp is not.
+
+Collapsing the rail hides it entirely, and 997px is a width this project
+measures at constantly — but the skeleton recipe walks `main.shell`'s children
+and never looks at the bar above them. Chrome that every page shares is exactly
+what a per-page measurement misses.
+
 ### Hover transforms need a gutter
 
-Same family of bug, third variant. `.heatmap-cell:hover` scales the square, and
+Same family of bug, another variant. `.heatmap-cell:hover` scales the square, and
 the heat map's columns are `1fr` — so the grid fills its container exactly and a
 cell in the last column scaled straight past the edge, raising a scrollbar on
 hover. `.heatmap-scroll` therefore carries padding sized as a gutter for that
@@ -174,10 +239,9 @@ c.style.transform = '';
 
 ### Loading skeletons mirror the real sections, and must stay that way
 
-The overview and projects skeletons reproduce their page section by section, in
-order, at measured heights. They are not decorative grey boxes: their job is
-that nothing moves when the data lands. (The project detail page's skeleton is
-still three generic blocks and does not meet this bar yet.)
+All three skeletons reproduce their page section by section, in order, at
+measured heights. They are not decorative grey boxes: their job is that nothing
+moves when the data lands.
 
 **The measurements are per agent, in `ProviderMeta.skeleton`.** A single shared
 set is wrong for at least one of them, because the two pages are genuinely
@@ -276,8 +340,8 @@ These heights depend on how many models and projects the measuring machine had.
 Re-measure against your own data when a panel changes shape, and expect a few
 pixels of drift on very different data.
 
-Check it by mounting the skeleton markup under the real CSS rather than racing
-the loading state, which is over in a few seconds:
+Check it by mounting the skeleton markup under the real CSS, or by catching the
+loading state directly:
 
 ```js
 // Compare el.offsetTop, not getBoundingClientRect().top: the `rise` entry
@@ -286,11 +350,53 @@ the loading state, which is over in a few seconds:
   .map((el) => [el.className, el.offsetTop, Math.round(el.getBoundingClientRect().height)]);
 ```
 
+**Catching it is easier than mounting it, and an iframe is how.** Load the page
+in an `<iframe>` sized to the width you are measuring — the iframe's own
+viewport drives the media queries, so 997px and 1680px are exact rather than
+approximated by a resized window — and poll every 40ms for the skeleton and
+again for the real page. One script then measures every project at every width
+with no window resizing at all. `[aria-busy="true"]` on the wrapper is what
+tells the two states apart.
+
+Two things to know before trying it:
+
+- **Refresh does not show a skeleton.** `UsageProvider` keeps the stale report
+  on screen while it refetches, so the skeleton only appears on a COLD load.
+  Clicking Refresh to make one appear will simply not work.
+- **Each load is a full parse.** Every iframe re-reads every transcript, so a
+  sweep of six projects is six parses. Run them in sequence, not at once.
+
+**The project detail page is measured too, and it is the odd one out.** Three of
+its panels depend on the PROJECT rather than the agent — a project uses some
+subset of the models the agent has, and the stat grid, both stacked charts and
+the token table each grow a row per model. So `SkeletonMetrics.detail` carries
+the mean across every project measured at both widths, which is a weaker
+guarantee than the overview's and is documented as such in the type. Reusing the
+overview's numbers there, which is what it used to do, meant the agent-wide
+model count: at 997px five cells wrapped to three rows where a four-model
+project takes two, 166px of error from that one constant.
+
+Measured after the fix, on a four-model project, skeleton minus real:
+
+| | above the first capped table | stat grid | worst panel |
+|---|---|---|---|
+| Claude 997px | −2 to −42px | **+1px** | −43px |
+| Claude 1680px | −2 to +46px | **0px** | −31px |
+
+Everything below the first capped table still shifts, and always will: those two
+tables' heights follow the number of days and sessions, which a skeleton cannot
+know. `sessionsTable` is NOT one of them — it shows twelve rows before its
+show-more, so it is a constant, and measuring it took it from 620 to 868.
+
 **A caution about measuring this in browser automation.** If the pane is not
 displayed, `document.visibilityState` is `hidden` and CSS animations stall at
 `currentTime: 0` — so every `.rise` element sits at its opening
 `translateY(14px)` forever, and rect-based tops read 14px low. That is the
 harness, not a layout bug: `offsetTop` agrees exactly.
+
+A hidden pane also stops `requestAnimationFrame` firing at all, so a probe that
+waits on a double rAF before measuring simply never returns. Use `setTimeout`
+in measuring scripts; it keeps running either way.
 
 **The same caution applies to anything transitioned.** The rail animates its
 width over 220ms and `.rail-item` its colour over 180ms, so a measurement taken
@@ -1233,25 +1339,52 @@ regression fails before it ships rather than after someone complains.
   a test greps for `#rrggbb` in `src/components/*Chart.tsx` and fails on one.
 - **Loading is announced.** Each skeleton is `role="status" aria-busy="true"`
   with an `.sr-only` line, so the wait is not silence.
+- **Every page has exactly one `<h1>`, and on two of them it is invisible.** The
+  top bar is deliberately NOT one — it is chrome that repeats on every page, and
+  two competing h1s is worse than none — but the overview and projects pages had
+  no visible title of their own either, so their outline started at h2 with
+  nothing to land on. They now carry an `.sr-only` h1 naming the agent and the
+  page. The project detail page already had a real one (the project's name), and
+  the empty, error and no-projects states promote their own heading to h1
+  because in those states it IS the whole page. Adding a second visible heading
+  to the two dashboards would be the wrong fix; adding a second h1 anywhere is
+  the wrong fix twice.
 
 ## Known issues
 
 Found in the pre-release audit and not yet fixed. Check before assuming the code
 already handles them:
 
-- **The project detail skeleton's heights are derived, not measured.** Every
-  other skeleton constant came from mounting the markup under the real CSS and
-  reading `offsetTop`; these were worked out from the overview panels that
-  share the same components, because the page is behind the password gate. See
-  `SkeletonMetrics.detail`, and re-measure when convenient. The two long tables
-  there are capped on purpose - their height follows the number of days and
-  sessions, which a skeleton cannot know.
-- **Nothing here is tested in a browser.** No screen reader, no axe run, no
-  visual check of the empty and error states - they are behind the password
-  gate, so everything above is enforced at the markup, token and unit level.
-- **Not verified in a browser.** The accessibility work above is enforced at the
-  markup and token level. Nobody has yet run it past a screen reader or an axe
-  audit on a signed-in page.
+- **No screen reader has been run against this.** An axe-core pass now has
+  (below), which is not the same thing: axe checks the markup, a screen reader
+  checks whether the result is usable. The `.sr-only` chart tables in
+  particular have never been *heard*.
+
+### What the browser pass covered, and what it found
+
+The first pass with a signed-in browser — axe-core 4.10.2 against WCAG 2.1
+A/AA plus best-practice, on the overview, projects and project detail pages for
+both agents, and on the empty, failed and render-error states.
+
+**Zero violations** on all of it, once two measuring artefacts were understood:
+
+- **Ten "serious" contrast failures on the projects page were the `.rise`
+  entry animation.** Run 1.5s after load, axe caught cards mid-fade and
+  measured the blended colour. Zero once `getAnimations()` reports `finished`.
+  Wait for that, not for a timeout.
+- **78 `color-contrast` results come back "incomplete" on every page with a
+  chart.** axe cannot compute contrast for SVG `<text>`. Done by hand, the axis
+  labels are `#7d7d87` on `#0a0a0c` = 4.86:1, which passes. This is a gap in
+  the tool, not in the page, and it will recur on every run.
+
+It also found four real bugs, all now fixed and all invisible to the markup,
+token and unit tests that were supposed to cover this ground. Three were
+variants of the overflow family documented above; they are written up there,
+where the next person will be looking. The fourth was the missing `<h1>`, under
+*Accessibility rules*.
+
+**The detail skeleton is measured now**, so the entry that used to sit here is
+gone. `SkeletonMetrics.detail` carries the numbers and the method.
 
 ## Running
 

@@ -191,6 +191,7 @@ a:hover {
   display: flex;
   align-items: center;
   gap: 28px;
+  min-width: 0;
 }
 
 /* Names the agent whose numbers are on screen. That matters more than it looks:
@@ -252,8 +253,26 @@ a:hover {
   border-color: var(--accent-border);
 }
 
+/* The right-hand cluster: status, sign out, refresh.
+   `min-width: 0` on this and on `.topbar-inner` is what stops the bar
+   overflowing the page. A flex item defaults to `min-width: auto`, so it
+   refuses to shrink below its content - and at 997px with the rail expanded
+   the shell is only 730px against 766px of bar, which pushed Refresh 36px past
+   the viewport edge and wrapped "Sign out" onto two lines. Letting the status
+   line be the thing that gives way keeps both controls whole. */
 .topbar-spacer {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* The two controls are the point of the bar; the status line is not. */
+.topbar-spacer .signout,
+.topbar-spacer .btn {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 /* --------------------------------------------------------------------------
@@ -1162,7 +1181,13 @@ a:hover {
    Tables
    ------------------------------------------------------------------------ */
 
+/* `position: relative` makes this the containing block for anything absolutely
+   positioned inside it - the info tips' bubbles and the screen-reader text
+   behind them. Without it those are positioned against the panel outside,
+   which both puts them in the wrong place once the table scrolls and lets them
+   extend the whole document sideways. See `.info-tip::after` and `.sr-only`. */
 .table-scroll {
+  position: relative;
   width: 100%;
   overflow-x: auto;
 }
@@ -1277,11 +1302,16 @@ table.data tfoot td {
   box-shadow: 0 6px 26px var(--accent-glow);
 }
 
+/* Truncates rather than pushing the bar wider - see `.topbar-spacer`. It stays
+   `nowrap` so it ellipsises on one line instead of wrapping the bar taller. */
 .refresh-meta {
   font-size: 13.5px;
   color: var(--text-faint);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* --------------------------------------------------------------------------
@@ -1388,7 +1418,12 @@ table.data tfoot td {
   position: absolute;
   bottom: calc(100% + 10px);
   left: 50%;
-  transform: translateX(-50%);
+  /* The horizontal nudge lives in a custom property because `tipIn` has to
+     reuse it: a keyframe that hard-coded `translateX(-50%)` would drag a
+     right-anchored bubble half its width sideways for the length of the
+     animation. */
+  --tip-x: -50%;
+  transform: translateX(var(--tip-x));
   width: 290px;
   padding: 11px 13px;
   border-radius: var(--radius-sm);
@@ -1401,6 +1436,12 @@ table.data tfoot td {
   letter-spacing: 0;
   text-transform: none;
   text-align: left;
+  /* Load-bearing for the same reason the resets above are. The one tip that
+     lives in a table header inherited `white-space: nowrap` from its `<th>`,
+     so a 290px box rendered its text as a single ~1540px line: the explainer
+     was clipped out of view and the table gained a scrollbar the moment you
+     hovered it. Measured at 1540px of scroll width before, 8px after. */
+  white-space: normal;
   pointer-events: none;
   box-shadow: 0 12px 34px rgba(0, 0, 0, 0.95);
   z-index: 100;
@@ -1412,12 +1453,65 @@ table.data tfoot td {
   animation: tipIn 180ms var(--ease) both;
 }
 
+/* Inside a table, the bubble belongs to the SCROLLER, and hangs below.
+
+   `.table-scroll` is a containing block (`position: relative`), so a bubble in
+   there is positioned against the scroller rather than against the panel
+   outside it. That is not only about overflow: the bubble was placed at the
+   tip's LAYOUT position, and in a table wider than its panel that position is
+   out in the part you cannot see. At 997px the explainer was therefore drawn
+   past the panel's right edge - invisible to the reader, and dragging 63px of
+   horizontal scroll onto the whole page while it was open. Against the
+   scroller it lands on the tip you are actually pointing at, and travels with
+   the table when you scroll it.
+
+   Hanging BELOW is what that costs: the tips sit in header cells, so a bubble
+   above them would be outside the scroller's box and clipped by it. Below, it
+   covers the first rows, which is where a table tooltip normally goes.
+
+   The right-hand anchor is the other half. A bubble centred on a tip in the
+   last column overhangs the scroller and gets clipped; the tips that exist are
+   all in the last two columns. The `-n + 3` limit is what stops a tip in a
+   left-hand column from being shoved off the opposite edge instead. */
+.table-scroll .info-tip::after {
+  top: calc(100% + 10px);
+  bottom: auto;
+}
+
+.table-scroll th:nth-last-child(-n + 3) .info-tip::after {
+  left: auto;
+  right: 0;
+  --tip-x: 0%;
+}
+
+/* Same reasoning, one panel out: the headline card's last column sits at the
+   right edge of the page, and nothing there clips, so a centred bubble on its
+   tip hung 63px past the document at 997px. This is the only tip outside a
+   table close enough to an edge to do it - the score cards' tips reflow inward
+   before they get there - so it is a rule rather than a component prop. */
+.headline-grid > :last-child .info-tip::after {
+  left: auto;
+  right: 0;
+  --tip-x: 0%;
+}
+
 /* Visible to assistive tech only. Used for the text behind an info tip, the
    name behind a colour swatch, chart captions and their table fallbacks.
-   1px and clipped, so it cannot add width to a `.table-scroll` the way a
-   laid-out-but-invisible box would. */
+
+   `left`/`top` are load-bearing, and being 1px wide is not enough on its own -
+   what matters is WHERE the box sits. Without them the element stays at its
+   static position, and inside a `.table-scroll` that position is out in the
+   overflowing part of a table far wider than the panel. `.table-scroll` is not
+   itself positioned, so the containing block is the panel OUTSIDE the
+   scroller: the box escapes the clip and drags the document's scrollable
+   width with it. Measured at 997px with the rail expanded, one of these sat at
+   x=1150 against a 982px viewport and put a horizontal scrollbar on the whole
+   page. Anchoring it to the containing block's origin costs nothing and cannot
+   overflow anything. */
 .sr-only {
   position: absolute;
+  left: 0;
+  top: 0;
   width: 1px;
   height: 1px;
   margin: -1px;
@@ -1501,11 +1595,11 @@ table.data tfoot td {
 @keyframes tipIn {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(4px);
+    transform: translateX(var(--tip-x)) translateY(4px);
   }
   to {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    transform: translateX(var(--tip-x)) translateY(0);
   }
 }
 

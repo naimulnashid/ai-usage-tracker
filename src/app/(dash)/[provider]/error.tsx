@@ -25,7 +25,8 @@ export default function DashboardError({
   return (
     <div style={{ paddingTop: 34 }}>
       <section className="card panel empty-state">
-        <h2 className="panel-title">This page stopped rather than showing something wrong</h2>
+        {/* h1 for the same reason as the empty state: it is the whole page. */}
+        <h1 className="panel-title">This page stopped rather than showing something wrong</h1>
         <p className="panel-sub empty-state-lead">
           Your transcripts and the local archive are untouched — this is a display problem, not a
           data one.

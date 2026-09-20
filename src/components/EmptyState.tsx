@@ -18,7 +18,9 @@ export function EmptyState({ warnings = [] }: { warnings?: string[] }) {
   const provider = useProvider();
   return (
     <section className="card panel empty-state rise">
-      <h2 className="panel-title">No {provider.label} usage found yet</h2>
+      {/* h1, not h2: in this state it is the only thing on the page, so it is
+          the page's title rather than a section within one. */}
+      <h1 className="panel-title">No {provider.label} usage found yet</h1>
       <p className="panel-sub empty-state-lead">
         Nothing was found to read, so there is nothing to show. That is the expected state before
         you have used {provider.label} — or if its transcripts live somewhere this dashboard did not

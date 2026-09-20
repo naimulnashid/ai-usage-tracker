@@ -6,6 +6,38 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed — the first pass in a real browser
+
+Everything below was found by loading the signed-in dashboard and measuring it,
+after an audit that had checked the same ground at the markup, token and unit
+level and passed. An axe-core run over both agents' three pages and the empty,
+failed and error states reported no violations beyond the heading below.
+
+- **The explainer tooltip inside a table was unreadable.** It inherited
+  `white-space: nowrap` from its header cell, so a 290px bubble rendered as one
+  ~1540px line: clipped out of view, and the table grew a scrollbar the moment
+  you hovered it. It also sat at the column's layout position, which on a table
+  wider than its panel is off where you cannot see it. It now wraps, hangs
+  below its header, and stays inside the table it belongs to.
+- **The dashboard scrolled sideways at narrow widths.** The screen-reader text
+  behind each tooltip escaped its scrolling table — it is absolutely positioned
+  and the table was not a containing block — and landed 169px past the right
+  edge of the page, taking a horizontal scrollbar with it.
+- **The top bar pushed Refresh off the edge of the page** at around 1000px with
+  the sidebar expanded, and wrapped "Sign out" onto two lines. The status line
+  now truncates instead, and both controls stay whole.
+- **Two pages had no `<h1>`.** The overview and projects pages started their
+  outline at h2, so a screen reader had no page title to land on.
+
+### Changed
+
+- **The project detail page's loading skeleton is measured**, not derived from
+  the overview's panels. Its three model-dependent panels and its stat grid
+  were sized for the agent's whole model list rather than the project's, which
+  at 997px put the placeholder 166px out on the grid alone; its sessions table
+  was 248px short. Measured across every project at both widths, the skeleton
+  now lands within ~43px everywhere above the two deliberately capped tables.
+
 ### Accessibility
 
 - Small text now clears WCAG AA contrast: `--text-faint` moves from `#6b6b75`

@@ -43,7 +43,10 @@ export function TopBar() {
           })}
         </nav>
 
-        <div className="topbar-spacer" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        {/* Layout lives in `.topbar-spacer` rather than inline, because what
+            keeps this cluster inside the page at a narrow width is a
+            `min-width` rule that an inline style would sit awkwardly beside. */}
+        <div className="topbar-spacer">
           <span className="refresh-meta">
             {loading
               ? 'Reading transcripts…'

@@ -49,8 +49,11 @@ export default function ProjectsPage() {
 
   if (error || !report) {
     return (
-      <div style={{ paddingTop: 34 }} className="notice notice-warn">
-        <div>{error ?? 'No data.'}</div>
+      <div style={{ paddingTop: 34 }}>
+        <h1 className="sr-only">{provider.label} projects</h1>
+        <div className="notice notice-warn">
+          <div>{error ?? 'No data.'}</div>
+        </div>
       </div>
     );
   }
@@ -69,7 +72,8 @@ export default function ProjectsPage() {
     return (
       <div className="page-enter" style={{ paddingTop: 34 }}>
         <section className="card panel empty-state rise">
-          <h2 className="panel-title">No projects to show</h2>
+          {/* The only thing on the page, so it is the page's title. */}
+          <h1 className="panel-title">No projects to show</h1>
           <p className="panel-sub empty-state-lead">
             This agent recorded usage, but none of it could be attributed to a working directory.
             The Overview still has the totals.
@@ -83,6 +87,9 @@ export default function ProjectsPage() {
 
   return (
     <div className="page-enter" style={{ paddingTop: 34 }}>
+      {/* Hidden page title - see the overview page for why it is not visible. */}
+      <h1 className="sr-only">{provider.label} projects</h1>
+
       {/* The ring answers a question the ranked list below cannot: twelve rows
           look the same whether the top one is 61% of spend or 15%. */}
       <section className="card panel rise">

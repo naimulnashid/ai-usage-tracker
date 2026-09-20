@@ -123,6 +123,7 @@ export default function OverviewPage() {
   if (error) {
     return (
       <div style={{ paddingTop: 34 }}>
+        <h1 className="sr-only">{provider.label} usage overview</h1>
         <div className="notice notice-warn">
           <div>
             <strong>Could not read your {provider.label} transcripts.</strong>
@@ -173,6 +174,12 @@ export default function OverviewPage() {
 
   return (
     <div className="page-enter" style={{ paddingTop: 34 }}>
+      {/* The page's own title. It is hidden because the design has no visible
+          one - the top bar names the agent, and that is chrome repeated on
+          every page rather than a heading (see TopBar). Without this the
+          document outline started at h2, so there was nothing to land on. */}
+      <h1 className="sr-only">{provider.label} usage overview</h1>
+
       {/* ---- Combined-models headline: the number to check first ---------- */}
       <section className="card headline-card rise">
         <div className="headline-grid">

@@ -117,6 +117,12 @@ describe('EmptyState', () => {
     assert.match(html, /No Claude Code usage found yet/);
   });
 
+  it('titles the page with an h1, since it is the only thing on it', () => {
+    // The top bar deliberately is not an h1 (it repeats on every page), so
+    // without this the document outline started at h2 and had no title.
+    assert.match(html, /<h1[^>]*>No Claude Code usage found yet<\/h1>/);
+  });
+
   it('says where it looked and how to point it elsewhere', () => {
     assert.match(html, /Looked in/);
     assert.match(html, /USERPROFILE/);
