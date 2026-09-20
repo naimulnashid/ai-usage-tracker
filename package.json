@@ -12,7 +12,8 @@
     "start:lan": "next start -H 0.0.0.0 -p 7842",
     "typecheck": "tsc --noEmit",
     "parse": "tsx scripts/dump-usage.ts",
-    "parse:codex": "tsx scripts/dump-codex-usage.ts"
+    "parse:codex": "tsx scripts/dump-codex-usage.ts",
+    "test": "node scripts/run-tests.mjs"
   },
   "dependencies": {
     "geist": "^1.7.2",
@@ -27,5 +28,8 @@
     "@types/react-dom": "^19.1.6",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
