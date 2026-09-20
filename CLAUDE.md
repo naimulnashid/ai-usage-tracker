@@ -1131,6 +1131,27 @@ Three decisions in there that look like mistakes and are not:
   policy for those paths rather than narrowing it — which is why it repeats
   `frame-ancestors`. The four differently-named headers still apply.
 
+### Accepted, not overlooked
+
+`SECURITY.md` carries the public list of things that look like findings and are
+deliberate — plain HTTP on a LAN, the cookie that cannot be `Secure` because of
+it, `'unsafe-inline'`, in-memory throttling keyed off a forgeable header. One
+more is worth recording here, because it began as a pre-release audit item and
+was **closed as accepted rather than fixed**, and the code still reads like an
+oversight:
+
+**`/api/usage/<agent>` returns the raw error message as `detail`, and warnings
+carry absolute paths.** Both sit behind the gate, and the page that receives
+them already renders the user's own `cwd` paths in every table — so the
+disclosure is to the one person who can already see all of it, and it is what
+makes a failed parse diagnosable from the browser instead of from a log nobody
+reads. Anyone with a session to read the `detail` has the whole report anyway.
+
+**Revisit it if the gate ever stops being all-or-nothing.** The reasoning rests
+entirely on there being exactly one class of reader; a second one — a read-only
+share, a guest password, anything per-project — invalidates it rather than
+weakening it.
+
 ### Traps
 
 **The cookie must not be `secure`.** This is served over plain HTTP on the LAN.
