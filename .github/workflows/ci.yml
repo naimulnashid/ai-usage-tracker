@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# A second push to the same branch supersedes the first.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: ${{ matrix.os }} · Node ${{ matrix.node }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Windows is where this is developed and where the launchers run;
+        # Ubuntu is the claim in the README that paths resolve from the home
+        # directory rather than Windows-only variables.
+        os: [windows-latest, ubuntu-latest]
+        node: ['20', '22']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      # The build needs no password: the gate is enforced at request time, and
+      # nothing here reads a transcript.
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
