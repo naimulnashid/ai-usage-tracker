@@ -179,8 +179,7 @@ export function ProjectShareChart({
    * after the early return above, so a hook here would change hook order
    * between renders. Ten sectors do not care about the identity churn.
    */
-  const onSliceEnter = (_entry: unknown, index: number) =>
-    setActive(data[index]?.id ?? null);
+  const onSliceEnter = (_entry: unknown, index: number) => setActive(data[index]?.id ?? null);
   const onSliceLeave = () => setActive(null);
 
   return (
@@ -199,85 +198,89 @@ export function ProjectShareChart({
       ]}
       rows={data}
     >
-    <div className="donut-layout">
-      <div className="donut-ring" style={{ height }}>
-        <ResponsiveContainer width="100%" height={height}>
-          <PieChart>
-            <Pie
-              data={data}
-              dataKey="cost"
-              nameKey="name"
-              innerRadius="62%"
-              outerRadius="94%"
-              paddingAngle={1.2}
-              stroke="var(--surface)"
-              strokeWidth={2}
-              animationDuration={850}
-              animationEasing="ease-out"
-              onMouseEnter={onSliceEnter}
-              onMouseLeave={onSliceLeave}
-            >
-              {data.map((slice) => (
-                <Cell
-                  key={slice.id}
-                  fill={slice.fill}
-                  /*
-                   * Fading toward the panel rather than filtering: the panel is
-                   * near-black, so a lower fill-opacity IS "darker", and it
-                   * costs nothing next to an SVG filter on ten sectors. The
-                   * fade itself is a CSS transition on .recharts-sector — see
-                   * the .donut-ring rules in globals.css.
-                   */
-                  fillOpacity={active === null || active === slice.id ? 1 : 0.28}
-                />
-              ))}
-            </Pie>
-            <Tooltip content={ChartTooltip} />
-          </PieChart>
-        </ResponsiveContainer>
+      <div className="donut-layout">
+        <div className="donut-ring" style={{ height }}>
+          <ResponsiveContainer width="100%" height={height}>
+            <PieChart>
+              <Pie
+                data={data}
+                dataKey="cost"
+                nameKey="name"
+                innerRadius="62%"
+                outerRadius="94%"
+                paddingAngle={1.2}
+                stroke="var(--surface)"
+                strokeWidth={2}
+                animationDuration={850}
+                animationEasing="ease-out"
+                onMouseEnter={onSliceEnter}
+                onMouseLeave={onSliceLeave}
+              >
+                {data.map((slice) => (
+                  <Cell
+                    key={slice.id}
+                    fill={slice.fill}
+                    /*
+                     * Fading toward the panel rather than filtering: the panel is
+                     * near-black, so a lower fill-opacity IS "darker", and it
+                     * costs nothing next to an SVG filter on ten sectors. The
+                     * fade itself is a CSS transition on .recharts-sector — see
+                     * the .donut-ring rules in globals.css.
+                     */
+                    fillOpacity={active === null || active === slice.id ? 1 : 0.28}
+                  />
+                ))}
+              </Pie>
+              <Tooltip content={ChartTooltip} />
+            </PieChart>
+          </ResponsiveContainer>
 
-        {/* Sits in the hole rather than as a Recharts label, so it can use the
+          {/* Sits in the hole rather than as a Recharts label, so it can use the
             real type scale and never fights the ring for space. */}
-        <div className="donut-center" aria-hidden>
-          <div className="donut-center-value num">{formatUsd(totalCost)}</div>
-          {/* `ranked`, not `data` - the slice count stops at ten once the tail
+          <div className="donut-center" aria-hidden>
+            <div className="donut-center-value num">{formatUsd(totalCost)}</div>
+            {/* `ranked`, not `data` - the slice count stops at ten once the tail
               is collapsed, and "across 10 projects" under a total covering
               twelve of them would be plainly wrong. */}
-          <div className="donut-center-label">
-            across {ranked.length} {ranked.length === 1 ? 'project' : 'projects'}
+            <div className="donut-center-label">
+              across {ranked.length} {ranked.length === 1 ? 'project' : 'projects'}
+            </div>
           </div>
         </div>
-      </div>
 
-      <ul className="donut-legend">
-        {data.map((slice) => (
-          <li
-            className={
-              'donut-legend-row' +
-              (active === slice.id ? ' is-active' : '') +
-              (active !== null && active !== slice.id ? ' is-dim' : '')
-            }
-            key={slice.id}
-          >
-            <span className="donut-legend-swatch" style={{ background: slice.fill }} aria-hidden />
-            {/* A monogram here would draw "O" and read as a project called
+        <ul className="donut-legend">
+          {data.map((slice) => (
+            <li
+              className={
+                'donut-legend-row' +
+                (active === slice.id ? ' is-active' : '') +
+                (active !== null && active !== slice.id ? ' is-dim' : '')
+              }
+              key={slice.id}
+            >
+              <span
+                className="donut-legend-swatch"
+                style={{ background: slice.fill }}
+                aria-hidden
+              />
+              {/* A monogram here would draw "O" and read as a project called
                 Others. The remainder gets a count instead. */}
-            {slice.projects > 1 ? (
-              <span className="donut-legend-more num" aria-hidden>
-                +{slice.projects}
+              {slice.projects > 1 ? (
+                <span className="donut-legend-more num" aria-hidden>
+                  +{slice.projects}
+                </span>
+              ) : (
+                <ProjectLogo name={slice.name} size={22} />
+              )}
+              <span className="donut-legend-name" title={slice.name}>
+                {slice.name}
               </span>
-            ) : (
-              <ProjectLogo name={slice.name} size={22} />
-            )}
-            <span className="donut-legend-name" title={slice.name}>
-              {slice.name}
-            </span>
-            <span className="donut-legend-cost num">{formatUsd(slice.cost)}</span>
-            <span className="donut-legend-share num">{slice.share.toFixed(1)}%</span>
-          </li>
-        ))}
-      </ul>
-    </div>
+              <span className="donut-legend-cost num">{formatUsd(slice.cost)}</span>
+              <span className="donut-legend-share num">{slice.share.toFixed(1)}%</span>
+            </li>
+          ))}
+        </ul>
+      </div>
     </ChartFigure>
   );
 }

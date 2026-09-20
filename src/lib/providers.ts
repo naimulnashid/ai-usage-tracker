@@ -286,7 +286,7 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
       tokenTable: 353, // 373 / 334 - two models, not five
       dailyTokens: 578, // 603 / 553
       dailySpendByModel: 565, // 577 / 553 - one legend row fewer than the
-                                 // tokens chart, whose detail column wraps at 997px
+      // tokens chart, whose detail column wraps at 997px
       heatmap: 432, // 353 / 512
       projectDonut: 405, // 417 / 393 - two projects, so the ring governs
       // Derived from the overview's measured panels - see SkeletonMetrics.detail.

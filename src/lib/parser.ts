@@ -30,8 +30,7 @@ import type {
 
 export function resolveProjectsDir(): string {
   const base =
-    process.env.CLAUDE_CONFIG_DIR ??
-    path.join(process.env.USERPROFILE ?? os.homedir(), '.claude');
+    process.env.CLAUDE_CONFIG_DIR ?? path.join(process.env.USERPROFILE ?? os.homedir(), '.claude');
   return path.join(base, 'projects');
 }
 
@@ -325,7 +324,8 @@ async function readFileRecords(
       const entry: Record<string, unknown> = parsedLine;
 
       const timestampMs = parseTimestampMs(entry.timestamp);
-      const tsRaw = timestampMs !== null && typeof entry.timestamp === 'string' ? entry.timestamp : null;
+      const tsRaw =
+        timestampMs !== null && typeof entry.timestamp === 'string' ? entry.timestamp : null;
       if (timestampMs === null && typeof entry.timestamp === 'string' && entry.timestamp) {
         diagnostics.implausibleTimestamps = (diagnostics.implausibleTimestamps ?? 0) + 1;
       }
@@ -450,9 +450,7 @@ export function computeStreaks(
   let cursor = last;
   while (present.has(cursor)) {
     current += 1;
-    cursor = new Date(Date.parse(`${cursor}T00:00:00Z`) - 86_400_000)
-      .toISOString()
-      .slice(0, 10);
+    cursor = new Date(Date.parse(`${cursor}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
   }
   return { current, longest };
 }
@@ -887,8 +885,11 @@ export async function buildUsageReport(options: ParseOptions = {}): Promise<Usag
         projectCwdFallback.get(id) ??
         null;
       const derivedName = cwd
-        ? cwd.split(/[\\/]/).filter(Boolean).pop() ?? id
-        : id.replace(/^C--Users-[^-]+-/, '').replace(/-/g, ' ').trim();
+        ? (cwd.split(/[\\/]/).filter(Boolean).pop() ?? id)
+        : id
+            .replace(/^C--Users-[^-]+-/, '')
+            .replace(/-/g, ' ')
+            .trim();
       return {
         id,
         cwd,
@@ -896,9 +897,7 @@ export async function buildUsageReport(options: ParseOptions = {}): Promise<Usag
         mergedFrom: mergedIn,
         ...bucketToPlain(bucket),
         daily: dailyToPlain(projectDaily.get(id) ?? new Map()),
-        sessions: sessions
-          .filter((s) => s.projectId === id)
-          .sort((a, b) => b.costUsd - a.costUsd),
+        sessions: sessions.filter((s) => s.projectId === id).sort((a, b) => b.costUsd - a.costUsd),
       };
     })
     .sort((a, b) => b.combined.costUsd - a.combined.costUsd);

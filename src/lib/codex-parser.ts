@@ -69,7 +69,14 @@ import path from 'node:path';
 import os from 'node:os';
 import readline from 'node:readline';
 
-import { costOf, getRate, loadPricing, loadProjectConfig, loadSettings, resolveProjectId } from './pricing';
+import {
+  costOf,
+  getRate,
+  loadPricing,
+  loadProjectConfig,
+  loadSettings,
+  resolveProjectId,
+} from './pricing';
 import {
   UNKNOWN_DATE,
   computeSessionRecords,
@@ -267,11 +274,7 @@ function sameTotals(a: RawTotals, b: RawTotals): boolean {
  * baseline (the whole current reading) rather than as negative usage, which
  * would silently subtract from the totals.
  */
-function deltaTokens(
-  previous: RawTotals,
-  current: RawTotals,
-  onReset: () => void,
-): TokenCounts {
+function deltaTokens(previous: RawTotals, current: RawTotals, onReset: () => void): TokenCounts {
   let reset = false;
   const step = (before: number, after: number): number => {
     const diff = after - before;
@@ -356,9 +359,18 @@ async function readFileRecords(
     diagnostics.filesFailed += 1;
     diagnostics.warnings.push(`Cannot open ${file.rel}: ${(err as Error).message}`);
     return {
-      file, events, ticks,
-      firstTimestampMs, lastTimestampMs, firstTimestampRaw, lastTimestampRaw,
-      cwd, isSubagent, subagentKind, reconciled, parentThreadId,
+      file,
+      events,
+      ticks,
+      firstTimestampMs,
+      lastTimestampMs,
+      firstTimestampRaw,
+      lastTimestampRaw,
+      cwd,
+      isSubagent,
+      subagentKind,
+      reconciled,
+      parentThreadId,
     };
   }
 
@@ -386,7 +398,8 @@ async function readFileRecords(
       const entry: Record<string, unknown> = parsedLine;
 
       const timestampMs = parseTimestampMs(entry.timestamp);
-      const tsRaw = timestampMs !== null && typeof entry.timestamp === 'string' ? entry.timestamp : null;
+      const tsRaw =
+        timestampMs !== null && typeof entry.timestamp === 'string' ? entry.timestamp : null;
       if (timestampMs === null && typeof entry.timestamp === 'string' && entry.timestamp) {
         diagnostics.implausibleTimestamps = (diagnostics.implausibleTimestamps ?? 0) + 1;
       }
@@ -436,8 +449,7 @@ async function readFileRecords(
       } else if (type === 'event_msg' && payload.type === 'token_count') {
         const info = payload.info as Record<string, unknown> | undefined;
         const totalUsage = (info?.total_token_usage ?? payload.total_token_usage) as
-          | Record<string, unknown>
-          | undefined;
+          Record<string, unknown> | undefined;
         // Older shapes, and the odd null `info` on an aborted turn, carry no
         // running total. Nothing can be derived from those, so they are skipped
         // rather than guessed at.
@@ -465,8 +477,7 @@ async function readFileRecords(
         // Independent check: Codex also reports the turn on its own. When the
         // two disagree, our reading of the schema has drifted.
         const lastUsage = (info?.last_token_usage ?? payload.last_token_usage) as
-          | Record<string, unknown>
-          | undefined;
+          Record<string, unknown> | undefined;
         const reportedTotal = lastUsage ? toInt(lastUsage.total_tokens) : 0;
         const derivedTotal = tokens.input + tokens.cacheRead + tokens.output + tokens.cacheWrite5m;
         if (lastUsage && reportedTotal !== derivedTotal) reconciled = false;
@@ -493,9 +504,18 @@ async function readFileRecords(
   }
 
   return {
-    file, events, ticks,
-    firstTimestampMs, lastTimestampMs, firstTimestampRaw, lastTimestampRaw,
-    cwd, isSubagent, subagentKind, reconciled, parentThreadId,
+    file,
+    events,
+    ticks,
+    firstTimestampMs,
+    lastTimestampMs,
+    firstTimestampRaw,
+    lastTimestampRaw,
+    cwd,
+    isSubagent,
+    subagentKind,
+    reconciled,
+    parentThreadId,
   };
 }
 
@@ -587,9 +607,7 @@ export interface CodexParseOptions {
   settings?: Settings;
 }
 
-export async function buildCodexUsageReport(
-  options: CodexParseOptions = {},
-): Promise<UsageReport> {
+export async function buildCodexUsageReport(options: CodexParseOptions = {}): Promise<UsageReport> {
   const home = options.codexHome ?? resolveCodexHome();
   const pricing = options.pricing ?? loadPricing('codex-pricing.json');
   const settings = options.settings ?? loadSettings();
@@ -755,7 +773,10 @@ export async function buildCodexUsageReport(
     const projectId = sessionProject ?? resolveProject(record.cwd);
     // A file with no usage still needs its project to exist, so an empty
     // thread does not vanish without a trace.
-    bucketsFor(projectId, localDate(record.firstTimestampMs ?? Date.now(), settings.localUtcOffsetHours));
+    bucketsFor(
+      projectId,
+      localDate(record.firstTimestampMs ?? Date.now(), settings.localUtcOffsetHours),
+    );
 
     sessions.push({
       sessionId: record.file.sessionId,
@@ -792,7 +813,10 @@ export async function buildCodexUsageReport(
       const cwd = projectCwd.get(id) ?? null;
       const derivedName = cwd
         ? (cwd.split(/[\\/]/).filter(Boolean).pop() ?? id)
-        : id.replace(/^C--Users-[^-]+-/, '').replace(/-/g, ' ').trim();
+        : id
+            .replace(/^C--Users-[^-]+-/, '')
+            .replace(/-/g, ' ')
+            .trim();
       return {
         id,
         cwd,
@@ -826,8 +850,9 @@ export async function buildCodexUsageReport(
     : null;
 
   const favoriteModel =
-    [...globalBucket.perModel.entries()].sort((a, b) => b[1].totalTokens - a[1].totalTokens)[0]?.[0] ??
-    null;
+    [...globalBucket.perModel.entries()].sort(
+      (a, b) => b[1].totalTokens - a[1].totalTokens,
+    )[0]?.[0] ?? null;
 
   // Records count chats, not transcripts: computeSessionRecords folds each
   // auto-review thread into the chat that spawned it (tokens and cost summed,

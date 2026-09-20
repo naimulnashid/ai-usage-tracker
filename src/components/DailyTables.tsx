@@ -18,13 +18,7 @@ import { RUNTIME_TOOLTIP } from './Notices';
  * The combined-models daily total: one row per day, all models summed.
  * This is the "what did this project cost me each day" table.
  */
-export function CombinedDailyTable({
-  daily,
-  peakCost,
-}: {
-  daily: DailyEntry[];
-  peakCost: number;
-}) {
+export function CombinedDailyTable({ daily, peakCost }: { daily: DailyEntry[]; peakCost: number }) {
   const provider = useProvider();
   const rows = [...daily].sort((a, b) => b.date.localeCompare(a.date));
   const totals = rows.reduce(
@@ -47,8 +41,7 @@ export function CombinedDailyTable({
             <th>{provider.messageNoun === 'requests' ? 'Requests' : 'Messages'}</th>
             <th>Tokens</th>
             <th>
-              Runtime{' '}
-              <InfoTip label="About runtime" text={RUNTIME_TOOLTIP} />
+              Runtime <InfoTip label="About runtime" text={RUNTIME_TOOLTIP} />
             </th>
             <th>Cost</th>
             <th style={{ width: 150 }}>Share of peak day</th>
@@ -57,9 +50,7 @@ export function CombinedDailyTable({
         <tbody>
           {rows.map((row) => {
             const share = peakCost > 0 ? (row.combined.costUsd / peakCost) * 100 : 0;
-            const models = Object.keys(row.perModel).filter(
-              (m) => row.perModel[m].totalTokens > 0,
-            );
+            const models = Object.keys(row.perModel).filter((m) => row.perModel[m].totalTokens > 0);
             return (
               <tr key={row.date}>
                 <td style={{ fontWeight: 550 }}>{formatDateLong(row.date)}</td>
@@ -162,8 +153,7 @@ export function ModelDailyTable({ daily }: { daily: DailyEntry[] }) {
             {provider.hasCacheWrites && <th>Cache write</th>}
             <th>{provider.cacheReadLabel}</th>
             <th>
-              Runtime{' '}
-              <InfoTip label="About runtime" text={RUNTIME_TOOLTIP} />
+              Runtime <InfoTip label="About runtime" text={RUNTIME_TOOLTIP} />
             </th>
             <th>Cost</th>
           </tr>
@@ -198,15 +188,11 @@ export function ModelDailyTable({ daily }: { daily: DailyEntry[] }) {
                 <td className="num">{formatTokens(cell.input)}</td>
                 <td className="num">{formatTokens(cell.output)}</td>
                 {provider.hasCacheWrites && (
-                  <td className="num">
-                    {formatTokens(cell.cacheWrite5m + cell.cacheWrite1h)}
-                  </td>
+                  <td className="num">{formatTokens(cell.cacheWrite5m + cell.cacheWrite1h)}</td>
                 )}
                 <td className="num">{formatTokens(cell.cacheRead)}</td>
                 <td className="num">{formatDuration(cell.runtimeSeconds)}</td>
-                <td className="num cost-cell">
-                  {cell.unpriced ? '—' : formatUsd(cell.costUsd)}
-                </td>
+                <td className="num cost-cell">{cell.unpriced ? '—' : formatUsd(cell.costUsd)}</td>
               </tr>
             );
           })}

@@ -2,13 +2,7 @@
 
 import { useState } from 'react';
 import type { SessionSummary } from '@/lib/types';
-import {
-  displayModel,
-  formatCount,
-  formatDuration,
-  formatTokens,
-  formatUsd,
-} from '@/lib/format';
+import { displayModel, formatCount, formatDuration, formatTokens, formatUsd } from '@/lib/format';
 import { modelColor } from '@/lib/model-colors';
 import { useProvider } from './ProviderScope';
 import { InfoTip } from './InfoTip';
@@ -40,8 +34,7 @@ export function SessionsTable({ sessions }: { sessions: SessionSummary[] }) {
               <th>{provider.messageNoun === 'requests' ? 'Requests' : 'Messages'}</th>
               <th>Tokens</th>
               <th>
-                Runtime{' '}
-                <InfoTip label="About runtime" text={RUNTIME_TOOLTIP} />
+                Runtime <InfoTip label="About runtime" text={RUNTIME_TOOLTIP} />
               </th>
               <th>
                 Open span{' '}
@@ -57,15 +50,13 @@ export function SessionsTable({ sessions }: { sessions: SessionSummary[] }) {
             {visible.map((session) => (
               <tr key={session.file}>
                 <td>
-                  <span
-                    style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}
-                  >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
                     {/*
-                      * Codex keeps a human-readable name per thread; Claude Code
-                      * does not. Where there is one it is the more useful label,
-                      * with the id kept alongside so a row can still be traced
-                      * back to its file.
-                      */}
+                     * Codex keeps a human-readable name per thread; Claude Code
+                     * does not. Where there is one it is the more useful label,
+                     * with the id kept alongside so a row can still be traced
+                     * back to its file.
+                     */}
                     {session.title && (
                       <span
                         style={{
@@ -144,9 +135,7 @@ export function SessionsTable({ sessions }: { sessions: SessionSummary[] }) {
           style={{ marginTop: 16 }}
           onClick={() => setExpanded((value) => !value)}
         >
-          {expanded
-            ? 'Show fewer'
-            : `Show all ${formatCount(sessions.length)} sessions`}
+          {expanded ? 'Show fewer' : `Show all ${formatCount(sessions.length)} sessions`}
         </button>
       )}
     </>

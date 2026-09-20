@@ -13,11 +13,7 @@ import { InfoTip } from '@/components/InfoTip';
 import { isEmptyReport, noteworthyWarnings } from '@/lib/report-state';
 import { DailyTokensByModelChart } from '@/components/DailyTokensByModelChart';
 import { DailySpendByModelChart } from '@/components/DailySpendByModelChart';
-import {
-  ParseWarnings,
-  RUNTIME_TOOLTIP,
-  UnpricedNotice,
-} from '@/components/Notices';
+import { ParseWarnings, RUNTIME_TOOLTIP, UnpricedNotice } from '@/components/Notices';
 import {
   displayModel,
   formatCount,
@@ -76,11 +72,11 @@ export default function OverviewPage() {
         </div>
 
         {/*
-          * Same grid class and the same number of cells as the real thing, so
-          * auto-fit wraps them identically at every width - one row on a wide
-          * screen, three on a narrow one. A fixed cell count would match at one
-          * width and be wrong at every other.
-          */}
+         * Same grid class and the same number of cells as the real thing, so
+         * auto-fit wraps them identically at every width - one row on a wide
+         * screen, three on a narrow one. A fixed cell count would match at one
+         * width and be wrong at every other.
+         */}
         <div className="stat-grid">
           {Array.from({ length: sk.modelCards }, (_, i) => (
             <div key={i} className="skeleton" style={{ height: 149 }} />
@@ -171,8 +167,7 @@ export default function OverviewPage() {
   const sum = (rows: typeof daily) => rows.reduce((a, r) => a + r.combined.costUsd, 0);
   const recentSum = sum(recent);
   const previousSum = sum(previous);
-  const trendPct =
-    previousSum > 0 ? ((recentSum - previousSum) / previousSum) * 100 : null;
+  const trendPct = previousSum > 0 ? ((recentSum - previousSum) / previousSum) * 100 : null;
 
   const topProject = report.projects[0];
 
@@ -184,17 +179,13 @@ export default function OverviewPage() {
           <div>
             <div className="headline-label">{provider.costLabel}</div>
             <div className="headline-value num">
-              <CountUp
-                value={combined.costUsd}
-                format={(n) => formatUsd(n)}
-                replayKey={version}
-              />
+              <CountUp value={combined.costUsd} format={(n) => formatUsd(n)} replayKey={version} />
             </div>
             <div className="headline-meta">
               across {formatCount(report.projects.length)}{' '}
-              {report.projects.length === 1 ? 'project' : 'projects'} ·{' '}
-              {formatCount(modelCount)} {modelCount === 1 ? 'model' : 'models'} ·{' '}
-              {formatCount(activeDays)} active {activeDays === 1 ? 'day' : 'days'}
+              {report.projects.length === 1 ? 'project' : 'projects'} · {formatCount(modelCount)}{' '}
+              {modelCount === 1 ? 'model' : 'models'} · {formatCount(activeDays)} active{' '}
+              {activeDays === 1 ? 'day' : 'days'}
             </div>
             {coverage?.earliestDate && coverage.latestDate && (
               /*
@@ -204,8 +195,7 @@ export default function OverviewPage() {
                * reduced spend.
                */
               <div className="headline-coverage">
-                {formatDateShort(coverage.earliestDate)} –{' '}
-                {formatDateShort(coverage.latestDate)}
+                {formatDateShort(coverage.earliestDate)} – {formatDateShort(coverage.latestDate)}
                 {coverage.restored && (
                   <span
                     className="coverage-badge"
@@ -227,11 +217,7 @@ export default function OverviewPage() {
           <div>
             <div className="headline-side-label">Total tokens</div>
             <div className="headline-side-value num">
-              <CountUp
-                value={combined.totalTokens}
-                format={formatTokens}
-                replayKey={version}
-              />
+              <CountUp value={combined.totalTokens} format={formatTokens} replayKey={version} />
             </div>
             <div className="headline-side-sub">
               {formatCount(combined.messages)} {provider.messageNoun}
@@ -240,8 +226,7 @@ export default function OverviewPage() {
 
           <div>
             <div className="headline-side-label">
-              Total runtime{' '}
-              <InfoTip label="About runtime" text={RUNTIME_TOOLTIP} />
+              Total runtime <InfoTip label="About runtime" text={RUNTIME_TOOLTIP} />
             </div>
             <div className="headline-side-value num">
               <CountUp
@@ -250,9 +235,7 @@ export default function OverviewPage() {
                 replayKey={version}
               />
             </div>
-            <div className="headline-side-sub">
-              {formatUsd(avgPerDay)} avg / active day
-            </div>
+            <div className="headline-side-sub">{formatUsd(avgPerDay)} avg / active day</div>
           </div>
         </div>
       </section>
@@ -314,16 +297,11 @@ export default function OverviewPage() {
                 {cell.unpriced ? (
                   '—'
                 ) : (
-                  <CountUp
-                    value={cell.costUsd}
-                    format={(n) => formatUsd(n)}
-                    replayKey={version}
-                  />
+                  <CountUp value={cell.costUsd} format={(n) => formatUsd(n)} replayKey={version} />
                 )}
               </div>
               <div className="stat-sub num">
-                {formatTokens(cell.totalTokens)} tokens ·{' '}
-                {formatDuration(cell.runtimeSeconds)}
+                {formatTokens(cell.totalTokens)} tokens · {formatDuration(cell.runtimeSeconds)}
               </div>
             </div>
           ))}
@@ -357,19 +335,15 @@ export default function OverviewPage() {
       <h2 className="section-title" style={{ marginTop: 40 }}>
         Activity
       </h2>
-      <ScoreCards
-        activity={report.activity}
-        combined={combined}
-        replayKey={version}
-      />
+      <ScoreCards activity={report.activity} combined={combined} replayKey={version} />
 
       <section className="card panel rise" style={{ animationDelay: '60ms' }}>
         <div className="panel-head">
           <div>
             <h2 className="panel-title">Daily tokens by model</h2>
             <p className="panel-sub">
-              Stacked by model, most expensive at the bottom — so the darker the base of
-              a column, the more of that day went on premium tokens.
+              Stacked by model, most expensive at the bottom — so the darker the base of a column,
+              the more of that day went on premium tokens.
             </p>
           </div>
         </div>
@@ -386,8 +360,8 @@ export default function OverviewPage() {
           <div>
             <h2 className="panel-title">Daily spend by model</h2>
             <p className="panel-sub">
-              The same columns priced instead of counted — so a day that looks modest
-              above and tall here went on the expensive models.
+              The same columns priced instead of counted — so a day that looks modest above and tall
+              here went on the expensive models.
             </p>
           </div>
         </div>
@@ -419,9 +393,7 @@ export default function OverviewPage() {
               >
                 {trendPct > 0 ? '↑' : '↓'} {Math.abs(trendPct).toFixed(0)}%
               </span>{' '}
-              <span style={{ fontSize: 14, color: 'var(--text-faint)' }}>
-                vs previous 7 days
-              </span>
+              <span style={{ fontSize: 14, color: 'var(--text-faint)' }}>vs previous 7 days</span>
             </div>
           )}
         </div>

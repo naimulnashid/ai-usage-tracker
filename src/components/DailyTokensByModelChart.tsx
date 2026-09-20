@@ -11,12 +11,7 @@ import {
   type TooltipContentProps,
 } from 'recharts';
 import type { DailyEntry, UsageCell } from '@/lib/types';
-import {
-  displayModel,
-  formatDateLong,
-  formatDateShort,
-  formatTokens,
-} from '@/lib/format';
+import { displayModel, formatDateLong, formatDateShort, formatTokens } from '@/lib/format';
 import { byPriceDesc, modelColor } from '@/lib/model-colors';
 import { ChartFigure } from './ChartFigure';
 
@@ -54,7 +49,9 @@ function ChartTooltip({ active, payload, label }: TooltipContentProps) {
             marginBottom: 5,
           }}
         >
-          <span style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)' }}>
+          <span
+            style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)' }}
+          >
             <span
               className="model-swatch"
               style={{ background: modelColor(String(entry.dataKey)) }}

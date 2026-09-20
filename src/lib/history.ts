@@ -73,10 +73,7 @@ function emptyHistory(): HistoryFile {
  * corrupt file yields an empty archive and a warning, never an exception. The
  * dashboard must still work when the archive does not.
  */
-export function loadHistory(
-  provider: ProviderId = 'claude',
-  warnings: string[] = [],
-): HistoryFile {
+export function loadHistory(provider: ProviderId = 'claude', warnings: string[] = []): HistoryFile {
   const file = historyPath(provider);
   if (!existsSync(file)) return emptyHistory();
 

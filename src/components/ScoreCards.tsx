@@ -257,9 +257,7 @@ export function ScoreCards({
             <div className="score-label">
               <ScoreIcon name={card.icon} />
               {card.label}
-              {card.tip && (
-                <InfoTip label={`About ${card.label.toLowerCase()}`} text={card.tip} />
-              )}
+              {card.tip && <InfoTip label={`About ${card.label.toLowerCase()}`} text={card.tip} />}
             </div>
             <div className="score-value">{card.value}</div>
             {card.sub && (

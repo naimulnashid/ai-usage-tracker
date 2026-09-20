@@ -52,8 +52,7 @@ function LoginForm() {
       <img src="/icon.svg" alt="" className="login-mark" width={40} height={40} />
       <h1 className="login-title">AI Usage Dashboard</h1>
       <p className="login-sub">
-        This dashboard is reachable from your network, so it asks for the shared
-        password first.
+        This dashboard is reachable from your network, so it asks for the shared password first.
       </p>
 
       <input
@@ -70,7 +69,14 @@ function LoginForm() {
       {error && <p className="login-error">{error}</p>}
 
       <button type="submit" className="btn btn-primary login-submit" disabled={busy || !password}>
-        {busy ? <><span className="spinner" aria-hidden />Checking</> : 'Unlock'}
+        {busy ? (
+          <>
+            <span className="spinner" aria-hidden />
+            Checking
+          </>
+        ) : (
+          'Unlock'
+        )}
       </button>
     </form>
   );

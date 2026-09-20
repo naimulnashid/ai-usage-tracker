@@ -27,8 +27,8 @@ export default function DashboardError({
       <section className="card panel empty-state">
         <h2 className="panel-title">This page stopped rather than showing something wrong</h2>
         <p className="panel-sub empty-state-lead">
-          Your transcripts and the local archive are untouched — this is a display
-          problem, not a data one.
+          Your transcripts and the local archive are untouched — this is a display problem, not a
+          data one.
         </p>
         <p className="empty-state-error">
           <code>{error.message || 'Unknown error'}</code>

@@ -18,13 +18,7 @@ interface CountUpProps {
  * Values render with tabular figures (`.num`), so the digits do not shift
  * width while the animation runs.
  */
-export function CountUp({
-  value,
-  format,
-  durationMs = 850,
-  className,
-  replayKey,
-}: CountUpProps) {
+export function CountUp({ value, format, durationMs = 850, className, replayKey }: CountUpProps) {
   const [display, setDisplay] = useState(value);
   const frameRef = useRef<number | null>(null);
   const fromRef = useRef(0);

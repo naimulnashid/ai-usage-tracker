@@ -71,7 +71,13 @@ export default function ProjectDetailPage() {
 
         {/* "Breakdown by model" heading. */}
         <div
-          style={{ height: 21, marginTop: 40, marginBottom: 18, display: 'flex', alignItems: 'center' }}
+          style={{
+            height: 21,
+            marginTop: 40,
+            marginBottom: 18,
+            display: 'flex',
+            alignItems: 'center',
+          }}
         >
           <div className="skeleton" style={{ height: 13, width: 170 }} />
         </div>
@@ -196,26 +202,17 @@ export default function ProjectDetailPage() {
                 not a bill, and the label is the only place the page says so. */}
             <div className="headline-label">{provider.costLabel}</div>
             <div className="headline-value num">
-              <CountUp
-                value={combined.costUsd}
-                format={(n) => formatUsd(n)}
-                replayKey={version}
-              />
+              <CountUp value={combined.costUsd} format={(n) => formatUsd(n)} replayKey={version} />
             </div>
             <div className="headline-meta">
-              {shareOfTotal.toFixed(1)}% of all spend · {formatUsd(avgPerDay)} avg / active
-              day
+              {shareOfTotal.toFixed(1)}% of all spend · {formatUsd(avgPerDay)} avg / active day
             </div>
           </div>
 
           <div>
             <div className="headline-side-label">Total tokens</div>
             <div className="headline-side-value num">
-              <CountUp
-                value={combined.totalTokens}
-                format={formatTokens}
-                replayKey={version}
-              />
+              <CountUp value={combined.totalTokens} format={formatTokens} replayKey={version} />
             </div>
             <div className="headline-side-sub">
               {formatCount(combined.messages)} {provider.messageNoun} ·{' '}
@@ -225,8 +222,7 @@ export default function ProjectDetailPage() {
 
           <div>
             <div className="headline-side-label">
-              Total runtime{' '}
-              <InfoTip label="About runtime" text={RUNTIME_TOOLTIP} />
+              Total runtime <InfoTip label="About runtime" text={RUNTIME_TOOLTIP} />
             </div>
             <div className="headline-side-value num">
               <CountUp
@@ -235,9 +231,7 @@ export default function ProjectDetailPage() {
                 replayKey={version}
               />
             </div>
-            <div className="headline-side-sub">
-              across {formatCount(activeDays)} active days
-            </div>
+            <div className="headline-side-sub">across {formatCount(activeDays)} active days</div>
           </div>
         </div>
       </section>
@@ -252,8 +246,7 @@ export default function ProjectDetailPage() {
           <div>
             <h2 className="panel-title">Daily total spend</h2>
             <p className="panel-sub">
-              All models combined for this project. Days marked in red sit well above
-              trend.
+              All models combined for this project. Days marked in red sit well above trend.
             </p>
           </div>
           {peakDay && (
@@ -308,16 +301,11 @@ export default function ProjectDetailPage() {
                 {cell.unpriced ? (
                   '—'
                 ) : (
-                  <CountUp
-                    value={cell.costUsd}
-                    format={(n) => formatUsd(n)}
-                    replayKey={version}
-                  />
+                  <CountUp value={cell.costUsd} format={(n) => formatUsd(n)} replayKey={version} />
                 )}
               </div>
               <div className="stat-sub num">
-                {formatTokens(cell.totalTokens)} tokens ·{' '}
-                {formatDuration(cell.runtimeSeconds)}
+                {formatTokens(cell.totalTokens)} tokens · {formatDuration(cell.runtimeSeconds)}
               </div>
             </div>
           ))}
@@ -328,8 +316,8 @@ export default function ProjectDetailPage() {
           <div>
             <h2 className="panel-title">Daily tokens by model</h2>
             <p className="panel-sub">
-              Stacked by model, most expensive at the bottom — so the darker the base of
-              a column, the more of that day went on premium tokens.
+              Stacked by model, most expensive at the bottom — so the darker the base of a column,
+              the more of that day went on premium tokens.
             </p>
           </div>
         </div>
@@ -382,9 +370,7 @@ export default function ProjectDetailPage() {
         <div className="panel-head">
           <div>
             <h2 className="panel-title">Sessions</h2>
-            <p className="panel-sub">
-              Every transcript file in this project, ranked by cost.
-            </p>
+            <p className="panel-sub">Every transcript file in this project, ranked by cost.</p>
           </div>
         </div>
         <SessionsTable sessions={sessions} />

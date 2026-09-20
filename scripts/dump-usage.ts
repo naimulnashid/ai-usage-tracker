@@ -79,7 +79,9 @@ async function main() {
   console.log(`  unique messages counted  : ${d.uniqueMessages.toLocaleString()}`);
   console.log(`  duplicate lines skipped  : ${d.duplicateLinesSkipped.toLocaleString()}`);
   console.log(`  output_tokens recovered  : ${d.outputTokensRecovered.toLocaleString()}`);
-  console.log(`  unpriced models          : ${d.unpricedModels.length ? d.unpricedModels.join(', ') : 'none'}`);
+  console.log(
+    `  unpriced models          : ${d.unpricedModels.length ? d.unpricedModels.join(', ') : 'none'}`,
+  );
   console.log(
     `  empty projects hidden    : ${
       d.emptyProjectsHidden.length ? d.emptyProjectsHidden.join(', ') : 'none'

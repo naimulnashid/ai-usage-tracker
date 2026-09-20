@@ -3,7 +3,14 @@ import path from 'node:path';
 import { describe, it } from 'node:test';
 
 import { buildUsageReport, encodeProjectDir } from '../src/lib/parser';
-import { assistantLine, plainLine, tempDir, testPricing, testSettings, writeLines } from './helpers';
+import {
+  assistantLine,
+  plainLine,
+  tempDir,
+  testPricing,
+  testSettings,
+  writeLines,
+} from './helpers';
 
 const CWD = 'C:\\Users\\you\\Projects\\My App';
 const DIR = encodeProjectDir(CWD); // C--Users-you-Projects-My-App
@@ -16,7 +23,13 @@ describe('Claude Code parser', () => {
     const root = tempDir();
     // The same message in two projects (a resumed session replays history) and
     // twice within one file (streaming partials).
-    const line = assistantLine({ ts: '2026-08-01T10:00:00Z', id: 'msg_a', input: 100, output: 20, cwd: CWD });
+    const line = assistantLine({
+      ts: '2026-08-01T10:00:00Z',
+      id: 'msg_a',
+      input: 100,
+      output: 20,
+      cwd: CWD,
+    });
     writeLines(path.join(root, DIR, 's1.jsonl'), [line, line]);
     writeLines(path.join(root, `${DIR}-copy`, 's2.jsonl'), [line]);
 
@@ -64,7 +77,12 @@ describe('Claude Code parser', () => {
   it('Trap 4: prices cache writes by TTL, falling back to the 5m rate', async () => {
     const root = tempDir();
     writeLines(path.join(root, DIR, 'split.jsonl'), [
-      assistantLine({ ts: '2026-08-01T10:00:00Z', id: 'msg_a', cacheWrite5m: 1_000_000, cacheWrite1h: 1_000_000 }),
+      assistantLine({
+        ts: '2026-08-01T10:00:00Z',
+        id: 'msg_a',
+        cacheWrite5m: 1_000_000,
+        cacheWrite1h: 1_000_000,
+      }),
     ]);
     writeLines(path.join(root, `${DIR}-flat`, 'flat.jsonl'), [
       assistantLine({ ts: '2026-08-01T10:00:00Z', id: 'msg_b', flatCacheWrite: 1_000_000 }),
@@ -116,7 +134,12 @@ describe('Claude Code parser', () => {
   it('refuses negative and fractional token counts', async () => {
     const root = tempDir();
     writeLines(path.join(root, DIR, 's1.jsonl'), [
-      assistantLine({ ts: '2026-08-01T10:00:00Z', id: 'msg_a', input: -5_000_000_000, output: 10.7 }),
+      assistantLine({
+        ts: '2026-08-01T10:00:00Z',
+        id: 'msg_a',
+        input: -5_000_000_000,
+        output: 10.7,
+      }),
     ]);
 
     const report = await parse(root);
@@ -160,7 +183,12 @@ describe('Claude Code parser', () => {
   it('reports a model with no rate card entry as unpriced', async () => {
     const root = tempDir();
     writeLines(path.join(root, DIR, 's1.jsonl'), [
-      assistantLine({ ts: '2026-08-01T10:00:00Z', id: 'msg_a', model: 'brand-new-model', output: 1_000_000 }),
+      assistantLine({
+        ts: '2026-08-01T10:00:00Z',
+        id: 'msg_a',
+        model: 'brand-new-model',
+        output: 1_000_000,
+      }),
     ]);
 
     const report = await parse(root);

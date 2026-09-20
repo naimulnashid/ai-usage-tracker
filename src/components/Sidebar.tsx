@@ -61,8 +61,16 @@ function AgentMark({ id, label }: { id: ProviderId; label: string }) {
 }
 
 const MenuIcon = () => (
-  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-       strokeWidth="2.1" strokeLinecap="round" aria-hidden>
+  <svg
+    width="19"
+    height="19"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.1"
+    strokeLinecap="round"
+    aria-hidden
+  >
     <path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17" />
   </svg>
 );

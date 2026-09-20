@@ -26,7 +26,14 @@ describe('pricing', () => {
   it('never bills reasoning tokens, which are already inside output', () => {
     const rate = getRate(pricing, 'test-model');
     const withReasoning = costOf(
-      { input: 0, output: 1_000_000, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0, reasoning: 900_000 },
+      {
+        input: 0,
+        output: 1_000_000,
+        cacheRead: 0,
+        cacheWrite5m: 0,
+        cacheWrite1h: 0,
+        reasoning: 900_000,
+      },
       rate,
     );
     assert.equal(Number(withReasoning.toFixed(2)), 50);
@@ -35,7 +42,10 @@ describe('pricing', () => {
   it('follows one alias hop, and returns null for an unknown model', () => {
     assert.equal(getRate(pricing, 'codex-auto-review')?.input, 1);
     assert.equal(getRate(pricing, 'brand-new-model'), null);
-    assert.equal(costOf({ input: 1_000_000, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 }, null), 0);
+    assert.equal(
+      costOf({ input: 1_000_000, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 }, null),
+      0,
+    );
   });
 });
 

@@ -30,7 +30,10 @@ export const IMAGE_EXTENSIONS = [
  * is a silently absent logo, which is hard to notice and annoying to debug.
  */
 export function logoKey(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
 }
 
 /** Initials for the fallback tile — at most two, so it stays legible at 38px. */

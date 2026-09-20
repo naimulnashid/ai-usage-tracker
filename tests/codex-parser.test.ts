@@ -57,7 +57,12 @@ describe('Codex parser', () => {
     thread(home, rolloutName(THREAD), [
       sessionMeta('2026-08-01T10:00:00Z', CWD),
       turnContext('2026-08-01T10:00:00Z', 'test-model'),
-      tokenCount({ ts: '2026-08-01T10:00:10Z', input: 1_000_000, cached: 800_000, output: 100_000 }),
+      tokenCount({
+        ts: '2026-08-01T10:00:10Z',
+        input: 1_000_000,
+        cached: 800_000,
+        output: 100_000,
+      }),
     ]);
 
     const report = await parse(home);
@@ -126,9 +131,15 @@ describe('Codex parser', () => {
       sessionMeta('2026-08-01T10:00:00Z', CWD),
       turnContext('2026-08-01T10:00:00Z', 'test-model'),
       tokenCount({ ts: '2026-08-01T10:00:10Z', input: 100, cached: 0, output: 10 }),
-      tokenCount({ ts: '2026-08-01T10:00:20Z', input: 200, cached: 0, output: 20 }, { ts: '', input: 100, cached: 0, output: 10 }),
+      tokenCount(
+        { ts: '2026-08-01T10:00:20Z', input: 200, cached: 0, output: 20 },
+        { ts: '', input: 100, cached: 0, output: 10 },
+      ),
       turnContext('2026-08-01T10:00:30Z', 'cheap-model'),
-      tokenCount({ ts: '2026-08-01T10:00:40Z', input: 300, cached: 0, output: 30 }, { ts: '', input: 200, cached: 0, output: 20 }),
+      tokenCount(
+        { ts: '2026-08-01T10:00:40Z', input: 300, cached: 0, output: 30 },
+        { ts: '', input: 200, cached: 0, output: 20 },
+      ),
     ]);
 
     const report = await parse(home);

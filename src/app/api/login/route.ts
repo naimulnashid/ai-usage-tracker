@@ -1,10 +1,5 @@
 import { NextResponse } from 'next/server';
-import {
-  SESSION_COOKIE,
-  configuredPassword,
-  issueSession,
-  safeEqual,
-} from '@/lib/auth';
+import { SESSION_COOKIE, configuredPassword, issueSession, safeEqual } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 

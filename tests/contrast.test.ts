@@ -77,7 +77,10 @@ describe('non-text contrast (WCAG 1.4.11, 3:1)', () => {
     }
   });
 
-  for (const [theme, block] of [['Claude Code', root], ['Codex', codex]] as const) {
+  for (const [theme, block] of [
+    ['Claude Code', root],
+    ['Codex', codex],
+  ] as const) {
     it(`${theme}'s heat map steps stand out from the panel`, () => {
       // --hm-0 is the absence of data, so it is exempt.
       for (const step of [1, 2, 3, 4, 5]) {
@@ -98,7 +101,10 @@ describe('non-text contrast (WCAG 1.4.11, 3:1)', () => {
 });
 
 describe('the ramp still encodes price', () => {
-  for (const [agent, prefix] of [['Claude Code', 'claude-'], ['Codex', /^(gpt|codex)-/]] as const) {
+  for (const [agent, prefix] of [
+    ['Claude Code', 'claude-'],
+    ['Codex', /^(gpt|codex)-/],
+  ] as const) {
     it(`${agent}: a dearer model is never lighter than a cheaper one`, () => {
       const shades = Object.entries(MODEL_SHADES).filter(([model]) =>
         typeof prefix === 'string' ? model.startsWith(prefix) : prefix.test(model),

@@ -1,13 +1,7 @@
 'use client';
 
 import type { UsageCell } from '@/lib/types';
-import {
-  displayModel,
-  formatCount,
-  formatDuration,
-  formatTokens,
-  formatUsd,
-} from '@/lib/format';
+import { displayModel, formatCount, formatDuration, formatTokens, formatUsd } from '@/lib/format';
 import { modelColor } from '@/lib/model-colors';
 import { useProvider } from './ProviderScope';
 import { InfoTip } from './InfoTip';
@@ -45,16 +39,14 @@ export function ModelBreakdownTable({
             <th>Output</th>
             {provider.hasReasoningTokens && (
               <th>
-                Reasoning{' '}
-                <InfoTip label="About reasoning tokens" text={REASONING_TIP} />
+                Reasoning <InfoTip label="About reasoning tokens" text={REASONING_TIP} />
               </th>
             )}
             {provider.hasCacheWrites && <th>Cache write</th>}
             <th>{provider.cacheReadLabel}</th>
             <th>Total tokens</th>
             <th>
-              Runtime{' '}
-              <InfoTip label="About runtime" text={RUNTIME_TOOLTIP} />
+              Runtime <InfoTip label="About runtime" text={RUNTIME_TOOLTIP} />
             </th>
             <th>Cost</th>
           </tr>
@@ -85,9 +77,7 @@ export function ModelBreakdownTable({
               <td className="num">{formatTokens(cell.cacheRead)}</td>
               <td className="num">{formatTokens(cell.totalTokens)}</td>
               <td className="num">{formatDuration(cell.runtimeSeconds)}</td>
-              <td className="num cost-cell">
-                {cell.unpriced ? '—' : formatUsd(cell.costUsd)}
-              </td>
+              <td className="num cost-cell">{cell.unpriced ? '—' : formatUsd(cell.costUsd)}</td>
             </tr>
           ))}
         </tbody>
@@ -101,9 +91,7 @@ export function ModelBreakdownTable({
               <td className="num">{formatTokens(combined.reasoning ?? 0)}</td>
             )}
             {provider.hasCacheWrites && (
-              <td className="num">
-                {formatTokens(combined.cacheWrite5m + combined.cacheWrite1h)}
-              </td>
+              <td className="num">{formatTokens(combined.cacheWrite5m + combined.cacheWrite1h)}</td>
             )}
             <td className="num">{formatTokens(combined.cacheRead)}</td>
             <td className="num">{formatTokens(combined.totalTokens)}</td>

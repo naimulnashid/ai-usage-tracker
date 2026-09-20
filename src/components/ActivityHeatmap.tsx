@@ -18,8 +18,18 @@ const RANGE_LABEL = '6 months';
 const WEEKDAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const WEEK_START_DAY: Record<WeekStart, number> = { sunday: 0, monday: 1, saturday: 6 };
 const MONTH_NAMES = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
 ];
 
 interface Cell {
@@ -131,7 +141,9 @@ export function ActivityHeatmap({
    * nothing else. Active days only: an empty cell says nothing a total does
    * not, and 180 rows of "no usage" is worse than useless to page through.
    */
-  const activeCells = cells.filter((cell) => !cell.future && (cell.entry?.combined.costUsd ?? 0) > 0);
+  const activeCells = cells.filter(
+    (cell) => !cell.future && (cell.entry?.combined.costUsd ?? 0) > 0,
+  );
 
   return (
     <ChartFigure
@@ -151,77 +163,77 @@ export function ActivityHeatmap({
       ]}
       rows={activeCells}
     >
-    <div>
-      <div className="heatmap-scroll">
-        <div
-          className="heatmap-plot"
-          aria-hidden="true"
-          style={{
-            gridTemplateColumns: `var(--hm-daycol) repeat(${WEEKS}, minmax(var(--hm-min), 1fr))`,
-          }}
-        >
-          {months.map((mark) => (
-            <span
-              key={`${mark.label}-${mark.column}`}
-              className="heatmap-month"
-              style={{ gridColumn: mark.column + 2, gridRow: 1 }}
-              aria-hidden
-            >
-              {mark.label}
-            </span>
-          ))}
-
-          {dayLabels.map((label, i) => (
-            <span
-              key={label}
-              className="heatmap-day"
-              style={{ gridColumn: 1, gridRow: i + 2 }}
-              aria-hidden
-            >
-              {label}
-            </span>
-          ))}
-
-          {cells.map((cell) => {
-            const cost = cell.entry?.combined.costUsd ?? 0;
-            const title = cell.future
-              ? ''
-              : cell.entry
-                ? `${formatDateLong(cell.date)} — ${formatUsd(cost)} · ${formatTokens(
-                    cell.entry.combined.totalTokens,
-                  )} tokens · ${formatDuration(cell.entry.combined.runtimeSeconds)}`
-                : `${formatDateLong(cell.date)} — no usage`;
-            return (
+      <div>
+        <div className="heatmap-scroll">
+          <div
+            className="heatmap-plot"
+            aria-hidden="true"
+            style={{
+              gridTemplateColumns: `var(--hm-daycol) repeat(${WEEKS}, minmax(var(--hm-min), 1fr))`,
+            }}
+          >
+            {months.map((mark) => (
               <span
-                key={cell.date}
-                className="heatmap-cell"
-                title={title}
-                style={{
-                  gridColumn: cell.column + 2,
-                  gridRow: cell.row + 2,
-                  background: cell.future ? 'transparent' : heatmapColor(cost, max),
-                  visibility: cell.future ? 'hidden' : 'visible',
-                }}
-              />
-            );
-          })}
+                key={`${mark.label}-${mark.column}`}
+                className="heatmap-month"
+                style={{ gridColumn: mark.column + 2, gridRow: 1 }}
+                aria-hidden
+              >
+                {mark.label}
+              </span>
+            ))}
+
+            {dayLabels.map((label, i) => (
+              <span
+                key={label}
+                className="heatmap-day"
+                style={{ gridColumn: 1, gridRow: i + 2 }}
+                aria-hidden
+              >
+                {label}
+              </span>
+            ))}
+
+            {cells.map((cell) => {
+              const cost = cell.entry?.combined.costUsd ?? 0;
+              const title = cell.future
+                ? ''
+                : cell.entry
+                  ? `${formatDateLong(cell.date)} — ${formatUsd(cost)} · ${formatTokens(
+                      cell.entry.combined.totalTokens,
+                    )} tokens · ${formatDuration(cell.entry.combined.runtimeSeconds)}`
+                  : `${formatDateLong(cell.date)} — no usage`;
+              return (
+                <span
+                  key={cell.date}
+                  className="heatmap-cell"
+                  title={title}
+                  style={{
+                    gridColumn: cell.column + 2,
+                    gridRow: cell.row + 2,
+                    background: cell.future ? 'transparent' : heatmapColor(cost, max),
+                    visibility: cell.future ? 'hidden' : 'visible',
+                  }}
+                />
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="heatmap-legend">
+          <span>
+            {formatUsd(total)} across {activeDays} active {activeDays === 1 ? 'day' : 'days'} in the
+            last {RANGE_LABEL}
+          </span>
+          <span className="heatmap-scale">
+            Less
+            {HEATMAP_RAMP.map((color) => (
+              <span key={color} className="heatmap-swatch" style={{ background: color }} />
+            ))}
+            More
+          </span>
         </div>
       </div>
-
-      <div className="heatmap-legend">
-        <span>
-          {formatUsd(total)} across {activeDays} active {activeDays === 1 ? 'day' : 'days'} in
-          the last {RANGE_LABEL}
-        </span>
-        <span className="heatmap-scale">
-          Less
-          {HEATMAP_RAMP.map((color) => (
-            <span key={color} className="heatmap-swatch" style={{ background: color }} />
-          ))}
-          More
-        </span>
-      </div>
-    </div>
     </ChartFigure>
   );
 }

@@ -20,9 +20,9 @@ export function EmptyState({ warnings = [] }: { warnings?: string[] }) {
     <section className="card panel empty-state rise">
       <h2 className="panel-title">No {provider.label} usage found yet</h2>
       <p className="panel-sub empty-state-lead">
-        Nothing was found to read, so there is nothing to show. That is the
-        expected state before you have used {provider.label} — or if its
-        transcripts live somewhere this dashboard did not look.
+        Nothing was found to read, so there is nothing to show. That is the expected state before
+        you have used {provider.label} — or if its transcripts live somewhere this dashboard did not
+        look.
       </p>
 
       <dl className="empty-state-facts">

@@ -63,7 +63,12 @@ describe('ChartFigure', () => {
     { header: 'Spend', cell: (row: (typeof rows)[number]) => row.spend },
   ];
   const html = render(
-    <ChartFigure label="Daily combined spend." summary="2 days, oldest first." columns={columns} rows={rows}>
+    <ChartFigure
+      label="Daily combined spend."
+      summary="2 days, oldest first."
+      columns={columns}
+      rows={rows}
+    >
       <div className="chart-wrap">chart goes here</div>
     </ChartFigure>,
   );

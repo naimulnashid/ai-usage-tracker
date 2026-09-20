@@ -17,8 +17,7 @@ export default function NotFound() {
       <div className="login-card">
         <h1 className="login-title">Nothing here</h1>
         <p className="login-sub">
-          That page does not exist. If you were after an agent, the dashboard
-          covers these:
+          That page does not exist. If you were after an agent, the dashboard covers these:
         </p>
         <div className="empty-state-actions">
           {PROVIDER_IDS.map((id) => (

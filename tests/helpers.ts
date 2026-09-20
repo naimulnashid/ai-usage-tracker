@@ -106,7 +106,10 @@ export interface TokenCountOptions {
   lastTotal?: number;
 }
 
-export function tokenCount(options: TokenCountOptions, previous?: TokenCountOptions): Record<string, unknown> {
+export function tokenCount(
+  options: TokenCountOptions,
+  previous?: TokenCountOptions,
+): Record<string, unknown> {
   const derived =
     options.input - (previous?.input ?? 0) + (options.output - (previous?.output ?? 0));
   return {

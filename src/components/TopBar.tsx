@@ -34,9 +34,7 @@ export function TopBar() {
 
         <nav className="nav">
           {links.map((link) => {
-            const active = link.exact
-              ? pathname === link.href
-              : pathname.startsWith(link.href);
+            const active = link.exact ? pathname === link.href : pathname.startsWith(link.href);
             return (
               <Link key={link.href} href={link.href} className="nav-link" data-active={active}>
                 {link.label}
@@ -45,10 +43,7 @@ export function TopBar() {
           })}
         </nav>
 
-        <div
-          className="topbar-spacer"
-          style={{ display: 'flex', alignItems: 'center', gap: 16 }}
-        >
+        <div className="topbar-spacer" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <span className="refresh-meta">
             {loading
               ? 'Reading transcripts…'

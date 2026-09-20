@@ -54,44 +54,39 @@ export function UsageProvider({ children }: { children: ReactNode }) {
   const sequence = useRef(0);
   const inFlight = useRef(0);
 
-  const load = useCallback(
-    async (providerId: string) => {
-      const ticket = (sequence.current += 1);
-      inFlight.current = ticket;
-      setLoading(true);
-      setError(null);
-      try {
-        // cache: 'no-store' matters - a manual Refresh must actually re-read disk.
-        const response = await fetch(`/api/usage/${providerId}`, { cache: 'no-store' });
-        // A session that expired while the tab sat open should send the user to
-        // the login screen, not surface a bare "Request failed (401)".
-        if (response.status === 401) {
-          window.location.href = '/login';
-          return;
-        }
-        const payload = await response.json();
-        if (ticket !== sequence.current) return; // superseded
-        if (!response.ok) {
-          throw new Error(
-            payload?.detail || payload?.error || `Request failed (${response.status})`,
-          );
-        }
-        setReport(payload as UsageReport & { parseMs?: number });
-        setLastRefreshed(new Date().toISOString());
-        setVersion((v) => v + 1);
-      } catch (err) {
-        if (ticket !== sequence.current) return;
-        setError(err instanceof Error ? err.message : String(err));
-      } finally {
-        if (ticket === sequence.current) {
-          inFlight.current = 0;
-          setLoading(false);
-          setInitialLoading(false);
-        }
+  const load = useCallback(async (providerId: string) => {
+    const ticket = (sequence.current += 1);
+    inFlight.current = ticket;
+    setLoading(true);
+    setError(null);
+    try {
+      // cache: 'no-store' matters - a manual Refresh must actually re-read disk.
+      const response = await fetch(`/api/usage/${providerId}`, { cache: 'no-store' });
+      // A session that expired while the tab sat open should send the user to
+      // the login screen, not surface a bare "Request failed (401)".
+      if (response.status === 401) {
+        window.location.href = '/login';
+        return;
       }
-    },
-    [],
-  );
+      const payload = await response.json();
+      if (ticket !== sequence.current) return; // superseded
+      if (!response.ok) {
+        throw new Error(payload?.detail || payload?.error || `Request failed (${response.status})`);
+      }
+      setReport(payload as UsageReport & { parseMs?: number });
+      setLastRefreshed(new Date().toISOString());
+      setVersion((v) => v + 1);
+    } catch (err) {
+      if (ticket !== sequence.current) return;
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      if (ticket === sequence.current) {
+        inFlight.current = 0;
+        setLoading(false);
+        setInitialLoading(false);
+      }
+    }
+  }, []);
 
   const refresh = useCallback(() => {
     // The button is disabled while loading; this guards the programmatic path.

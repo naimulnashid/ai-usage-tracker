@@ -121,9 +121,7 @@ export function resolveProjectId(
   while (merge[current]) {
     const next = merge[current];
     if (seen.has(next)) {
-      warnings.push(
-        `Ignored a cycle in config/projects.json merge rules involving "${next}".`,
-      );
+      warnings.push(`Ignored a cycle in config/projects.json merge rules involving "${next}".`);
       return id;
     }
     seen.add(next);

@@ -28,7 +28,12 @@ async function reportFor(days: Array<{ date: string; output: number }>): Promise
   writeLines(
     path.join(root, DIR, 's1.jsonl'),
     days.map((day, i) =>
-      assistantLine({ ts: `${day.date}T10:0${i}:00Z`, id: `msg_${i}_${day.date}`, output: day.output, cwd: CWD }),
+      assistantLine({
+        ts: `${day.date}T10:0${i}:00Z`,
+        id: `msg_${i}_${day.date}`,
+        output: day.output,
+        cwd: CWD,
+      }),
     ),
   );
   return buildUsageReport({ projectsDir: root, pricing: testPricing(), settings: testSettings() });
@@ -54,7 +59,11 @@ describe('history archive', () => {
     assert.equal(restored.coverage?.archivedOnlyDays, 1);
     assert.equal(restored.coverage?.restored, true);
     assert.equal(restored.coverage?.earliestDate, '2026-08-01');
-    assert.equal(restored.projects.length, 1, 'a project surviving only in the archive still shows');
+    assert.equal(
+      restored.projects.length,
+      1,
+      'a project surviving only in the archive still shows',
+    );
   });
 
   it('never lets a thinner parse overwrite a fuller day', async () => {

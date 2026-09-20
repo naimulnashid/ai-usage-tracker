@@ -10,13 +10,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { InfoTip } from '@/components/InfoTip';
 import { isEmptyReport } from '@/lib/report-state';
 import { ProjectShareChart } from '@/components/ProjectShareChart';
-import {
-  displayModel,
-  formatCount,
-  formatDuration,
-  formatTokens,
-  formatUsd,
-} from '@/lib/format';
+import { displayModel, formatCount, formatDuration, formatTokens, formatUsd } from '@/lib/format';
 import { modelColor } from '@/lib/model-colors';
 
 export default function ProjectsPage() {
@@ -77,8 +71,8 @@ export default function ProjectsPage() {
         <section className="card panel empty-state rise">
           <h2 className="panel-title">No projects to show</h2>
           <p className="panel-sub empty-state-lead">
-            This agent recorded usage, but none of it could be attributed to a
-            working directory. The Overview still has the totals.
+            This agent recorded usage, but none of it could be attributed to a working directory.
+            The Overview still has the totals.
           </p>
         </section>
       </div>
@@ -96,9 +90,8 @@ export default function ProjectsPage() {
           <div>
             <h2 className="panel-title">Share of spend</h2>
             <p className="panel-sub">
-              The largest projects as slices of the total, shaded by rank — so the ring
-              reads in the same order as the list below. Anything past the top nine is
-              summed into Others.
+              The largest projects as slices of the total, shaded by rank — so the ring reads in the
+              same order as the list below. Anything past the top nine is summed into Others.
             </p>
           </div>
         </div>
@@ -122,14 +115,14 @@ export default function ProjectsPage() {
             }}
           >
             {/*
-              * `center`, not `baseline`. A flex container takes its baseline
-              * from its first item, and the logo's first item is an <img>,
-              * whose baseline is its bottom edge - so baseline alignment
-              * dropped the whole name block 13px and grew every card with a
-              * logo to 190px while the monogram ones stayed at 177. Centring
-              * makes the two cases identical again, which is also what keeps
-              * the measured 177px skeleton row honest.
-              */}
+             * `center`, not `baseline`. A flex container takes its baseline
+             * from its first item, and the logo's first item is an <img>,
+             * whose baseline is its bottom edge - so baseline alignment
+             * dropped the whole name block 13px and grew every card with a
+             * logo to 190px while the monogram ones stayed at 177. Centring
+             * makes the two cases identical again, which is also what keeps
+             * the measured 177px skeleton row honest.
+             */}
             <div
               style={{
                 display: 'flex',

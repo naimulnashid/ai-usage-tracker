@@ -53,17 +53,10 @@ function ChartTooltip({ active, payload }: TooltipContentProps) {
           marginBottom: 8,
         }}
       >
-        <span
-          className="model-swatch"
-          style={{ background: modelColor(row.model) }}
-          aria-hidden
-        />
+        <span className="model-swatch" style={{ background: modelColor(row.model) }} aria-hidden />
         {row.label}
       </div>
-      <div
-        className="num"
-        style={{ color: modelColor(row.model), fontSize: 21, fontWeight: 650 }}
-      >
+      <div className="num" style={{ color: modelColor(row.model), fontSize: 21, fontWeight: 650 }}>
         {row.unpriced ? 'unpriced' : formatUsd(row.cost)}
       </div>
       {!row.unpriced && (
@@ -128,38 +121,38 @@ export function CostByModelChart({
       ]}
       rows={data}
     >
-    <div className="chart-wrap" style={{ minHeight: height }}>
-      <ResponsiveContainer width="100%" height={height} key={replayKey}>
-        <BarChart
-          data={data}
-          layout="vertical"
-          margin={{ top: 4, right: 26, bottom: 4, left: 4 }}
-        >
-          <CartesianGrid stroke="var(--border)" horizontal={false} />
-          <XAxis
-            type="number"
-            tickFormatter={(v: number) => formatUsd(v, { compact: true })}
-            tick={{ fill: 'var(--text-faint)', fontSize: 13 }}
-            axisLine={{ stroke: 'var(--border)' }}
-            tickLine={false}
-          />
-          <YAxis
-            type="category"
-            dataKey="label"
-            tick={{ fill: 'var(--text-muted)', fontSize: 14 }}
-            axisLine={false}
-            tickLine={false}
-            width={116}
-          />
-          <Tooltip content={ChartTooltip} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
-          <Bar dataKey="cost" radius={[0, 6, 6, 0]} animationDuration={850} barSize={30}>
-            {data.map((row) => (
-              <Cell key={row.model} fill={modelColor(row.model)} />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+      <div className="chart-wrap" style={{ minHeight: height }}>
+        <ResponsiveContainer width="100%" height={height} key={replayKey}>
+          <BarChart
+            data={data}
+            layout="vertical"
+            margin={{ top: 4, right: 26, bottom: 4, left: 4 }}
+          >
+            <CartesianGrid stroke="var(--border)" horizontal={false} />
+            <XAxis
+              type="number"
+              tickFormatter={(v: number) => formatUsd(v, { compact: true })}
+              tick={{ fill: 'var(--text-faint)', fontSize: 13 }}
+              axisLine={{ stroke: 'var(--border)' }}
+              tickLine={false}
+            />
+            <YAxis
+              type="category"
+              dataKey="label"
+              tick={{ fill: 'var(--text-muted)', fontSize: 14 }}
+              axisLine={false}
+              tickLine={false}
+              width={116}
+            />
+            <Tooltip content={ChartTooltip} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+            <Bar dataKey="cost" radius={[0, 6, 6, 0]} animationDuration={850} barSize={30}>
+              {data.map((row) => (
+                <Cell key={row.model} fill={modelColor(row.model)} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </ChartFigure>
   );
 }

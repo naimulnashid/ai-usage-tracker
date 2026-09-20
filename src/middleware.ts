@@ -12,9 +12,7 @@ import { SESSION_COOKIE, configuredPassword, verifySession } from '@/lib/auth';
  * login page. None of it leaks anything - they are logos.
  */
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|icon.svg|agent-marks/|favicon.ico).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|icon.svg|agent-marks/|favicon.ico).*)'],
 };
 
 /** Only same-site absolute paths may be bounced back to after login. */
