@@ -31,11 +31,11 @@ import path from 'node:path';
 import { computeStreaks, localDate } from './parser';
 import type { ProviderId } from './providers';
 import type { DailyEntry, ProjectSummary, UsageCell, UsageReport } from './types';
+import { UNKNOWN_DATE } from './usage-math';
 
 const HISTORY_VERSION = 1;
 
 /** Entries with no usable timestamp are bucketed under this by the parser. */
-const UNKNOWN_DATE = '(unknown date)';
 
 export interface ArchivedBucket {
   perModel: Record<string, UsageCell>;

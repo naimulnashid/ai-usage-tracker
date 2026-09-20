@@ -14,6 +14,18 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   nothing on screen said whether it had been checked last week or last year.
 - `.nvmrc`, naming the newest Node version CI tests.
 
+### Changed
+
+- The arithmetic both parsers share — tokens into a cell, cells into a bucket,
+  buckets into a sorted daily array — now lives in one module instead of two
+  copies that had already started to drift. No number changes: the full
+  reports were diffed before and after.
+- **The Codex mark in the sidebar is drawn at the same visual size as the
+  Claude Code one.** Both files are square and centred, but OpenAI's bakes a
+  25% margin into every side where Anthropic's runs edge to edge, so in one
+  shared box the Codex mark rendered at half the size. Neither file is
+  modified; only the box it is drawn into.
+
 ### Fixed
 
 - **Every page scrolled a long way past its footer.** The screen-reader tables
@@ -23,13 +35,7 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   around 1200px of empty scroll below the overview's footer. Every page now
   ends where its footer does.
 
-### Changed
-
-- **The Codex mark in the sidebar is drawn at the same visual size as the
-  Claude Code one.** Both files are square and centred, but OpenAI's bakes a
-  25% margin into every side where Anthropic's runs edge to edge, so in one
-  shared box the Codex mark rendered at half the size. Neither file is
-  modified; only the box it is drawn into.
+## [0.12.0] - 2026-09-20
 
 First public release. Earlier versions were developed privately, so this entry
 summarises where the project stands rather than replaying that history — and it

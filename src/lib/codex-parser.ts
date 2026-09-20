@@ -78,7 +78,6 @@ import {
   resolveProjectId,
 } from './pricing';
 import {
-  UNKNOWN_DATE,
   computeSessionRecords,
   computeStreaks,
   isRecord,
@@ -86,16 +85,20 @@ import {
   parseTimestampMs,
   toTokenCount,
 } from './parser';
+import { UNKNOWN_DATE, type Bucket, localHour, usageMath } from './usage-math';
+
+// Codex reports reasoning tokens as a subset of output - Trap 3.
+const { addTokens, newBucket, bucketCell, bucketToPlain, dailyToPlain } = usageMath({
+  tracksReasoning: true,
+});
 import type {
   ActivityStats,
-  DailyEntry,
   ParseDiagnostics,
   PricingConfig,
   ProjectSummary,
   SessionSummary,
   Settings,
   TokenCounts,
-  UsageCell,
   UsageReport,
 } from './types';
 
@@ -517,84 +520,6 @@ async function readFileRecords(
     reconciled,
     parentThreadId,
   };
-}
-
-/* -------------------------------------------------------------------------
- * Aggregation
- * ---------------------------------------------------------------------- */
-
-function emptyCell(): UsageCell {
-  return {
-    input: 0,
-    output: 0,
-    cacheRead: 0,
-    cacheWrite5m: 0,
-    cacheWrite1h: 0,
-    reasoning: 0,
-    messages: 0,
-    runtimeSeconds: 0,
-    totalTokens: 0,
-    costUsd: 0,
-    unpriced: false,
-  };
-}
-
-function addTokens(cell: UsageCell, tokens: TokenCounts, cost: number) {
-  cell.input += tokens.input;
-  cell.output += tokens.output;
-  cell.cacheRead += tokens.cacheRead;
-  cell.cacheWrite5m += tokens.cacheWrite5m;
-  cell.cacheWrite1h += tokens.cacheWrite1h;
-  // Reasoning is already inside `output`, so it is tracked but never summed
-  // into totalTokens.
-  cell.reasoning = (cell.reasoning ?? 0) + (tokens.reasoning ?? 0);
-  cell.messages += 1;
-  cell.totalTokens +=
-    tokens.input + tokens.output + tokens.cacheRead + tokens.cacheWrite5m + tokens.cacheWrite1h;
-  cell.costUsd += cost;
-}
-
-function localHour(timestampMs: number, offsetHours: number): number | null {
-  const shifted = timestampMs + offsetHours * 3_600_000;
-  if (!Number.isFinite(shifted) || Math.abs(shifted) > 8.64e15) return null;
-  return new Date(shifted).getUTCHours();
-}
-
-interface Bucket {
-  perModel: Map<string, UsageCell>;
-  combined: UsageCell;
-}
-
-function newBucket(): Bucket {
-  return { perModel: new Map(), combined: emptyCell() };
-}
-
-function bucketCell(bucket: Bucket, model: string): UsageCell {
-  let cell = bucket.perModel.get(model);
-  if (!cell) {
-    cell = emptyCell();
-    bucket.perModel.set(model, cell);
-  }
-  return cell;
-}
-
-function bucketToPlain(bucket: Bucket): {
-  perModel: Record<string, UsageCell>;
-  combined: UsageCell;
-} {
-  const perModel: Record<string, UsageCell> = {};
-  for (const [model, cell] of [...bucket.perModel.entries()].sort(
-    (a, b) => b[1].totalTokens - a[1].totalTokens,
-  )) {
-    perModel[model] = cell;
-  }
-  return { perModel, combined: bucket.combined };
-}
-
-function dailyToPlain(map: Map<string, Bucket>): DailyEntry[] {
-  return [...map.entries()]
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([date, bucket]) => ({ date, ...bucketToPlain(bucket) }));
 }
 
 /* -------------------------------------------------------------------------

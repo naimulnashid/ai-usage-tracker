@@ -2,6 +2,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import readline from 'node:readline';
+import { UNKNOWN_DATE, type Bucket, localHour, usageMath } from './usage-math';
+
+// Claude Code does not report reasoning tokens, so its cells carry no
+// `reasoning` key at all - see usage-math.ts for why that is not a zero.
+const { addTokens, newBucket, bucketCell, bucketToPlain, dailyToPlain } = usageMath();
+
+export { UNKNOWN_DATE };
 import {
   costOf,
   getRate,
@@ -12,7 +19,6 @@ import {
 } from './pricing';
 import type {
   ActivityStats,
-  DailyEntry,
   ParseDiagnostics,
   PricingConfig,
   ProjectSummary,
@@ -20,7 +26,6 @@ import type {
   SessionSummary,
   Settings,
   TokenCounts,
-  UsageCell,
   UsageReport,
 } from './types';
 
@@ -199,9 +204,6 @@ function pickProjectCwd(id: string, counts: Map<string, number>): string | null 
   return best;
 }
 
-/** The bucket for usage whose line carried no usable timestamp. */
-export const UNKNOWN_DATE = '(unknown date)';
-
 /**
  * A token count from a transcript, as a non-negative integer.
  *
@@ -369,37 +371,6 @@ async function readFileRecords(
   return { file, records, firstTimestampMs, cwd, cwdCounts };
 }
 
-/* -------------------------------------------------------------------------
- * Aggregation helpers
- * ---------------------------------------------------------------------- */
-
-function emptyCell(): UsageCell {
-  return {
-    input: 0,
-    output: 0,
-    cacheRead: 0,
-    cacheWrite5m: 0,
-    cacheWrite1h: 0,
-    messages: 0,
-    runtimeSeconds: 0,
-    totalTokens: 0,
-    costUsd: 0,
-    unpriced: false,
-  };
-}
-
-function addTokens(cell: UsageCell, tokens: TokenCounts, cost: number) {
-  cell.input += tokens.input;
-  cell.output += tokens.output;
-  cell.cacheRead += tokens.cacheRead;
-  cell.cacheWrite5m += tokens.cacheWrite5m;
-  cell.cacheWrite1h += tokens.cacheWrite1h;
-  cell.messages += 1;
-  cell.totalTokens +=
-    tokens.input + tokens.output + tokens.cacheRead + tokens.cacheWrite5m + tokens.cacheWrite1h;
-  cell.costUsd += cost;
-}
-
 /**
  * The local calendar day for a UTC instant, or `UNKNOWN_DATE` when the shifted
  * instant falls outside the range a `Date` can represent. Callers already drop
@@ -410,12 +381,6 @@ export function localDate(timestampMs: number, offsetHours: number): string {
   const shifted = timestampMs + offsetHours * 3_600_000;
   if (!Number.isFinite(shifted) || Math.abs(shifted) > 8.64e15) return UNKNOWN_DATE;
   return new Date(shifted).toISOString().slice(0, 10);
-}
-
-function localHour(timestampMs: number, offsetHours: number): number | null {
-  const shifted = timestampMs + offsetHours * 3_600_000;
-  if (!Number.isFinite(shifted) || Math.abs(shifted) > 8.64e15) return null;
-  return new Date(shifted).getUTCHours();
 }
 
 /** Days apart between two YYYY-MM-DD keys, treating both as UTC midnight. */
@@ -561,44 +526,6 @@ export function computeSessionRecords(
     peakSession: best((chat) => chat.totalTokens),
     longestSession: best((chat) => chat.root.runtimeSeconds),
   };
-}
-
-/** Nested accumulator: model -> cell, plus a combined cell. */
-interface Bucket {
-  perModel: Map<string, UsageCell>;
-  combined: UsageCell;
-}
-
-function newBucket(): Bucket {
-  return { perModel: new Map(), combined: emptyCell() };
-}
-
-function bucketCell(bucket: Bucket, model: string): UsageCell {
-  let cell = bucket.perModel.get(model);
-  if (!cell) {
-    cell = emptyCell();
-    bucket.perModel.set(model, cell);
-  }
-  return cell;
-}
-
-function bucketToPlain(bucket: Bucket): {
-  perModel: Record<string, UsageCell>;
-  combined: UsageCell;
-} {
-  const perModel: Record<string, UsageCell> = {};
-  for (const [model, cell] of [...bucket.perModel.entries()].sort(
-    (a, b) => b[1].totalTokens - a[1].totalTokens,
-  )) {
-    perModel[model] = cell;
-  }
-  return { perModel, combined: bucket.combined };
-}
-
-function dailyToPlain(map: Map<string, Bucket>): DailyEntry[] {
-  return [...map.entries()]
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([date, bucket]) => ({ date, ...bucketToPlain(bucket) }));
 }
 
 /* -------------------------------------------------------------------------

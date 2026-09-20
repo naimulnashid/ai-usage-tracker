@@ -429,6 +429,7 @@ src/lib/providers.ts                 The two-agent registry. Client-safe: no `no
 src/lib/pricing.ts                   Loads config and settings, computes cost. Fails soft to "unpriced".
 src/lib/parser.ts                    CLAUDE CODE CORE. Scan -> parse -> de-duplicate -> aggregate.
 src/lib/codex-parser.ts              CODEX CORE. Same output, completely different traps.
+src/lib/usage-math.ts                The arithmetic BOTH parsers do, once. Cells, buckets, daily rollup.
 src/lib/history.ts                   Daily archive. One file per agent, keyed off report.provider.
 src/lib/auth.ts                      Password gate: session cookie signing. Web Crypto only.
 src/lib/rail.ts                      Sidebar state + the before-paint init script.
@@ -1376,6 +1377,32 @@ only.
   projects. Read at runtime only. `out/` and `data/` are gitignored for the same
   reason (the reports embed real `cwd` paths).
 
+### What the two parsers share, and the one thing they cannot
+
+Nothing about *reading* a transcript transfers between them — the formats have
+nothing in common and the traps above are entirely different. What does
+transfer is everything after a line is understood: tokens into a cell, cells
+into a per-model bucket, buckets out as a sorted daily array. That lived twice
+until `src/lib/usage-math.ts`, and a fix to one copy would have missed the
+other.
+
+**The one genuine difference is reasoning tokens, so it is the one thing
+`usageMath()` is parameterised on.** Codex reports `reasoning` as a subset of
+output; Claude Code does not report it at all, so a Claude Code cell has no
+`reasoning` key — and that absence is meaningful. `undefined` says "this agent
+does not report it"; a `0` would claim it was measured and found to be none.
+Do not "tidy" that into a default of zero.
+
+Two of the seven helpers differed between the copies before this, and both
+differed only in that field. The other five were identical to the character.
+
+**How to prove a change here is safe:** `npm run parse` and
+`npm run parse:codex` write the exact structure the API serves, so capture
+both reports, make the change, and diff them with `generatedAt` stripped. When
+this module was extracted, Codex's report came back **identical** — it was not
+in use during the change — and Claude Code's matched on 53 of 54 days, the
+exception being the one the session doing the work was writing to.
+
 ## Input guards: what a malformed line can and cannot do
 
 The rule at the top of the Claude Code section — degrade, never crash — is now
@@ -1386,7 +1413,7 @@ enforced in one place per concern, shared by both parsers (`parser.ts`):
 | `isRecord()` | Valid JSON that is not an object (`null`, a number, an array). Reading a field off one used to throw and abort the **rest of that file**; it is now counted in `linesUnparseable` and skipped. |
 | `parseTimestampMs()` | Absurd dates. `Date.parse` accepts `+275760-09-13T00:00:00Z`, and adding a timezone offset to it overflows `Date`, so `toISOString()` threw `RangeError` out of the parse and onto the page. Anything before 2000 or more than a year ahead is treated as no timestamp, counted in `diagnostics.implausibleTimestamps`; its tokens still count, under `(unknown date)`. |
 | `toTokenCount()` | Negative, fractional, non-numeric counts. One negative value used to flow into the totals as negative cost and then into the archive, where it outlived the line that caused it. |
-| `localDate()` / `localHour()` | A backstop for the same overflow, so no future caller can reintroduce it. |
+| `localDate()` (`parser.ts`) / `localHour()` (`usage-math.ts`) | A backstop for the same overflow, so no future caller can reintroduce it. |
 | `sanitizeDays()` (`history.ts`) | A hand-edited or truncated archive. Days that cannot be read are dropped with a warning instead of throwing; missing numbers coerce to 0. |
 
 Each of these has a test that fails if the guard is removed.
