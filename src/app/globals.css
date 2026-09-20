@@ -435,6 +435,37 @@ a:hover {
   object-fit: contain;
 }
 
+/* The two marks are both square and both centred, and they still did not look
+   the same size, because each vendor bakes a different amount of clear space
+   into its own file. Measured by rasterising each and taking the alpha
+   bounding box: Anthropic's artwork fills 99.5% of its viewBox, OpenAI's
+   fills exactly 50%. In a shared 24px box that is 24px of mark against 12px -
+   half the size, not an illusion.
+
+   So the box is per-mark and the FOOTPRINT stays 24px: 44px of image pulled
+   back by -10px on every side leaves a 24px margin box, so the rail's spacing
+   and alignment do not move. Nothing overflows either - at 44px the Blossom's
+   own artwork is 22px, still inside the original box - and the image renders
+   natively at its real size rather than being transformed, so it stays crisp.
+
+   22px against 23.9px leaves the rounder mark at about 92% of the spikier
+   one, which is where two marks of this shape look equal rather than
+   measuring equal.
+
+   **This does not modify either asset.** The files stay byte-identical to the
+   vendors' downloads, the aspect ratio is untouched, and the clear space each
+   one specifies scales with it. Choosing a display size is not redrawing,
+   recolouring or cropping - which remain forbidden, see CLAUDE.md. Re-measure
+   if a vendor republishes its mark with different padding.
+
+   `img` in the selector on purpose: the missing-file fallback is a `<span>`
+   sharing this class, and it must keep the plain 24px box. */
+img.rail-mark[data-agent='codex'] {
+  width: 44px;
+  height: 44px;
+  margin: -10px;
+}
+
 /* Initials in the mark's slot when its file is missing - same box, so the rail
    does not shift between the two states. */
 .rail-mark-fallback {

@@ -53,6 +53,9 @@ function AgentMark({ id, label }: { id: ProviderId; label: string }) {
       src={MARKS[id]}
       alt=""
       className="rail-mark"
+      // Lets CSS correct for how much padding a vendor baked into its own
+      // file, which differs per mark. See `.rail-mark` in globals.css.
+      data-agent={id}
       width={24}
       height={24}
       onError={() => setMissing(true)}
