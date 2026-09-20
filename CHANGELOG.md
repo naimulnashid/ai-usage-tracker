@@ -6,123 +6,12 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Security
+## [0.12.0] - 2026-09-20
 
-- **Security headers on every response.** A content security policy, plus
-  `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy: no-referrer`
-  and `Permissions-Policy`. The policy's `connect-src 'self'` is the one that
-  matters: "this app makes no outbound network calls" was a promise the code
-  kept and nothing enforced, and the browser now refuses instead. An `.svg`
-  path — the agent marks and your project logos, which are files you drop in
-  yourself — gets a tighter policy that allows no script at all.
-- **The login screen can no longer be framed by another site**, which is the
-  clickjacking defence it was missing.
-- **The auth gate's exclusions are anchored.** `icon.svg` and `favicon.ico`
-  were matched as prefixes with an unescaped `.`, so paths like `/icon.svgx`
-  and `/iconxsvg` were treated as the favicon and skipped the password gate.
-  Nothing was actually served through the gap — the paths 404 — but it is shut.
-
-### Fixed
-
-- **An expired session no longer loses your place.** A session that ran out
-  while a tab sat open bounced to the login screen and then to the overview;
-  it now returns you to the page you were on, query string included, the same
-  way a request that never had a session already did.
-
-### Fixed — the first pass in a real browser
-
-Everything below was found by loading the signed-in dashboard and measuring it,
-after an audit that had checked the same ground at the markup, token and unit
-level and passed. An axe-core run over both agents' three pages and the empty,
-failed and error states reported no violations beyond the heading below.
-
-- **The explainer tooltip inside a table was unreadable.** It inherited
-  `white-space: nowrap` from its header cell, so a 290px bubble rendered as one
-  ~1540px line: clipped out of view, and the table grew a scrollbar the moment
-  you hovered it. It also sat at the column's layout position, which on a table
-  wider than its panel is off where you cannot see it. It now wraps, hangs
-  below its header, and stays inside the table it belongs to.
-- **The dashboard scrolled sideways at narrow widths.** The screen-reader text
-  behind each tooltip escaped its scrolling table — it is absolutely positioned
-  and the table was not a containing block — and landed 169px past the right
-  edge of the page, taking a horizontal scrollbar with it.
-- **The top bar pushed Refresh off the edge of the page** at around 1000px with
-  the sidebar expanded, and wrapped "Sign out" onto two lines. The status line
-  now truncates instead, and both controls stay whole.
-- **Two pages had no `<h1>`.** The overview and projects pages started their
-  outline at h2, so a screen reader had no page title to land on.
-
-### Changed
-
-- **The project detail page's loading skeleton is measured**, not derived from
-  the overview's panels. Its three model-dependent panels and its stat grid
-  were sized for the agent's whole model list rather than the project's, which
-  at 997px put the placeholder 166px out on the grid alone; its sessions table
-  was 248px short. Measured across every project at both widths, the skeleton
-  now lands within ~43px everywhere above the two deliberately capped tables.
-
-### Accessibility
-
-- Small text now clears WCAG AA contrast: `--text-faint` moves from `#6b6b75`
-  (3.6-4.0:1, a failure) to `#7d7d87` (4.55:1 at worst). The charts' axis and
-  tooltip colours are tokens instead of their own copies of those hex values.
-- Every model shade and heat-map step clears 3:1 against the panel, with the
-  price ordering intact. The darkest bands used to sit at 1.5-2.2:1, which is
-  close to invisible against near-black.
-- Every chart is wrapped in a named `<figure>` with a screen-reader table of the
-  same numbers, so the data no longer exists only as a picture. The heat map's
-  grid is hidden from assistive tech in favour of that table, instead of
-  swallowing its own per-day labels behind `role="img"`.
-- The "i" explainers are real buttons: keyboard-reachable, named, and announced
-  through `aria-describedby`. Colour-only swatch columns carry the model names
-  for screen readers, and the loading skeletons announce themselves.
-
-### Tooling
-
-- ESLint 9 (flat config, via `eslint-config-next`) and Prettier, wired into CI
-  alongside the typecheck, tests and build. The codebase needed no rule
-  suppressions: the first run reported two warnings, both now gone.
-- `.gitattributes` normalises line endings to LF, with Windows scripts kept as
-  CRLF. Without it, Prettier and a Windows checkout disagree on every line of
-  every file.
-- `.editorconfig` keeps editors in step with both.
-
-### States
-
-- A parse that finds nothing now says so: which agent, where it looked, and how
-  to point it somewhere else. It used to render `$0.00` across a dozen cards
-  with a warning claiming a file could not be read.
-- Warnings are described honestly. "Nothing found" is left to the empty state,
-  and the rest are no longer all announced as unreadable files - the same list
-  carries merge-rule cycles and archive failures.
-- Render errors keep the dashboard's chrome and offer a retry instead of
-  blanking the page, and an unknown agent segment gets a real page.
-- The project detail page's loading skeleton mirrors the page section by
-  section, instead of three grey boxes standing in for nine sections.
-
-### Fixed
-
-- A project id containing `%` no longer blanks the page: the page was decoding
-  a parameter that arrives decoded.
-- One malformed line can no longer take down a report. JSON that is valid but
-  not an object (`null`, a number, an array) is skipped instead of aborting the
-  rest of that file; an out-of-range timestamp is treated as undated instead of
-  throwing `RangeError` out of the whole parse; negative and fractional token
-  counts are refused; and unreadable days in the local archive are dropped with
-  a warning instead of throwing.
-- `npm run parse` / `parse:codex` report an `implausible timestamps` count.
-
-### Added
-
-- A test suite (`npm test`, Node's built-in runner) covering both parsers'
-  documented traps and these guards, the archive's one-directional merge, the
-  session cookie and pricing.
-- CI: typecheck, tests and build on Windows and Ubuntu, Node 20 and 22.
-
-## [0.12.0] - Unreleased
-
-First public release. Earlier versions were developed privately; this entry
-summarises where the project stands rather than replaying that history.
+First public release. Earlier versions were developed privately, so this entry
+summarises where the project stands rather than replaying that history — and it
+includes everything done between opening the repository and tagging it, none of
+which was ever released separately.
 
 ### Features
 
@@ -147,8 +36,30 @@ summarises where the project stands rather than replaying that history.
 - A password gate that fails closed; CLI parsers (`npm run parse`,
   `npm run parse:codex`); an optional Windows background service.
 
+### Added
+
+- A test suite (`npm test`, Node's built-in runner) covering both parsers'
+  documented traps and the input guards, the archive's one-directional merge,
+  the session cookie, pricing, the accessible markup, the contrast ratios, the
+  security headers and the rules that keep the page from scrolling sideways.
+- CI: lint, formatting, typecheck, tests and build on Windows and Ubuntu, Node
+  20 and 22.
+
 ### Security
 
+- **Security headers on every response.** A content security policy, plus
+  `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy: no-referrer`
+  and `Permissions-Policy`. The policy's `connect-src 'self'` is the one that
+  matters: "this app makes no outbound network calls" was a promise the code
+  kept and nothing enforced, and the browser now refuses instead. An `.svg`
+  path — the agent marks and your project logos, which are files you drop in
+  yourself — gets a tighter policy that allows no script at all.
+- **The login screen can no longer be framed by another site**, which is the
+  clickjacking defence it was missing.
+- **The auth gate's exclusions are anchored.** `icon.svg` and `favicon.ico`
+  were matched as prefixes with an unescaped `.`, so paths like `/icon.svgx`
+  and `/iconxsvg` were treated as the favicon and skipped the password gate.
+  Nothing was actually served through the gap — the paths 404 — but it is shut.
 - Upgraded Next.js to 15.5.25 for GHSA-p293-qw3h-jr36 (unauthenticated remote
   code execution on Windows-hosted servers) and GHSA-2xp9-vwfh-vxw4, and sharp
   to 0.35.4.
@@ -162,6 +73,37 @@ summarises where the project stands rather than replaying that history.
 - Failed logins are throttled per client and globally, answering 429 with
   `Retry-After`.
 
+### Accessibility
+
+- Small text now clears WCAG AA contrast: `--text-faint` moves from `#6b6b75`
+  (3.6-4.0:1, a failure) to `#7d7d87` (4.55:1 at worst). The charts' axis and
+  tooltip colours are tokens instead of their own copies of those hex values.
+- Every model shade and heat-map step clears 3:1 against the panel, with the
+  price ordering intact. The darkest bands used to sit at 1.5-2.2:1, which is
+  close to invisible against near-black.
+- Every chart is wrapped in a named `<figure>` with a screen-reader table of the
+  same numbers, so the data no longer exists only as a picture. The heat map's
+  grid is hidden from assistive tech in favour of that table, instead of
+  swallowing its own per-day labels behind `role="img"`.
+- The "i" explainers are real buttons: keyboard-reachable, named, and announced
+  through `aria-describedby`. Colour-only swatch columns carry the model names
+  for screen readers, and the loading skeletons announce themselves.
+- Every page has exactly one `<h1>`. The overview and projects pages started
+  their outline at h2, so a screen reader had no page title to land on.
+
+### States
+
+- A parse that finds nothing now says so: which agent, where it looked, and how
+  to point it somewhere else. It used to render `$0.00` across a dozen cards
+  with a warning claiming a file could not be read.
+- Warnings are described honestly. "Nothing found" is left to the empty state,
+  and the rest are no longer all announced as unreadable files - the same list
+  carries merge-rule cycles and archive failures.
+- Render errors keep the dashboard's chrome and offer a retry instead of
+  blanking the page, and an unknown agent segment gets a real page.
+- Every loading skeleton mirrors its page section by section at measured
+  heights, so nothing moves when the data lands.
+
 ### Changed
 
 - Days are bucketed at the machine's own UTC offset by default instead of a
@@ -172,12 +114,60 @@ summarises where the project stands rather than replaying that history.
   folders' contents, each with a committed template.
 - The sidebar uses the vendors' official marks from `public/agent-marks/`,
   unmodified, and falls back to the agent's initials when a file is missing.
+- **The project detail page's loading skeleton is measured**, not derived from
+  the overview's panels. Its three model-dependent panels and its stat grid
+  were sized for the agent's whole model list rather than the project's, which
+  at 997px put the placeholder 166px out on the grid alone; its sessions table
+  was 248px short. Measured across every project at both widths, the skeleton
+  now lands within ~43px everywhere above the two deliberately capped tables.
+
+### Tooling
+
+- ESLint 9 (flat config, via `eslint-config-next`) and Prettier, wired into CI
+  alongside the typecheck, tests and build. The codebase needed no rule
+  suppressions: the first run reported two warnings, both now gone.
+- `.gitattributes` normalises line endings to LF, with Windows scripts kept as
+  CRLF. Without it, Prettier and a Windows checkout disagree on every line of
+  every file.
+- `.editorconfig` keeps editors in step with both.
 
 ### Fixed
 
+- A project id containing `%` no longer blanks the page: the page was decoding
+  a parameter that arrives decoded.
+- One malformed line can no longer take down a report. JSON that is valid but
+  not an object (`null`, a number, an array) is skipped instead of aborting the
+  rest of that file; an out-of-range timestamp is treated as undated instead of
+  throwing `RangeError` out of the whole parse; negative and fractional token
+  counts are refused; and unreadable days in the local archive are dropped with
+  a warning instead of throwing.
+- `npm run parse` / `parse:codex` report an `implausible timestamps` count.
 - The Codex project detail page labelled its API-equivalent figure as "Total
   estimated spend", called requests "messages", and pointed its merge tooltip
   at Claude Code's config file.
+- **An expired session no longer loses your place.** A session that ran out
+  while a tab sat open bounced to the login screen and then to the overview;
+  it now returns you to the page you were on, query string included, the same
+  way a request that never had a session already did.
+
+The rest were found by loading the signed-in dashboard and measuring it, after
+an audit that had checked the same ground at the markup, token and unit level
+and passed. An axe-core run over both agents' three pages and the empty, failed
+and error states reported no violations beyond the missing `<h1>` above.
+
+- **The explainer tooltip inside a table was unreadable.** It inherited
+  `white-space: nowrap` from its header cell, so a 290px bubble rendered as one
+  ~1540px line: clipped out of view, and the table grew a scrollbar the moment
+  you hovered it. It also sat at the column's layout position, which on a table
+  wider than its panel is off where you cannot see it. It now wraps, hangs
+  below its header, and stays inside the table it belongs to.
+- **The dashboard scrolled sideways at narrow widths.** The screen-reader text
+  behind each tooltip escaped its scrolling table — it is absolutely positioned
+  and the table was not a containing block — and landed 169px past the right
+  edge of the page, taking a horizontal scrollbar with it.
+- **The top bar pushed Refresh off the edge of the page** at around 1000px with
+  the sidebar expanded, and wrapped "Sign out" onto two lines. The status line
+  now truncates instead, and both controls stay whole.
 
 ### Removed
 
