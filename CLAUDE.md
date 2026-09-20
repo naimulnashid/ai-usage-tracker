@@ -990,6 +990,30 @@ edited. To update one, replace the file with a newer official download. Rules:
 `.rail-mark` sets `object-fit: contain` so the box is pinned rather than
 trusting every vendor's file to be perfectly square.
 
+**The box is per mark, because the vendors pad their files differently.** Both
+marks are square and centred, and they still did not look the same size.
+Measured by rasterising each and taking the alpha bounding box: **Anthropic's
+artwork fills 99.5% of its viewBox, OpenAI's fills exactly 50%** — a 25% margin
+baked into every side of the file. In one shared 24px box that is 24px of mark
+against 12px, which is half the size, not an illusion.
+
+So `img.rail-mark[data-agent='codex']` is a 44px image pulled back by `-10px`
+on every side. The margin box stays 24px, so the rail's spacing and alignment
+do not move; nothing visually overflows either, because at 44px the Blossom's
+own artwork is 22px and still inside the original box. Sizing the element
+rather than transforming it keeps the SVG rendering natively, so it stays
+crisp. 22px against 23.9px leaves the rounder mark at about 92% of the spikier
+one, which is where two marks of these shapes look equal rather than measure
+equal.
+
+**This is not a modification of either asset, and the rule above still holds.**
+The files stay byte-identical to the vendors' downloads, the aspect ratio is
+untouched, and the clear space each vendor specifies scales with its own mark.
+Choosing a display size is not redrawing, recolouring or cropping. Re-measure
+if a vendor republishes its mark with different padding — and note the selector
+says `img` on purpose, because the missing-file fallback is a `<span>` sharing
+the class and must keep the plain 24px box.
+
 ### Project logos
 
 Separate from the agent marks, and a different mechanism. Each agent has its own
@@ -1390,6 +1414,17 @@ regression fails before it ships rather than after someone complains.
   1.2:1 - so the encoding "darker = more expensive" survives, but **colour can
   never be the only way to read a band**. The test also checks that ordering:
   a dearer model may never be lighter than a cheaper one.
+- **`.sr-only` goes on a WRAPPER around a table, never on the table.** This is
+  the one that got away for months. `.sr-only` hides a box by shrinking it to
+  1px and clipping the overflow — and **neither applies to a `display: table`
+  box**: `overflow` does not apply to it, and a 1px `width`/`height` is only a
+  minimum, because a table sizes to its content. `clip-path` still hid it, so
+  the symptom was not a visible table but **~1200px of empty scroll below the
+  footer** on the overview, from two full-height tables nobody could see.
+  `ChartFigure` now wraps its table in a `<div class="sr-only">`. The tempting
+  wrong fix is `display: block` on the table, which strips exactly the table
+  semantics the element exists to provide. Anything else visually hidden this
+  way — a list, a span — is fine; only tables need the wrapper.
 - **Charts carry their numbers as text.** `ChartFigure` wraps every chart in a
   `<figure>` with a visually hidden caption and a `.sr-only` table of the same
   series. Recharts' `accessibilityLayer` makes the plot keyboard-reachable but
