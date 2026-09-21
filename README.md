@@ -480,6 +480,12 @@ Check vendors' current pricing if it is old.
   doesn't de-duplicate and excludes cache tokens. Several of the Codex app's
   stats cover a recent window rather than all history. Where they measure the
   same thing (for example, lifetime Codex tokens), the figures agree.
+- **No screen reader has been run against this.** The accessible markup is
+  covered by tests, an axe-core pass over both agents' pages reports no
+  violations, and the accessibility tree has been read back by hand — one
+  `<h1>` per page, named landmarks, and a table of the same numbers behind
+  every chart. None of that is the same as hearing it. If you use a screen
+  reader and something here does not work, that is a bug worth reporting.
 
 ---
 
