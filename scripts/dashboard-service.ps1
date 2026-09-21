@@ -31,11 +31,23 @@ function Write-Log($message) {
 }
 
 try {
-    # Already listening? Another copy is up - never start a second one, it would
-    # only fail on the port and leave a confusing log.
-    if (Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue) {
-        Write-Log "Already running on port $port - nothing to do."
-        exit 0
+    # Already listening? Never start a second server on the port. If it is
+    # another copy of this dashboard, there is nothing to do. If it is some
+    # other program, say so: a bare "already running" here would leave the
+    # dashboard down until the next logon with a log claiming it was up. And do
+    # not start alongside it either - a different bind address would let both
+    # listen, with this machine's browser reaching whichever is more specific.
+    . (Join-Path $PSScriptRoot 'dashboard-process.ps1')
+    $held = @(Get-PortListener -Port $port -Root $root)
+    if ($held.Count -gt 0) {
+        $ours = @($held | Where-Object { $_.IsDashboard })
+        if ($ours.Count -gt 0) {
+            Write-Log "Already running on port $port (PID $(($ours.ProcessId) -join ', ')) - nothing to do."
+            exit 0
+        }
+        $others = ($held | ForEach-Object { "'$($_.Name)' PID $($_.ProcessId) on $($_.Address)" }) -join '; '
+        Write-Log "ERROR: port $port is held by another program ($others), not this dashboard. Dashboard not started."
+        exit 1
     }
 
     # npm is npm.cmd on Windows, and a scheduled task's PATH is not the one from

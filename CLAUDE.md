@@ -1490,7 +1490,9 @@ Get-NetTCPConnection -LocalPort 7843 -State Listen |
 
 is exactly what once took down another app's dashboard, which had held that
 port all along — and which, as a logon task, stayed down until the next logon.
-**Stop the demo by the PID you started, or with Ctrl+C. Never by port.**
+**Stop the demo by the PID you started, or with Ctrl+C. Never by port.** The
+background dashboard's own stop script follows the same rule; see *Stopping it,
+and "is it running?", go by ownership* under *Running*.
 
 **And the PID you started is not the server.** `Start-Process npx.cmd` hands
 back `cmd.exe`; the listener is a node process two levels below it. Measured:
@@ -1764,6 +1766,46 @@ starts; failing build → does not start, logs the exit code. The `.bat` was
 additionally run with a poisoned `errorlevel 7` before its build section, since
 the stale check reads an exit code — `if errorlevel` sits inside the
 `if not defined DO_BUILD` block so an earlier failure cannot be read as "stale".
+
+### Stopping it, and "is it running?", go by ownership, never by port
+
+`dashboard-stop.ps1` (and `stop-dashboard.bat`, which runs it) used to stop
+every `node` process listening on 7842. That is the kill-by-port from *The demo
+server gets its own port*, one step removed: another local app's Next.js server
+is `node` too, and it can hold 7842 alongside this one through a different bind
+address. The process name protected nothing.
+
+Both the stop script and the service's "already running?" check now go through
+`scripts/dashboard-process.ps1`, which counts a listener as this dashboard only
+when its command line runs Next.js out of **this checkout's** `node_modules`:
+
+- **Anchored on `<repo>\node_modules\`, not on `<repo>`.** The bare path also
+  matches a sibling folder whose name merely starts with this one's — a backup
+  copy, say — and any process that only mentions the repo in an argument.
+- **What cannot be confirmed is not ours.** A command line Windows will not
+  show, as for an elevated process, is left alone with a message. Refusing is
+  recoverable; killing the wrong server is not.
+- **Stopping the listener is enough.** Measured: the npm and `cmd.exe` wrappers
+  above it exit on their own once it is gone, and the service logs the exit.
+- **The service refuses by name.** With another program on the port it logs
+  `ERROR: port 7842 is held by another program (...)` and exits 1. It used to
+  log `Already running` and exit 0, which left the dashboard down until the
+  next logon with a log saying it was up. It still never starts alongside the
+  other program: a different bind address would let both listen, and this
+  machine's browser would reach whichever is more specific.
+
+The stop script's `-Port` exists to test this on a spare port. Verified on 7942
+with a plain node listener standing in for another app, both ways round — ours
+on `0.0.0.0` beside a stranger on `127.0.0.1`, and ours on `127.0.0.1` beside a
+stranger on `::`. The old rule selected both listeners each time; the new one
+stopped only ours and the stranger kept listening. The matching rule was also
+checked against the listeners on the neighbouring ports, read-only: every
+other app's server there is `node`, and none of them matched.
+
+**A known gap, older than this check:** while the service is running, its
+`Out-File -Append` holds `logs/dashboard.log` open, so a second copy of the
+service cannot write even its `Already running` line — it exits 1 on an
+IOException instead.
 
 ## Git
 

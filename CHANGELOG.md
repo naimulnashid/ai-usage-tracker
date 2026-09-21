@@ -31,6 +31,13 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **`stop-dashboard.bat` no longer stops other apps' servers.** It stopped
+  every Node process listening on the dashboard's port, and another local
+  app's Node server can hold that same port through a different bind address.
+  It now stops only a server running this checkout's Next.js, and leaves
+  anything else alone with a message saying what it is. The background
+  service's "already running" check uses the same rule, so another program on
+  the port is logged as an error instead of passing for the dashboard.
 - **The demo recipe no longer points at a port other apps use, or stops the
   server in a way that takes them down with it.** The README ran the screenshot
   server on 7843, right beside this dashboard's own port and so a likely one
