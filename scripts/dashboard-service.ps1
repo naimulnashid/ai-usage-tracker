@@ -25,9 +25,71 @@ $logDir = Join-Path $root 'logs'
 $log = Join-Path $logDir 'dashboard.log'
 if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir | Out-Null }
 
+# The log is written by more than one process at once. While the server runs,
+# its output streams in here for hours - and a second copy of this script (a
+# re-run task, a double-clicked .vbs) still has to be able to add its line.
+# Out-File and Add-Content both open the file refusing other writers, which
+# made that second copy die on an IOException with nothing logged at all.
+#
+# So every writer opens the file sharing it (FileShare.ReadWrite), with the
+# AppendData right and nothing else. That is what makes sharing safe: with no
+# general write access, Windows places each write at the end of the file as
+# one operation, wherever the file has grown to since. A plain write handle
+# keeps its own position, and seeking to the end before each write is not
+# enough - measured with two processes appending at once, seek-then-write lost
+# 2677 of 6000 lines, each written over by the other process. AppendData lost
+# none, in Windows PowerShell 5.1 and PowerShell 7 alike.
+#
+# One Write() per line keeps each line one operation. The bytes are what
+# Out-File wrote: UTF-8, CRLF, and a BOM on a new file.
+$logEncoding = New-Object System.Text.UTF8Encoding $false
+$logPreamble = (New-Object System.Text.UTF8Encoding $true).GetPreamble()
+
+function Open-LogStream {
+    $mode = [System.IO.FileMode]::Append
+    $rights = [System.Security.AccessControl.FileSystemRights]::AppendData
+    $share = [System.IO.FileShare]::ReadWrite
+    $none = [System.IO.FileOptions]::None
+    if ($PSVersionTable.PSEdition -eq 'Core') {
+        # .NET Core dropped this FileStream constructor; the same call lives here.
+        return [System.IO.FileSystemAclExtensions]::Create((New-Object System.IO.FileInfo $log),
+            $mode, $rights, $share, 4096, $none, $null)
+    }
+    return New-Object System.IO.FileStream($log, $mode, $rights, $share, 4096, $none)
+}
+
+function Add-LogLine([System.IO.FileStream]$stream, [string]$text) {
+    $bytes = $logEncoding.GetBytes($text + [Environment]::NewLine)
+    if ($stream.Length -eq 0) { $bytes = [byte[]]($logPreamble + $bytes) }
+    $stream.Write($bytes, 0, $bytes.Length)
+    $stream.Flush()
+}
+
 function Write-Log($message) {
-    "{0}  {1}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), $message |
-        Add-Content -Path $log -Encoding utf8
+    $line = "{0}  {1}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), $message
+    # Logging is never what stops this script. A writer that does not share -
+    # a copy of this script from before the log was shared, still serving -
+    # can hold the file for hours, so try briefly and then carry on without.
+    for ($try = 0; $try -lt 5; $try++) {
+        try {
+            $stream = Open-LogStream
+            try { Add-LogLine $stream $line } finally { $stream.Dispose() }
+            return
+        }
+        catch { Start-Sleep -Milliseconds 200 }
+    }
+}
+
+# Streams a command's output into the log line by line as it arrives; the
+# server runs for hours, so nothing may wait for it to finish. Strings go in as
+# they are, anything else through the same formatting Out-File applied.
+function Write-LogOutput {
+    begin { $stream = Open-LogStream }
+    process {
+        $lines = if ($_ -is [string]) { $_ } else { $_ | Out-String -Stream }
+        foreach ($text in $lines) { Add-LogLine $stream $text }
+    }
+    end { $stream.Dispose() }
 }
 
 try {
@@ -63,7 +125,7 @@ try {
 
     if (-not (Test-Path 'node_modules')) {
         Write-Log 'Installing dependencies...'
-        & $npm install *>&1 | Out-File -FilePath $log -Append -Encoding utf8
+        & $npm install *>&1 | Write-LogOutput
     }
 
     # Never build at logon. Building here delayed every boot by ~15s and, worse,
@@ -84,7 +146,7 @@ try {
 
     if (-not (Test-Path $buildId)) {
         Write-Log 'No production build found - building once (about 15s)...'
-        & $npm run build *>&1 | Out-File -FilePath $log -Append -Encoding utf8
+        & $npm run build *>&1 | Write-LogOutput
         if ($LASTEXITCODE -ne 0) {
             Write-Log "ERROR: build failed with exit code $LASTEXITCODE. Dashboard not started."
             exit 1
@@ -110,7 +172,7 @@ try {
     $script = if ($Lan) { 'start:lan' } else { 'start' }
     $scope = if ($Lan) { 'every network interface' } else { 'this machine only' }
     Write-Log "Starting the dashboard on port $port, listening on $scope."
-    & $npm run $script *>&1 | Out-File -FilePath $log -Append -Encoding utf8
+    & $npm run $script *>&1 | Write-LogOutput
     Write-Log "Server exited with code $LASTEXITCODE."
 }
 catch {

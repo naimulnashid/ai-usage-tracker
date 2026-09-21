@@ -31,6 +31,13 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **Starting the background service a second time no longer fails without a
+  trace.** While the dashboard ran, the server's output held
+  `logs/dashboard.log` open against other writers, so a second launch — a
+  re-run task, a double-clicked launcher — could not log that the dashboard was
+  already running, and exited with an error instead. The log is now shared, and
+  every line is appended as a single operation, so two writers cannot overwrite
+  each other's lines. The log's contents are unchanged.
 - **`stop-dashboard.bat` no longer stops other apps' servers.** It stopped
   every Node process listening on the dashboard's port, and another local
   app's Node server can hold that same port through a different bind address.

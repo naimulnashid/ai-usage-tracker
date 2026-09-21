@@ -1802,10 +1802,44 @@ stopped only ours and the stranger kept listening. The matching rule was also
 checked against the listeners on the neighbouring ports, read-only: every
 other app's server there is `node`, and none of them matched.
 
-**A known gap, older than this check:** while the service is running, its
-`Out-File -Append` holds `logs/dashboard.log` open, so a second copy of the
-service cannot write even its `Already running` line — it exits 1 on an
-IOException instead.
+### The service log has more than one writer, so it is appended atomically
+
+While the service runs, the server's output streams into `logs/dashboard.log`
+for hours — and a second copy of the service (a re-run task, a double-clicked
+`.vbs`) still has to add its own `Already running` line. It could not. The
+server's output went through `Out-File -Append`, which holds the file open
+refusing other writers, so that second copy died on an IOException with
+nothing logged, and exited 1. The check above made the failure visible; it had
+always been there.
+
+Every write now opens the log with `FileShare.ReadWrite` and **the
+`AppendData` right alone** (`Open-LogStream` in `dashboard-service.ps1`). The
+right is the part that matters:
+
+- **Sharing on its own corrupts the log.** A plain write handle keeps its own
+  position, so the long-lived one writes over whatever another process has
+  added since. Seeking to the end before each write does not fix it: the gap
+  between the seek and the write is wide enough in PowerShell that a sandbox
+  run with three duplicate launches lost a server line to it. Two processes
+  appending as fast as they can lost **2677 of 6000 lines** that way.
+- **With `AppendData` and no general write access, Windows places each write at
+  the end of the file as one operation.** The same two-process test lost none,
+  in Windows PowerShell 5.1 and PowerShell 7 alike. .NET Core dropped the
+  `FileStream` constructor that takes the right, so under 7 the same call goes
+  through `FileSystemAclExtensions.Create`.
+- **One `Write()` per line** keeps each line a single operation, and the bytes
+  are what `Out-File` wrote — UTF-8, CRLF, a BOM on a new file. Fed the same
+  server output, the old sink and the new one wrote logs identical apart from
+  their timestamps.
+- **Logging is never what stops the script.** `Write-Log` retries for a second
+  and then carries on without, because a writer that does not share can still
+  hold the file — a service started before this change, until it is
+  restarted.
+
+Verified in a sandbox with a fake server ticking every 20ms: five duplicate
+launches while it ran all exited 0, all five lines landed intact, and none of
+the server's 242 lines went missing. The committed code, on the same setup,
+exited 1 and logged nothing.
 
 ## Git
 
