@@ -436,6 +436,7 @@ src/lib/rail.ts                      Sidebar state + the before-paint init scrip
 src/middleware.ts                    The single auth gate in front of every route.
 scripts/dump-usage.ts                CLI: `npm run parse`.       -> out/usage-report.json
 scripts/dump-codex-usage.ts          CLI: `npm run parse:codex`. -> out/codex-usage-report.json
+scripts/report-console.ts            The two dump scripts' shared printing. Output is a baseline - keep it byte-identical.
 scripts/run-tests.mjs                CLI: `npm test`. Discovers tests/*.test.ts.
 scripts/make-demo-data.ts            CLI: `npm run demo:data`. Synthetic transcripts for both agents.
 tests/                               node:test suites; fixtures are written at run time.
@@ -479,6 +480,22 @@ distinct mechanisms:
 
 **Fix:** de-duplicate globally on `(message.id, requestId)` across *all* files,
 not per file. See `canonical` / `countedKeys` in `parser.ts`.
+
+**This is what costs the memory, and it is not avoidable in one pass.** Global
+de-duplication means no line can be attributed until every file's keys are
+known, so the parser holds one small record per timestamped line across two
+passes. Measured on real data: **158 MB peak heap for 155,000 lines**, about a
+kilobyte a line, and Codex is similar. Node's default heap gives that somewhere
+between ten and twenty times' headroom, which at ~20 MB of transcripts a day is
+years — and the archive means old transcripts can be deleted without losing the
+history, so the working set has a natural ceiling.
+
+If it ever does matter, the fix is two passes over the FILES rather than one
+pass holding everything: read once to build `canonical`, read again to
+attribute. That trades the memory for reading every transcript twice. Do not
+reach for a cache instead — "recomputed on demand, no cache layer" is a
+documented property of this app, and a stale cache would report numbers that
+were true a minute ago, which is worse than a slow parse.
 
 ### Trap 2 — `output_tokens` placeholders are recoverable
 
@@ -1471,6 +1488,13 @@ broken:
 - **`ParseWarnings` no longer calls everything a file.** The same list carries
   merge-rule cycles and archive write failures; announcing "N files could not
   be read" sent people looking for a file that was fine.
+- **A merge-rule cycle is reported once.** It used to be reported once per
+  event: Codex resolves a project per tick and per event, so one bad rule in
+  `codex-projects.json` produced thousands of identical warnings, which that
+  same warning box then summarised as a pile of unreadable files. Resolution is
+  memoised per working directory now, and `resolveProjectId` names the cycle's
+  members in sorted order so `a -> b -> a` reads the same from either end and
+  de-duplicates to one line.
 - **Render errors are caught.** `(dash)/[provider]/error.tsx` keeps the chrome
   and offers a retry; `app/not-found.tsx` handles an unknown agent segment.
   Before, one exception - a literal `%` in a project id was enough - left a

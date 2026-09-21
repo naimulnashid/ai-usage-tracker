@@ -73,6 +73,12 @@ export function loadSettings(): Settings {
   };
 }
 
+/** What `projects.json` / `codex-projects.json` contribute to a parse. */
+export interface ProjectConfig {
+  merge: Record<string, string>;
+  displayNames: Record<string, string>;
+}
+
 /**
  * Project merge/rename overrides.
  *
@@ -83,11 +89,12 @@ export function loadSettings(): Settings {
  * The file is the user's own and gitignored - it names their projects. A
  * missing file is the normal state for a fresh clone and means "no overrides";
  * `config/projects.example.json` is the template to copy from.
+ *
+ * Both parsers take a `projectConfig` option that overrides this. That exists
+ * so a test can exercise merge rules without writing the user's own gitignored
+ * config file, which it must never do.
  */
-export function loadProjectConfig(file = 'projects.json'): {
-  merge: Record<string, string>;
-  displayNames: Record<string, string>;
-} {
+export function loadProjectConfig(file = 'projects.json'): ProjectConfig {
   const parsed = readJson<{
     merge?: Record<string, unknown>;
     displayNames?: Record<string, unknown>;
@@ -121,7 +128,23 @@ export function resolveProjectId(
   while (merge[current]) {
     const next = merge[current];
     if (seen.has(next)) {
-      warnings.push(`Ignored a cycle in config/projects.json merge rules involving "${next}".`);
+      // Said once per CYCLE, not once per caller and not once per entry point.
+      //
+      // Two things made this noisy. The Codex parser resolves a project per
+      // event, so one bad rule produced thousands of copies (now memoised at
+      // the call site); and `a -> b -> a` is reached from both ends, which
+      // described one mistake twice. Naming the members in sorted order gives
+      // both entry points the same sentence, so the de-duplication catches it.
+      //
+      // The file is not named: this serves `projects.json` and
+      // `codex-projects.json` both, and naming the wrong one sends a Codex
+      // user to edit a file that is fine.
+      const cycle = [...new Set([...seen, next])]
+        .sort()
+        .map((member) => `"${member}"`)
+        .join(' -> ');
+      const warning = `Ignored a cycle in your project merge rules: ${cycle}.`;
+      if (!warnings.includes(warning)) warnings.push(warning);
       return id;
     }
     seen.add(next);

@@ -76,6 +76,7 @@ import {
   loadProjectConfig,
   loadSettings,
   resolveProjectId,
+  type ProjectConfig,
 } from './pricing';
 import {
   computeSessionRecords,
@@ -530,6 +531,10 @@ export interface CodexParseOptions {
   codexHome?: string;
   pricing?: PricingConfig;
   settings?: Settings;
+  /** Merge rules and display names. Injectable for the same reason `pricing`
+   *  is: otherwise the only way to exercise them is to write the user's own
+   *  gitignored config file, which a test must never do. */
+  projectConfig?: ProjectConfig;
 }
 
 export async function buildCodexUsageReport(options: CodexParseOptions = {}): Promise<UsageReport> {
@@ -567,7 +572,7 @@ export async function buildCodexUsageReport(options: CodexParseOptions = {}): Pr
   }
 
   const threadNames = loadThreadNames(home, diagnostics.warnings);
-  const projectConfig = loadProjectConfig('codex-projects.json');
+  const projectConfig = options.projectConfig ?? loadProjectConfig('codex-projects.json');
 
   const fileRecords: FileRecords[] = [];
   for (const file of files) {
@@ -599,9 +604,24 @@ export async function buildCodexUsageReport(options: CodexParseOptions = {}): Pr
 
   const UNPLACED = '(unknown project)';
 
-  /** cwd -> merged project id, remembering what was folded into what. */
+  /**
+   * cwd -> merged project id, remembering what was folded into what.
+   *
+   * **Memoised, and that is load-bearing rather than an optimisation.** This is
+   * called once per tick and once per event, which in a busy file is hundreds
+   * of times with the same handful of `cwd` values — and `resolveProjectId`
+   * pushes a warning every time it walks into a merge-rule cycle. One cycle in
+   * `codex-projects.json` therefore produced thousands of identical warnings,
+   * which the UI then summarised as a pile of unreadable files. Resolving each
+   * distinct cwd once bounds that at one warning per cwd rather than one per
+   * event, and skips the repeated slug-minting while it is there.
+   */
+  const resolvedProjects = new Map<string, string>();
   const resolveProject = (rawCwd: string | null): string => {
     if (!rawCwd) return UNPLACED;
+    const cached = resolvedProjects.get(rawCwd);
+    if (cached !== undefined) return cached;
+
     const sourceId = projectIdFromCwd(rawCwd);
     const targetId = resolveProjectId(sourceId, projectConfig.merge, diagnostics.warnings);
     if (sourceId === targetId) {
@@ -611,6 +631,7 @@ export async function buildCodexUsageReport(options: CodexParseOptions = {}): Pr
       merged.add(sourceId);
       projectMergedFrom.set(targetId, merged);
     }
+    resolvedProjects.set(rawCwd, targetId);
     return targetId;
   };
 

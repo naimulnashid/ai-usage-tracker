@@ -16,6 +16,7 @@ import {
   loadProjectConfig,
   loadSettings,
   resolveProjectId,
+  type ProjectConfig,
 } from './pricing';
 import type {
   ActivityStats,
@@ -141,7 +142,6 @@ interface LineRecord {
   /** De-duplication key, null for lines that carry no message id. */
   key: string | null;
   tokens: TokenCounts | null;
-  cwd: string | null;
 }
 
 interface FileRecords {
@@ -358,7 +358,7 @@ async function readFileRecords(
         }
       }
 
-      records.push({ timestampMs, timestampRaw: tsRaw, lineModel, key, tokens, cwd: null });
+      records.push({ timestampMs, timestampRaw: tsRaw, lineModel, key, tokens });
     }
   } catch (err) {
     diagnostics.filesFailed += 1;
@@ -536,6 +536,8 @@ export interface ParseOptions {
   projectsDir?: string;
   pricing?: PricingConfig;
   settings?: Settings;
+  /** Merge rules and display names. See CodexParseOptions for why. */
+  projectConfig?: ProjectConfig;
 }
 
 export async function buildUsageReport(options: ParseOptions = {}): Promise<UsageReport> {
@@ -562,7 +564,7 @@ export async function buildUsageReport(options: ParseOptions = {}): Promise<Usag
 
   // Apply project merge rules before anything is aggregated, so a renamed
   // directory's sessions land in the same buckets as the target's.
-  const projectConfig = loadProjectConfig();
+  const projectConfig = options.projectConfig ?? loadProjectConfig();
   for (const file of files) {
     file.projectId = resolveProjectId(
       file.sourceProjectId,

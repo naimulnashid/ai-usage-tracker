@@ -24,26 +24,34 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   templates lead with the privacy rule, because an app that reads your real
   code and paths makes a public bug report the easiest way to leak them.
 
-### Changed
-
-- The arithmetic both parsers share — tokens into a cell, cells into a bucket,
-  buckets into a sorted daily array — now lives in one module instead of two
-  copies that had already started to drift. No number changes: the full
-  reports were diffed before and after.
-- **The Codex mark in the sidebar is drawn at the same visual size as the
-  Claude Code one.** Both files are square and centred, but OpenAI's bakes a
-  25% margin into every side where Anthropic's runs edge to edge, so in one
-  shared box the Codex mark rendered at half the size. Neither file is
-  modified; only the box it is drawn into.
-
 ### Fixed
 
+- **One bad project merge rule no longer floods the warning box.** A cycle in
+  `codex-projects.json` produced a warning per usage event — thousands of
+  identical lines, which the dashboard then summarised as a pile of unreadable
+  files. It is reported once now.
 - **Every page scrolled a long way past its footer.** The screen-reader tables
   that carry each chart's numbers were hidden with a class that cannot hide a
   `<table>` — a table ignores the 1px size and the clipped overflow the class
   relies on — so two full-height tables stayed laid out, invisible, adding
   around 1200px of empty scroll below the overview's footer. Every page now
   ends where its footer does.
+
+### Changed
+
+- The arithmetic both parsers share — tokens into a cell, cells into a bucket,
+  buckets into a sorted daily array — now lives in one module instead of two
+  copies that had already started to drift. No number changes: the full
+  reports were diffed before and after.
+- The two `npm run parse` scripts share their printing instead of keeping two
+  copies of it. What each agent reports that the other does not — its model
+  columns, its own diagnostics counters — stays separate. The printed output is
+  unchanged, character for character.
+- **The Codex mark in the sidebar is drawn at the same visual size as the
+  Claude Code one.** Both files are square and centred, but OpenAI's bakes a
+  25% margin into every side where Anthropic's runs edge to edge, so in one
+  shared box the Codex mark rendered at half the size. Neither file is
+  modified; only the box it is drawn into.
 
 ## [0.12.0] - 2026-09-20
 

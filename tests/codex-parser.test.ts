@@ -15,6 +15,7 @@ import {
 } from './helpers';
 
 const CWD = '/home/you/projects/my-app';
+const OTHER_CWD = '/home/you/projects/other-app';
 const THREAD = '00000000-0000-0000-0000-00000000000a';
 const GUARDIAN = '00000000-0000-0000-0000-00000000000b';
 const DAY = ['sessions', '2026', '08', '01'];
@@ -228,5 +229,45 @@ describe('Codex parser', () => {
     assert.equal(report.projects.length, 0);
     assert.equal(report.diagnostics.filesScanned, 0);
     assert.match(report.diagnostics.warnings.join(' '), /No Codex rollout files found/);
+  });
+  it('says a merge-rule cycle once, not once per event', async () => {
+    // The warning is pushed from inside project resolution, which runs per
+    // tick AND per event - so a single bad rule used to produce one warning
+    // per token_count line, thousands of them, which the UI then summarised as
+    // a pile of unreadable files. Resolution is memoised per working directory
+    // now, and the warning itself is de-duplicated.
+    const home = tempDir();
+    const a = projectIdFromCwd(CWD);
+    const b = projectIdFromCwd(OTHER_CWD);
+    const events = Array.from({ length: 40 }, (_, i) =>
+      tokenCount({
+        ts: `2026-08-01T10:${String(i).padStart(2, '0')}:00Z`,
+        input: 100 * (i + 1),
+        cached: 0,
+        output: 10 * (i + 1),
+      }),
+    );
+    thread(home, rolloutName(THREAD), [
+      sessionMeta('2026-08-01T10:00:00Z', CWD),
+      turnContext('2026-08-01T10:00:00Z', 'test-model'),
+      ...events,
+    ]);
+    thread(home, rolloutName(GUARDIAN), [
+      sessionMeta('2026-08-01T11:00:00Z', OTHER_CWD),
+      turnContext('2026-08-01T11:00:00Z', 'test-model'),
+      ...events,
+    ]);
+
+    const report = await buildCodexUsageReport({
+      codexHome: home,
+      pricing,
+      settings: testSettings(),
+      projectConfig: { merge: { [a]: b, [b]: a }, displayNames: {} },
+    });
+
+    const cycles = report.diagnostics.warnings.filter((w) => /cycle/i.test(w));
+    assert.equal(cycles.length, 1, `expected one cycle warning, got ${cycles.length}`);
+    // And the parse still produced numbers rather than giving up.
+    assert.ok(report.global.combined.totalTokens > 0);
   });
 });
