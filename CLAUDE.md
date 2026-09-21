@@ -1471,6 +1471,37 @@ part of this tool that does not rebuild itself from disk, so that damage does
 not come back. Anything that reads demo transcripts must set that variable;
 the generator prints it as part of the command for exactly that reason.
 
+### The demo server gets its own port, and is stopped by PID
+
+**The demo port is 7942**, in both the command `demo:data` prints and the
+README's `demo:shots` recipe. Not 7842, which is the real dashboard's, and not
+7843 and up, which other local dashboards take — the recipe once said 7843.
+
+**A loopback bind does not reserve the port.** On Windows a server bound to
+`127.0.0.1` starts happily on a port another app already holds with a wildcard
+(`0.0.0.0` or `::`) listener; both were reproduced on this port, side by side.
+So `Get-NetTCPConnection -LocalPort <port>` returns **both** owners, and
+stopping the demo with
+
+```powershell
+Get-NetTCPConnection -LocalPort 7843 -State Listen |
+  ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
+```
+
+is exactly what once took down another app's dashboard, which had held that
+port all along — and which, as a logon task, stayed down until the next logon.
+**Stop the demo by the PID you started, or with Ctrl+C. Never by port.**
+
+**And the PID you started is not the server.** `Start-Process npx.cmd` hands
+back `cmd.exe`; the listener is a node process two levels below it. Measured:
+`Stop-Process` on that PID left the server listening, and `taskkill /PID <pid>
+/T /F` stopped all of it. A stop that "did not work" is the usual reason to
+reach for a kill-by-port, so kill the tree the first time.
+
+The same goes for a port already in use: an `EADDRINUSE` is only guaranteed
+when the other listener has the *same* address. Check the port is free with
+`Get-NetTCPConnection` before starting, rather than trusting the bind to fail.
+
 ## The four states a page can be in
 
 Loading, failed, empty, and has-data. The middle two used to be told apart by

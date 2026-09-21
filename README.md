@@ -327,7 +327,8 @@ npm run demo:data
 ```
 
 Writes a synthetic transcript tree for both agents to `./demo-data` and prints
-the command to run the dashboard against it. Useful for taking a screenshot,
+the command to run the dashboard against it, on port **7942** so it never
+shares a port with your real one on 7842. Useful for taking a screenshot,
 trying a change, or seeing what the thing looks like before pointing it at
 your own machine.
 
@@ -348,15 +349,31 @@ produce. It is seeded, so the same command always gives the same dashboard.
 Delete `./demo-data` when you are done; it is gitignored either way.
 
 **The screenshots above are made from it**, so they can be regenerated rather
-than re-staged by hand whenever the UI changes:
+than re-staged by hand whenever the UI changes. Serve a build on the demo tree,
+on the demo port:
 
 ```bash
-npm run demo:shots -- http://127.0.0.1:7843 "<your session cookie>"
+npm run build
+CLAUDE_CONFIG_DIR=demo-data/claude CODEX_HOME=demo-data/codex \
+  DASHBOARD_DATA_DIR=demo-data/archive npx next start -H 127.0.0.1 -p 7942
+```
+
+Then, from another terminal:
+
+```bash
+npm run demo:shots -- http://127.0.0.1:7942 "<your session cookie>"
 ```
 
 It drives headless Chrome over the DevTools protocol and writes
-`docs/screenshots/`. Give it a server running on the demo tree — the cookie is
-passed in rather than minted, so the script never handles a password.
+`docs/screenshots/`. The cookie is passed in rather than minted, so the script
+never handles a password.
+
+> **Stop the demo server with Ctrl+C, or by the PID of the process you
+> started — never by killing whatever is listening on the port.** A server
+> bound to `127.0.0.1` can share its port with another app's wildcard
+> (`0.0.0.0` or `::`) listener, so a kill-by-port stops both. On Windows, kill
+> the whole tree (`taskkill /PID <pid> /T /F`): `npx` runs the server as a
+> grandchild, and stopping only the PID you were handed leaves it listening.
 
 ---
 

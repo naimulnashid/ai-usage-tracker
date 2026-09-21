@@ -403,7 +403,9 @@ function main(): void {
   console.log(`  CLAUDE_CONFIG_DIR=${q(path.join(target, 'claude'))} \\`);
   console.log(`  CODEX_HOME=${q(path.join(target, 'codex'))} \\`);
   console.log(`  DASHBOARD_DATA_DIR=${q(dataDir)} \\`);
-  console.log('  npm run dev');
+  // Not `npm run dev`: that is 7842, the real dashboard's port, and a
+  // 127.0.0.1 bind can sit alongside a LAN-mode 0.0.0.0 listener there.
+  console.log('  npx next dev -H 127.0.0.1 -p 7942');
   console.log('');
   console.log('DASHBOARD_DATA_DIR is not optional: without it these synthetic');
   console.log('days are folded into your real archive in ./data, and the merge');

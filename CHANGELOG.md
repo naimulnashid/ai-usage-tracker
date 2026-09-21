@@ -31,6 +31,16 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **The demo recipe no longer points at a port other apps use, or stops the
+  server in a way that takes them down with it.** The README ran the screenshot
+  server on 7843, right beside this dashboard's own port and so a likely one
+  for another local app to hold already, and
+  `demo:data` printed `npm run dev`, which is this dashboard's own 7842. A
+  server bound to `127.0.0.1` can share a port with another app's wildcard
+  listener, so stopping the demo by killing whatever listened on that port
+  killed the other app as well. The demo now runs on 7942, and the README says
+  to stop it by the PID you started (the whole process tree, on Windows) or
+  with Ctrl+C — never by port.
 - **One bad project merge rule no longer floods the warning box.** A cycle in
   `codex-projects.json` produced a warning per usage event — thousands of
   identical lines, which the dashboard then summarised as a pile of unreadable
