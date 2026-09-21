@@ -7,6 +7,35 @@ day.
 It works by reading the session transcripts both agents already write to your
 disk. There is no account, no database and no cloud service.
 
+![The Claude Code overview: total estimated spend, tokens and runtime, above a daily spend chart](docs/screenshots/overview-claude.webp)
+
+<details>
+<summary><b>Codex, the projects page, and one project in detail</b></summary>
+
+Codex's headline says **API-equivalent spend**, not "total spend" — it is
+commonly used on a flat subscription, where these tokens were never billed
+individually. The two figures answer different questions and are never added.
+
+![The Codex overview, in its own accent, headed API-equivalent spend](docs/screenshots/overview-codex.webp)
+
+Projects open with a share-of-spend ring, because a ranked list looks the same
+whether the top project is 37% of your spend or 15%.
+
+![The projects page: a share-of-spend donut above a ranked list of projects](docs/screenshots/projects.webp)
+
+Each project has its own page: daily spend, a breakdown by model, and every
+session ranked by cost.
+
+![A single project's page, with its own spend, tokens and runtime](docs/screenshots/project-detail.webp)
+
+</details>
+
+> **Every number in those images is invented.** They are captured from
+> `npm run demo:data`, which writes a synthetic transcript tree — see
+> [Trying it without your own data](#trying-it-without-your-own-data). A real
+> screenshot of this dashboard would be a screenshot of somebody's projects,
+> paths and spending.
+
 ---
 
 ## Privacy: what it reads, writes and sends
@@ -317,6 +346,17 @@ produce. It is seeded, so the same command always gives the same dashboard.
 > thing here that cannot rebuild itself from disk.
 
 Delete `./demo-data` when you are done; it is gitignored either way.
+
+**The screenshots above are made from it**, so they can be regenerated rather
+than re-staged by hand whenever the UI changes:
+
+```bash
+npm run demo:shots -- http://127.0.0.1:7843 "<your session cookie>"
+```
+
+It drives headless Chrome over the DevTools protocol and writes
+`docs/screenshots/`. Give it a server running on the demo tree — the cookie is
+passed in rather than minted, so the script never handles a password.
 
 ---
 

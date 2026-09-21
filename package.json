@@ -14,6 +14,7 @@
     "parse": "tsx scripts/dump-usage.ts",
     "parse:codex": "tsx scripts/dump-codex-usage.ts",
     "demo:data": "tsx scripts/make-demo-data.ts",
+    "demo:shots": "tsx scripts/make-screenshots.ts",
     "test": "node scripts/run-tests.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
