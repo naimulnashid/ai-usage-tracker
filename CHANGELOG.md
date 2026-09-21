@@ -23,6 +23,11 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `CONTRIBUTING.md`, issue and pull-request templates, and Dependabot. The
   templates lead with the privacy rule, because an app that reads your real
   code and paths makes a public bug report the easiest way to leak them.
+- **The README says that no screen reader has been run against this.** The
+  accessible markup is covered by tests, an axe-core pass reports no
+  violations and the accessibility tree has been read back by hand — but none
+  of that is the same as hearing it, and the gap was recorded only in the
+  contributor notes, where someone relying on one would never see it.
 
 ### Fixed
 
