@@ -1563,10 +1563,10 @@ regression fails before it ships rather than after someone complains.
 Found in the pre-release audit and not yet fixed. Check before assuming the code
 already handles them:
 
-- **No screen reader has been run against this.** An axe-core pass now has
-  (below), which is not the same thing: axe checks the markup, a screen reader
-  checks whether the result is usable. The `.sr-only` chart tables in
-  particular have never been *heard*.
+- **No screen reader has been run against this.** The accessibility TREE has
+  now been audited (below), which is closer but still not the same thing: it
+  proves a screen reader is given the right structure, not that the result is
+  pleasant or even followable to listen to. Nobody has *heard* this.
 
 ### What the browser pass covered, and what it found
 
@@ -1604,6 +1604,37 @@ where the next person will be looking. The fourth was the missing `<h1>`, under
 
 **The detail skeleton is measured now**, so the entry that used to sit here is
 gone. `SkeletonMetrics.detail` carries the numbers and the method.
+
+### The accessibility tree, audited
+
+One step past axe, and a step short of a screen reader. Chrome's
+`Accessibility.getFullAXTree` over CDP returns the tree that NVDA, JAWS and
+Narrator all read FROM, so it catches the structural failures — an unnamed
+button, a table that stopped being a table, a heading level skipped — while
+saying nothing about how any of it sounds. Run against a server on the demo
+tree, on both agents' overviews, the projects page and a project:
+
+| Check | Result |
+|---|---|
+| Interactive elements with no accessible name | **0**, on all four pages |
+| Images with no name | 0 |
+| Landmarks | `banner`, `navigation`, `main`, `complementary` on every page |
+| Headings | exactly one `h1` per page, no level skipped, `h1` first in DOM order |
+| Chart figures | every one named by its caption, each with a table fallback |
+| `.sr-only` chart tables | **rows, column headers and cells all exposed** |
+| Models columns | swatch-only on screen, names in `.sr-only`, announced once |
+| Heat map | `.heatmap-plot` is `aria-hidden`, so its 182 day cells stay out of the way and the 36-row table is the data |
+
+**The `.sr-only` table row is the one that mattered.** Wrapping those tables in
+a `<div>` could have cost them their table semantics, which is the whole reason
+they exist — it did not.
+
+**Two lessons about auditing the tree, both learned by getting it wrong here.**
+An `aria-hidden` wrapper still has to be walked THROUGH to reach what is under
+it: filtering ignored nodes out of the lookup made every chart table look like
+it had lost its cells, which was alarming and false. And heading ORDER has to
+come from the DOM — the flat node array is not document order, and reading it
+as such made the detail page look like it opened with an `h2`.
 
 ## Running
 
