@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useUsage } from '@/components/UsageProvider';
 import { useProvider } from '@/components/ProviderScope';
 import { CountUp } from '@/components/CountUp';
+import { HeadlineValue } from '@/components/HeadlineValue';
 import { DailySpendChart } from '@/components/DailySpendChart';
 import { CostByModelChart } from '@/components/CostByModelChart';
 import { ModelBreakdownTable } from '@/components/ModelBreakdownTable';
@@ -193,9 +194,7 @@ export default function OverviewPage() {
         <div className="headline-grid">
           <div>
             <div className="headline-label">{provider.costLabel}</div>
-            <div className="headline-value num">
-              <CountUp value={combined.costUsd} format={(n) => formatUsd(n)} replayKey={version} />
-            </div>
+            <HeadlineValue value={combined.costUsd} replayKey={version} />
             <div className="headline-meta">
               across {formatCount(report.projects.length)}{' '}
               {report.projects.length === 1 ? 'project' : 'projects'} · {formatCount(modelCount)}{' '}

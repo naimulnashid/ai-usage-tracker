@@ -606,9 +606,23 @@ img.rail-mark[data-agent='codex'] {
    Headline
    ------------------------------------------------------------------------ */
 
+/* A size container, so the total inside can be sized against the card - see
+   `.headline-value`. The containment that needs is harmless here: a
+   full-width block whose width never came from its content, and already a
+   stacking context through the `rise` transform. */
 .headline-card {
   padding: 40px 44px;
   margin-bottom: 22px;
+  container-type: inline-size;
+  /* The side figures' size, here so the reserve below can use it. */
+  --headline-side-size: clamp(30px, 3.4vw, 42px);
+  /* What the total must leave for the two grid gaps and the two side columns,
+     each as narrow as its own figure allows at ~0.55em a character: tokens
+     up to seven ("867.39M", 3.85em), runtime up to five ("1234h" - it wraps
+     at the space before the minutes, 2.75em). Measured at 997px with the rail
+     expanded, the two came to 112px and 81px against 3.85em = 131px and
+     2.75em = 93px reserved. Zero once the grid is one column (below 900px). */
+  --headline-reserve: calc(2 * 44px + 6.6 * var(--headline-side-size));
 }
 
 .headline-label {
@@ -620,9 +634,28 @@ img.rail-mark[data-agent='codex'] {
   margin-bottom: 10px;
 }
 
-/* The single most prominent element on the page. */
+/* The single most prominent element on the page.
+
+   As large as it always was - `clamp(58px, 8vw, 92px)` - unless its own
+   characters would not fit, and then exactly as small as they need. A fixed
+   size overflowed the page once a total reached five figures: "$12,345.67"
+   at 80px is ~420px, and the grid's first column, which grows to fit it,
+   pushed the whole grid past the card at 997px with the rail expanded.
+
+   The fit: the card's width (`100cqi`) less the reserve for the side columns,
+   divided by the figure's length. `--chars` is set by <HeadlineValue> from
+   the formatted total; 0.55em is the widest average glyph measured across
+   dollar figures of 7-13 characters in this face, tabular digits and the
+   tight tracking included ("$999.99" is the widest, at 0.547). Today's
+   four-digit totals are unaffected at 997, 1024 and 1680px - this only ever
+   takes size away when the old size would not have fitted. 24px is a floor
+   for absurd widths, not a size anything is expected to reach. */
 .headline-value {
-  font-size: clamp(58px, 8vw, 92px);
+  font-size: clamp(
+    24px,
+    calc((100cqi - var(--headline-reserve)) / (var(--chars, 10) * 0.55)),
+    clamp(58px, 8vw, 92px)
+  );
   font-weight: 680;
   line-height: 1.02;
   letter-spacing: -0.035em;
@@ -653,7 +686,7 @@ img.rail-mark[data-agent='codex'] {
 }
 
 .headline-side-value {
-  font-size: clamp(30px, 3.4vw, 42px);
+  font-size: var(--headline-side-size);
   font-weight: 620;
   letter-spacing: -0.02em;
   line-height: 1.1;
@@ -2074,6 +2107,10 @@ table.data tfoot td {
   }
   .headline-card {
     padding: 28px 24px;
+    /* One column now, so the total has the card's whole width. This is also
+       what fits it on a narrow window: "$1,234.56" at the old 58px floor was
+       ~268px in ~212px of card at 360px. */
+    --headline-reserve: 0px;
   }
 
   /* There is not room for both the rail and the content here, so the rail goes
@@ -2094,32 +2131,6 @@ table.data tfoot td {
     padding-left: 0;
     padding-right: 0;
     gap: 0;
-  }
-}
-
-/* Narrow windows, continued - the top bar's own rules sit beside the bar.
-
-   The headline total is drawn at 58px, the floor of its desktop clamp, and
-   "$1,234.56" at 58px is ~268px, in a card with ~212px of room at 360px. The
-   page overflowed by 13px and Chrome zoomed it out - hidden behind the top
-   bar's far larger overflow until the bar was fixed. On a phone the figure
-   scales with the card instead, never larger than those same 58px: 19% of the
-   card's width fits a ten-character figure ("$12,345.67").
-
-   Down here, after `.headline-value`, on purpose: the first attempt sat in the
-   bar's phone block near the top of the file, where the base rule - same
-   specificity, later in the file - quietly won.
-
-   `cqi` rather than `vw`, so no copy of the rail's width and the paddings has
-   to live here. The containment that needs is harmless on this card: a
-   full-width block whose width never came from its content, and already a
-   stacking context through the `rise` transform. */
-@media (max-width: 720px) {
-  .headline-card {
-    container-type: inline-size;
-  }
-  .headline-value {
-    font-size: clamp(30px, 19cqi, 58px);
   }
 }
 

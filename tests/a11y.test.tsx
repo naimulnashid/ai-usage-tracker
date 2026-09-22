@@ -16,6 +16,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { ChartFigure } from '../src/components/ChartFigure';
 import { DayRangeSelect } from '../src/components/DayRangeSelect';
 import { EmptyState } from '../src/components/EmptyState';
+import { HeadlineValue } from '../src/components/HeadlineValue';
 import { InfoTip } from '../src/components/InfoTip';
 import { ProjectMenu } from '../src/components/ProjectMenu';
 import { ProviderScope } from '../src/components/ProviderScope';
@@ -194,5 +195,12 @@ describe('ProjectMenu', () => {
 
   it('hides the drawn dots from assistive tech', () => {
     assert.match(html, /<svg[^>]*aria-hidden="true"/);
+  });
+});
+
+describe('HeadlineValue', () => {
+  it('carries the formatted total’s length, which its CSS sizes it by', () => {
+    assert.match(render(<HeadlineValue value={12345.67} />), /style="--chars:10"/);
+    assert.match(render(<HeadlineValue value={999.99} />), /style="--chars:7"/);
   });
 });

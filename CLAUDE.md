@@ -301,22 +301,59 @@ status line hidden. Three things about it that are not obvious:
   although it is drawn top right. Reordering the markup would move the same
   mismatch onto the desktop, where a keyboard is actually used.
 
-**Fixing it exposed the next one down.** With the bar fitting, the page still
-overflowed by 13px at 360px: the headline total is drawn at 58px (the floor of
-its desktop clamp), which is ~268px of "$1,234.56" in ~212px of card. On a
-phone it is now `clamp(30px, 19cqi, 58px)` against the card - enough for a
-ten-character figure - in a second `max-width: 720px` block **after** the base
-rule. The first attempt sat in the bar's block near the top of the file and
-lost to `.headline-value` on source order, with nothing to say so; the layout
-test checks the order now.
+**Fixing it exposed the next one down**: the headline total, which did not fit
+its card at 360px either. That is now solved for every width at once - see
+the next section.
 
 Measured with the page-overflow check, in iframes with scrollbars hidden to
 match a phone's overlay ones: 0px at 360, 393 and 412px on the overview, the
 projects page and a project page, both agents; the bar is 109px tall there
-(84px before, in one row). Unchanged above 720px: one row, 84px, headline at
-its old size. Two leftovers, both outside the phones this was for: **3px at
-320px** from a chart legend's share column, and a **five-figure total at
-997px** ("$12,345.67"), which the desktop headline does not fit.
+(84px before, in one row). Unchanged above 720px: one row, 84px. One leftover,
+narrower than any phone this was for: **3px at 320px** from a chart legend's
+share column.
+
+### The headline total is sized to fit its own length
+
+`.headline-value` was a fixed `clamp(58px, 8vw, 92px)`, and the grid's first
+column grows to fit whatever that draws. So a long enough total pushed the
+grid out of the card: "$12,345.67" overflowed the page at 997px, and **today's
+four-digit total already did at 997px with the rail expanded** - the grid was
+74px wider than the card, and the Total runtime column hung past its right
+edge. It went unnoticed because the page itself did not quite scroll.
+
+Now the size is the old one UNLESS the figure would not fit, and then exactly
+as small as it needs:
+
+```css
+font-size: clamp(24px,
+  calc((100cqi - var(--headline-reserve)) / (var(--chars) * 0.55)),
+  clamp(58px, 8vw, 92px));
+```
+
+- **`100cqi` is the card** (`.headline-card` is an inline-size container),
+  and **`--headline-reserve`** is what the two side columns and the gaps need:
+  `88px + 6.6 × --headline-side-size`, from the longest figure each side can
+  show - seven characters of tokens ("867.39M", 3.85em) and five of runtime
+  ("1234h", 2.75em; it wraps before the minutes). Measured at 997px expanded:
+  112px and 81px, against 131px and 93px reserved. It is **0** in the 900px
+  block, where the grid is one column - which is also what fits a narrow
+  window, replacing the separate phone rule this used to need.
+- **`--chars` is the formatted total's length**, set by `<HeadlineValue>`.
+  0.55em is the widest average glyph measured across dollar figures of 7-13
+  characters in this face ("$999.99", at 0.547 - short strings run widest).
+- **The side size lives in one custom property** (`--headline-side-size`),
+  read by both `.headline-side-value` and the reserve, so the two cannot drift.
+
+Measured with the default collapsed rail: **today's total is unchanged** at
+997, 1024 and 1680px, a five-figure one too, and a six-figure one drops only
+to 74-77px. With the rail expanded the figure shrinks where the old one did not
+fit - to ~54px at 997px, near the ~60px that actually fits. The card's height
+at 997 and 1680px, and so `skeleton.headline`, did not move.
+
+**A same-specificity override has to come after its base rule.** The first
+version of the narrow-window fix sat above `.headline-value` in the file and
+lost on source order, silently; the layout test checks the 900px reserve's
+position for the same reason.
 
 ### Hover transforms need a gutter
 

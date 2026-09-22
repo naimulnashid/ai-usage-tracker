@@ -165,16 +165,41 @@ describe('the top bar becomes two rows in a narrow window', () => {
     // At the desktop's 15px side padding the row was 0.5px short of fitting.
     assert.ok(inPhone('.nav-link', 'padding', '7px 11px'));
   });
+});
 
-  it('scales the headline total to its card, AFTER the rule it overrides', () => {
-    // 58px of "$1,234.56" is ~268px against ~212px of card at 360px. The first
-    // version of this override sat above `.headline-value` in the file and
-    // lost to it on source order, so the order is what this checks.
-    const base = css.indexOf('.headline-value {');
-    const phone = css.indexOf('  .headline-value {\n    font-size: clamp(30px, 19cqi, 58px);');
-    assert.ok(base >= 0 && phone >= 0, 'headline rules not found');
-    assert.ok(phone > base, 'the phone override must come after the base rule');
-    assert.ok(css.lastIndexOf('@media (max-width: 720px) {', phone) > base);
+describe('the headline total fits its card, however long it gets', () => {
+  // A fixed clamp(58px, 8vw, 92px) overflowed the page at five figures:
+  // "$12,345.67" at 80px is ~420px, and the grid's first column grew to fit
+  // it and pushed the grid past the card.
+  const value = rule('.headline-value');
+  const card = rule('.headline-card');
+
+  it('sizes against the card, which is a container for it', () => {
+    assert.ok(declares('.headline-card', 'container-type', 'inline-size'));
+    assert.match(value, /100cqi/);
+  });
+
+  it('divides the room by the figure’s own length', () => {
+    assert.match(value, /var\(--chars/);
+  });
+
+  it('leaves room for the side columns, from the size they are drawn at', () => {
+    assert.match(value, /var\(--headline-reserve\)/);
+    assert.match(card, /--headline-reserve\s*:\s*calc\([^;]*var\(--headline-side-size\)/);
+    assert.ok(declares('.headline-side-value', 'font-size', 'var\\(--headline-side-size\\)'));
+  });
+
+  it('never grows past the size it always had', () => {
+    assert.match(value, /clamp\(58px, 8vw, 92px\)/);
+  });
+
+  it('drops the reserve where the grid is one column, after the rule it overrides', () => {
+    // A same-specificity override above the base rule loses on source order,
+    // which is exactly how an earlier version of this fix failed silently.
+    const base = css.indexOf('.headline-card {');
+    const one = css.indexOf('--headline-reserve: 0px;');
+    assert.ok(one > base, 'the one-column reserve must come after the base rule');
+    assert.ok(css.lastIndexOf('@media (max-width: 900px) {', one) > base);
   });
 });
 

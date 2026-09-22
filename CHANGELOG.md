@@ -46,8 +46,12 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - **The top bar fits a narrow window.** It was one row that needed about
   560px, so anything narrower was pushed sideways. Below 720px it is now two
-  rows: the agent's name and Refresh, then the page tabs and Sign out. The
-  headline total also scales down to fit its card at those widths.
+  rows: the agent's name and Refresh, then the page tabs and Sign out.
+- **The headline total always fits its card.** It was drawn at a fixed size,
+  so a five-figure total pushed the page sideways, and with the sidebar
+  expanded even a four-figure one pushed the runtime figure out of the card.
+  It now keeps its usual size whenever that fits, and shrinks just enough
+  when it doesn't.
 - **Starting the background service a second time no longer fails without a
   trace.** While the dashboard ran, the server's output held
   `logs/dashboard.log` open against other writers, so a second launch — a

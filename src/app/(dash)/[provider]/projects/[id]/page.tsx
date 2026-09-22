@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { useUsage } from '@/components/UsageProvider';
 import { useProvider } from '@/components/ProviderScope';
 import { CountUp } from '@/components/CountUp';
+import { HeadlineValue } from '@/components/HeadlineValue';
 import { DailySpendChart } from '@/components/DailySpendChart';
 import { DailyTokensByModelChart } from '@/components/DailyTokensByModelChart';
 import { DailySpendByModelChart } from '@/components/DailySpendByModelChart';
@@ -220,9 +221,7 @@ export default function ProjectDetailPage() {
             {/* The agent's own label: on Codex this figure is API-equivalent,
                 not a bill, and the label is the only place the page says so. */}
             <div className="headline-label">{provider.costLabel}</div>
-            <div className="headline-value num">
-              <CountUp value={combined.costUsd} format={(n) => formatUsd(n)} replayKey={version} />
-            </div>
+            <HeadlineValue value={combined.costUsd} replayKey={version} />
             <div className="headline-meta">
               {shareOfTotal.toFixed(1)}% of all spend · {formatUsd(avgPerDay)} avg / active day
             </div>
