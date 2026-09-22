@@ -54,6 +54,9 @@ export const MODEL_SHADES: Record<string, ModelShade> = {
   'claude-opus-4-8': { color: '#D97757', outputPrice: 25 }, // 6.34:1 - the accent itself
   'claude-opus-4-6': { color: '#DF8B70', outputPrice: 25 }, // 7.60:1
 
+  // $20 output — Opus 5.5, between the Opus family and Sonnet
+  'claude-opus-5-5': { color: '#E19278', outputPrice: 20 }, // 8.09:1
+
   // $15 / $10 output — Sonnet
   'claude-sonnet-4-6': { color: '#E39981', outputPrice: 15 }, // 8.61:1
   'claude-sonnet-5': { color: '#E7A893', outputPrice: 10 }, // 9.82:1
