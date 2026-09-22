@@ -10,10 +10,12 @@ import {
   YAxis,
   type TooltipContentProps,
 } from 'recharts';
-import type { DailyEntry, UsageCell } from '@/lib/types';
+import type { DailyEntry } from '@/lib/types';
 import { displayModel, formatDateLong, formatDateShort, formatUsd } from '@/lib/format';
 import { byPriceDesc, modelColor } from '@/lib/model-colors';
+import { daysInRange, isActiveDay, sumDays, type DayRange } from '@/lib/day-range';
 import { ChartFigure } from './ChartFigure';
+import { NoDaysInRange } from './DayRangeSelect';
 
 type Row = { date: string } & Record<string, number | string>;
 
@@ -23,6 +25,8 @@ function ChartTooltip({ active, payload, label }: TooltipContentProps) {
     .filter((entry) => typeof entry.value === 'number' && entry.value > 0)
     .sort((a, b) => (b.value as number) - (a.value as number));
   const total = entries.reduce((sum, entry) => sum + (entry.value as number), 0);
+  // A window has a column for every day, idle ones included.
+  const idle = entries.length === 0;
 
   return (
     <div
@@ -66,20 +70,22 @@ function ChartTooltip({ active, payload, label }: TooltipContentProps) {
       ))}
       <div
         style={{
-          borderTop: '1px solid var(--border-bright)',
-          marginTop: 9,
-          paddingTop: 8,
+          borderTop: idle ? 'none' : '1px solid var(--border-bright)',
+          marginTop: idle ? 0 : 9,
+          paddingTop: idle ? 0 : 8,
           display: 'flex',
           justifyContent: 'space-between',
           gap: 16,
         }}
       >
-        <span style={{ color: 'var(--text-muted)' }}>Total</span>
+        <span style={{ color: 'var(--text-muted)' }}>{idle ? 'No activity' : 'Total'}</span>
         {/* The agent's accent, never a literal - this tooltip is rendered under
             [data-provider], so `var()` re-themes it for Codex for free. */}
-        <span className="num" style={{ color: 'var(--accent)', fontWeight: 650 }}>
-          {formatUsd(total)}
-        </span>
+        {!idle && (
+          <span className="num" style={{ color: 'var(--accent)', fontWeight: 650 }}>
+            {formatUsd(total)}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -93,25 +99,29 @@ function ChartTooltip({ active, payload, label }: TooltipContentProps) {
  *
  * Its legend carries dollars only. Token counts belong to the tokens chart, and
  * repeating them here would put two different denominators next to one share.
+ *
+ * Like its twin, the legend is summed over the days in `range` only.
  */
 export function DailySpendByModelChart({
   daily,
-  perModel,
-  combined,
+  range = 'all',
+  today = null,
   replayKey,
   height = 300,
 }: {
   daily: DailyEntry[];
-  perModel: Record<string, UsageCell>;
-  combined: UsageCell;
+  range?: DayRange;
+  /** The report's "today", which ends a window. See `reportToday`. */
+  today?: string | null;
   replayKey?: number;
   height?: number;
 }) {
-  const models = [...new Set(daily.flatMap((entry) => Object.keys(entry.perModel)))].sort(
+  const days = daysInRange(daily, range, today);
+  const models = [...new Set(days.flatMap((entry) => Object.keys(entry.perModel)))].sort(
     byPriceDesc,
   );
 
-  const data: Row[] = daily.map((entry) => {
+  const data: Row[] = days.map((entry) => {
     const row: Row = { date: entry.date };
     for (const model of models) {
       row[model] = entry.perModel[model]?.costUsd ?? 0;
@@ -119,22 +129,26 @@ export function DailySpendByModelChart({
     return row;
   });
 
-  if (!data.length || !models.length) {
-    return (
-      <div style={{ color: 'var(--text-faint)', padding: '40px 0', textAlign: 'center' }}>
-        No dated activity found.
-      </div>
-    );
-  }
+  // A window is never empty of DAYS - it is filled - so "no models" is the test.
+  if (!models.length) return <NoDaysInRange daily={daily} range={range} />;
 
+  const { perModel, combined } = sumDays(days);
   const legend = models
     .map((model) => ({ model, cell: perModel[model] }))
     .filter((row) => row.cell && (row.cell.costUsd > 0 || row.cell.totalTokens > 0));
 
+  // Active days only in the table fallback - see the tokens chart.
+  const tableRows = data.filter((_, index) => isActiveDay(days[index]));
+  const activeCount = tableRows.length;
+
   return (
     <ChartFigure
       label="Daily spend, stacked by model, most expensive band first."
-      summary={`${data.length} day${data.length === 1 ? '' : 's'}, oldest first, one column per model.`}
+      summary={
+        range === 'all'
+          ? `${data.length} day${data.length === 1 ? '' : 's'}, oldest first, one column per model.`
+          : `The ${activeCount} active day${activeCount === 1 ? '' : 's'} of the last ${range}, oldest first, one column per model.`
+      }
       columns={[
         { header: 'Date', cell: (row: Row) => formatDateLong(String(row.date)) },
         ...models.map((model) => ({
@@ -147,10 +161,11 @@ export function DailySpendByModelChart({
             formatUsd(models.reduce((sum, model) => sum + Number(row[model] ?? 0), 0)),
         },
       ]}
-      rows={data}
+      rows={tableRows}
     >
       <div className="chart-wrap" style={{ minHeight: height }}>
-        <ResponsiveContainer width="100%" height={height} key={replayKey}>
+        {/* Keyed by range too, so a new range grows in like a fresh load. */}
+        <ResponsiveContainer width="100%" height={height} key={`${replayKey ?? 0}:${range}`}>
           <BarChart data={data} margin={{ top: 10, right: 12, bottom: 4, left: 4 }}>
             <CartesianGrid stroke="var(--border)" vertical={false} />
             <XAxis

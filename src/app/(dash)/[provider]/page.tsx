@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useUsage } from '@/components/UsageProvider';
 import { useProvider } from '@/components/ProviderScope';
 import { CountUp } from '@/components/CountUp';
@@ -13,7 +14,9 @@ import { InfoTip } from '@/components/InfoTip';
 import { isEmptyReport, noteworthyWarnings } from '@/lib/report-state';
 import { DailyTokensByModelChart } from '@/components/DailyTokensByModelChart';
 import { DailySpendByModelChart } from '@/components/DailySpendByModelChart';
+import { DayRangeSelect } from '@/components/DayRangeSelect';
 import { ParseWarnings, RUNTIME_TOOLTIP, UnpricedNotice } from '@/components/Notices';
+import { DEFAULT_DAY_RANGE, reportToday, type DayRange } from '@/lib/day-range';
 import {
   displayModel,
   formatCount,
@@ -28,6 +31,10 @@ import { modelColor } from '@/lib/model-colors';
 export default function OverviewPage() {
   const provider = useProvider();
   const { report, initialLoading, error, version } = useUsage();
+  // One range per chart: a control inside a panel changes that panel only.
+  // Above the early returns, since these are hooks.
+  const [tokensRange, setTokensRange] = useState<DayRange>(DEFAULT_DAY_RANGE);
+  const [spendRange, setSpendRange] = useState<DayRange>(DEFAULT_DAY_RANGE);
 
   if (initialLoading) {
     /*
@@ -171,6 +178,7 @@ export default function OverviewPage() {
   const trendPct = previousSum > 0 ? ((recentSum - previousSum) / previousSum) * 100 : null;
 
   const topProject = report.projects[0];
+  const today = reportToday(report.generatedAt, report.settings.localUtcOffsetHours);
 
   return (
     <div className="page-enter" style={{ paddingTop: 34 }}>
@@ -363,36 +371,46 @@ export default function OverviewPage() {
 
       <section className="card panel rise" style={{ animationDelay: '60ms' }}>
         <div className="panel-head">
-          <div>
+          <div className="panel-head-main">
             <h2 className="panel-title">Daily tokens by model</h2>
             <p className="panel-sub">
               Stacked by model, most expensive at the bottom — so the darker the base of a column,
               the more of that day went on premium tokens.
             </p>
           </div>
+          <DayRangeSelect
+            value={tokensRange}
+            onChange={setTokensRange}
+            label="Days shown in Daily tokens by model"
+          />
         </div>
         <DailyTokensByModelChart
           daily={daily}
-          perModel={perModel}
-          combined={combined}
+          range={tokensRange}
+          today={today}
           replayKey={version}
         />
       </section>
 
       <section className="card panel rise" style={{ animationDelay: '70ms' }}>
         <div className="panel-head">
-          <div>
+          <div className="panel-head-main">
             <h2 className="panel-title">Daily spend by model</h2>
             <p className="panel-sub">
               The same columns priced instead of counted — so a day that looks modest above and tall
               here went on the expensive models.
             </p>
           </div>
+          <DayRangeSelect
+            value={spendRange}
+            onChange={setSpendRange}
+            label="Days shown in Daily spend by model"
+          />
         </div>
         <DailySpendByModelChart
           daily={daily}
-          perModel={perModel}
-          combined={combined}
+          range={spendRange}
+          today={today}
           replayKey={version}
         />
       </section>

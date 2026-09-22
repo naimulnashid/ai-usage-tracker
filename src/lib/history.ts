@@ -28,6 +28,7 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
+import { dataDir } from './data-dir';
 import { computeStreaks, localDate } from './parser';
 import type { ProviderId } from './providers';
 import type { DailyEntry, ProjectSummary, UsageCell, UsageReport } from './types';
@@ -74,8 +75,7 @@ const ARCHIVE_FILES: Record<ProviderId, string> = {
  * set. Anything reading demo transcripts must set it too.
  */
 export function historyPath(provider: ProviderId = 'claude'): string {
-  const dir = process.env.DASHBOARD_DATA_DIR?.trim() || path.join(process.cwd(), 'data');
-  return path.join(dir, ARCHIVE_FILES[provider] ?? ARCHIVE_FILES.claude);
+  return path.join(dataDir(), ARCHIVE_FILES[provider] ?? ARCHIVE_FILES.claude);
 }
 
 function emptyHistory(): HistoryFile {

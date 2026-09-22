@@ -1,21 +1,53 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useUsage } from '@/components/UsageProvider';
 import { useProvider } from '@/components/ProviderScope';
 import { CountUp } from '@/components/CountUp';
 import { RUNTIME_TOOLTIP } from '@/components/Notices';
 import { ProjectLogo } from '@/components/ProjectLogo';
+import { ProjectMenu } from '@/components/ProjectMenu';
 import { EmptyState } from '@/components/EmptyState';
 import { InfoTip } from '@/components/InfoTip';
 import { isEmptyReport } from '@/lib/report-state';
 import { ProjectShareChart } from '@/components/ProjectShareChart';
 import { displayModel, formatCount, formatDuration, formatTokens, formatUsd } from '@/lib/format';
 import { modelColor } from '@/lib/model-colors';
+import type { ProjectSummary } from '@/lib/types';
+
+/** Focus target when a hide leaves no card to move to. */
+const SHOW_ALL = '__show-all__';
 
 export default function ProjectsPage() {
   const provider = useProvider();
-  const { report, initialLoading, error, version } = useUsage();
+  const { report, initialLoading, error, version, hiddenProjects, setProjectHidden } = useUsage();
+
+  // Hooks, so above every early return below.
+  const [showAll, setShowAll] = useState(false);
+  const [announcement, setAnnouncement] = useState('');
+  const cardLinks = useRef(new Map<string, HTMLAnchorElement>());
+  const showAllButton = useRef<HTMLButtonElement>(null);
+
+  /*
+   * Where focus goes once a hidden card has left the list.
+   *
+   * The focused element was inside that card, so removing it drops focus to
+   * <body> and a keyboard user is thrown back to the top of the page. This
+   * holds the id of the card to land on instead - the next one down, or the
+   * "Show all projects" button when there is none - and the effect below
+   * applies it after the render that removed the card. It only acts if focus
+   * really was lost, so a hide that left the card in place does nothing.
+   */
+  const focusAfterHide = useRef<string | null>(null);
+  useEffect(() => {
+    const target = focusAfterHide.current;
+    if (!target) return;
+    const active = document.activeElement;
+    if (active && active !== document.body) return;
+    focusAfterHide.current = null;
+    (target === SHOW_ALL ? showAllButton.current : cardLinks.current.get(target))?.focus();
+  });
 
   if (initialLoading) {
     /*
@@ -85,6 +117,35 @@ export default function ProjectsPage() {
 
   const grandTotal = report.global.combined.costUsd;
 
+  // Hidden projects leave the LIST only. Totals, shares and every chart still
+  // count them - see src/lib/hidden-projects.ts.
+  const hiddenIds = new Set(hiddenProjects);
+  const hiddenCount = report.projects.filter((project) => hiddenIds.has(project.id)).length;
+  const expanded = showAll && hiddenCount > 0;
+  const listed = expanded
+    ? report.projects
+    : report.projects.filter((project) => !hiddenIds.has(project.id));
+
+  async function toggleHidden(project: ProjectSummary, hide: boolean) {
+    // Decide where focus lands before the card goes, while `listed` still has it.
+    if (hide && !expanded) {
+      const at = listed.findIndex((candidate) => candidate.id === project.id);
+      focusAfterHide.current = (listed[at + 1] ?? listed[at - 1])?.id ?? SHOW_ALL;
+    }
+    try {
+      await setProjectHidden(project.id, hide);
+    } catch (error) {
+      focusAfterHide.current = null;
+      throw error;
+    }
+    // Showing the last hidden project takes the button away; the next hide
+    // should then leave the list, not stay in a list that is still expanded.
+    if (!hide && hiddenCount === 1) setShowAll(false);
+    setAnnouncement(
+      hide ? `${project.name} is hidden from the list.` : `${project.name} is back in the list.`,
+    );
+  }
+
   return (
     <div className="page-enter" style={{ paddingTop: 34 }}>
       {/* Hidden page title - see the overview page for why it is not visible. */}
@@ -102,142 +163,191 @@ export default function ProjectsPage() {
             </p>
           </div>
         </div>
-        <ProjectShareChart projects={report.projects} totalCost={grandTotal} />
+        <ProjectShareChart
+          projects={report.projects}
+          totalCost={grandTotal}
+          hiddenIds={hiddenIds}
+        />
       </section>
 
-      {report.projects.map((project, index) => {
+      {listed.map((project, index) => {
         const share = grandTotal > 0 ? (project.combined.costUsd / grandTotal) * 100 : 0;
+        const isHidden = hiddenIds.has(project.id);
 
         return (
-          <Link
+          /*
+           * The card is this wrapper; the link fills it and the options menu
+           * sits over its bottom-right corner as the link's SIBLING. A button
+           * inside the <a> would be invalid markup, and clicking it would
+           * follow the link. Everything inside the link is exactly what it was
+           * when the card itself was the link, so the measured 177px holds.
+           */
+          <div
             key={project.id}
-            href={`${provider.basePath}/projects/${encodeURIComponent(project.id)}`}
-            className="card card-hover rise"
-            style={{
-              display: 'block',
-              color: 'inherit',
-              padding: '22px 26px',
-              marginBottom: 14,
-              animationDelay: `${index * 40}ms`,
-            }}
+            className={`card card-hover rise project-card${isHidden ? ' is-hidden' : ''}`}
+            style={{ animationDelay: `${index * 40}ms` }}
           >
-            {/*
-             * `center`, not `baseline`. A flex container takes its baseline
-             * from its first item, and the logo's first item is an <img>,
-             * whose baseline is its bottom edge - so baseline alignment
-             * dropped the whole name block 13px and grew every card with a
-             * logo to 190px while the monogram ones stayed at 177. Centring
-             * makes the two cases identical again, which is also what keeps
-             * the measured 177px skeleton row honest.
-             */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 20,
-                flexWrap: 'wrap',
+            <Link
+              ref={(element) => {
+                if (element) cardLinks.current.set(project.id, element);
+                else cardLinks.current.delete(project.id);
               }}
+              href={`${provider.basePath}/projects/${encodeURIComponent(project.id)}`}
+              className="project-card-link"
             >
-              {/* The mark sits at 38px, which is shorter than the two lines it
+              {/*
+               * `center`, not `baseline`. A flex container takes its baseline
+               * from its first item, and the logo's first item is an <img>,
+               * whose baseline is its bottom edge - so baseline alignment
+               * dropped the whole name block 13px and grew every card with a
+               * logo to 190px while the monogram ones stayed at 177. Centring
+               * makes the two cases identical again, which is also what keeps
+               * the measured 177px skeleton row honest.
+               */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 20,
+                  flexWrap: 'wrap',
+                }}
+              >
+                {/* The mark sits at 38px, which is shorter than the two lines it
                   stands beside - so it cannot grow the row, and the measured
                   177px skeleton stays right. */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
-                <ProjectLogo name={project.name} />
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 20, fontWeight: 620, letterSpacing: '-0.015em' }}>
-                    {project.name}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 13.5,
-                      color: 'var(--text-faint)',
-                      marginTop: 4,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                    title={project.cwd ?? project.id}
-                  >
-                    {project.cwd ?? project.id}
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ textAlign: 'right' }}>
-                <div
-                  className="num"
-                  style={{ fontSize: 30, fontWeight: 640, color: 'var(--accent)' }}
-                >
-                  <CountUp
-                    value={project.combined.costUsd}
-                    format={(n) => formatUsd(n)}
-                    replayKey={version}
-                  />
-                </div>
-                <div className="num" style={{ fontSize: 13.5, color: 'var(--text-faint)' }}>
-                  {share.toFixed(1)}% of total
-                </div>
-              </div>
-            </div>
-
-            {/* Share-of-spend bar, segmented by model */}
-            <div
-              style={{
-                display: 'flex',
-                height: 7,
-                borderRadius: 999,
-                overflow: 'hidden',
-                background: '#141418',
-                margin: '16px 0 13px',
-              }}
-            >
-              {Object.entries(project.perModel)
-                .sort((a, b) => b[1].totalTokens - a[1].totalTokens)
-                .map(([model, cell]) => {
-                  const pct =
-                    project.combined.totalTokens > 0
-                      ? (cell.totalTokens / project.combined.totalTokens) * 100
-                      : 0;
-                  if (pct <= 0) return null;
-                  return (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
+                  <ProjectLogo name={project.name} />
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 20, fontWeight: 620, letterSpacing: '-0.015em' }}>
+                      {project.name}
+                      {/* Only ever seen with every project listed. */}
+                      {isHidden && <span className="hidden-pill">Hidden</span>}
+                    </div>
                     <div
-                      key={model}
-                      title={`${displayModel(model)} · ${pct.toFixed(1)}%`}
                       style={{
-                        width: `${pct}%`,
-                        background: modelColor(model),
-                        transition: 'opacity 180ms var(--ease)',
+                        fontSize: 13.5,
+                        color: 'var(--text-faint)',
+                        marginTop: 4,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
                       }}
-                    />
-                  );
-                })}
-            </div>
+                      title={project.cwd ?? project.id}
+                    >
+                      {project.cwd ?? project.id}
+                    </div>
+                  </div>
+                </div>
 
-            <div
-              className="num"
-              style={{
-                display: 'flex',
-                gap: 22,
-                flexWrap: 'wrap',
-                fontSize: 14.5,
-                color: 'var(--text-muted)',
-              }}
-            >
-              <span>{formatTokens(project.combined.totalTokens)} tokens</span>
-              <span>
-                {formatDuration(project.combined.runtimeSeconds)}{' '}
-                <InfoTip label="About runtime" text={RUNTIME_TOOLTIP} />
-              </span>
-              <span>{formatCount(project.sessions.length)} sessions</span>
-              <span>{formatCount(project.daily.length)} active days</span>
-              <span style={{ marginLeft: 'auto', color: 'var(--accent)', fontWeight: 550 }}>
-                View breakdown →
-              </span>
-            </div>
-          </Link>
+                <div style={{ textAlign: 'right' }}>
+                  <div
+                    className="num"
+                    style={{ fontSize: 30, fontWeight: 640, color: 'var(--accent)' }}
+                  >
+                    <CountUp
+                      value={project.combined.costUsd}
+                      format={(n) => formatUsd(n)}
+                      replayKey={version}
+                    />
+                  </div>
+                  <div className="num" style={{ fontSize: 13.5, color: 'var(--text-faint)' }}>
+                    {share.toFixed(1)}% of total
+                  </div>
+                </div>
+              </div>
+
+              {/* Share-of-spend bar, segmented by model */}
+              <div
+                style={{
+                  display: 'flex',
+                  height: 7,
+                  borderRadius: 999,
+                  overflow: 'hidden',
+                  background: '#141418',
+                  margin: '16px 0 13px',
+                }}
+              >
+                {Object.entries(project.perModel)
+                  .sort((a, b) => b[1].totalTokens - a[1].totalTokens)
+                  .map(([model, cell]) => {
+                    const pct =
+                      project.combined.totalTokens > 0
+                        ? (cell.totalTokens / project.combined.totalTokens) * 100
+                        : 0;
+                    if (pct <= 0) return null;
+                    return (
+                      <div
+                        key={model}
+                        title={`${displayModel(model)} · ${pct.toFixed(1)}%`}
+                        style={{
+                          width: `${pct}%`,
+                          background: modelColor(model),
+                          transition: 'opacity 180ms var(--ease)',
+                        }}
+                      />
+                    );
+                  })}
+              </div>
+
+              <div
+                className="num"
+                style={{
+                  display: 'flex',
+                  gap: 22,
+                  flexWrap: 'wrap',
+                  fontSize: 14.5,
+                  color: 'var(--text-muted)',
+                }}
+              >
+                <span>{formatTokens(project.combined.totalTokens)} tokens</span>
+                <span>
+                  {formatDuration(project.combined.runtimeSeconds)}{' '}
+                  <InfoTip label="About runtime" text={RUNTIME_TOOLTIP} />
+                </span>
+                <span>{formatCount(project.sessions.length)} sessions</span>
+                <span>{formatCount(project.daily.length)} active days</span>
+                <span className="project-card-cta">View breakdown →</span>
+              </div>
+            </Link>
+            <ProjectMenu
+              projectName={project.name}
+              hidden={isHidden}
+              onToggle={() => toggleHidden(project, !isHidden)}
+            />
+          </div>
         );
       })}
+
+      {listed.length === 0 && (
+        <p className="projects-all-hidden">
+          {report.projects.length === 1
+            ? 'Your only project is hidden.'
+            : `All ${formatCount(report.projects.length)} projects are hidden.`}
+        </p>
+      )}
+
+      {/* Only when something is hidden: with nothing to reveal, a "Show all"
+          button would be a control that does nothing. */}
+      {hiddenCount > 0 && (
+        <div className="projects-more">
+          <button
+            ref={showAllButton}
+            type="button"
+            className="btn"
+            aria-expanded={expanded}
+            onClick={() => setShowAll((value) => !value)}
+          >
+            {expanded ? 'Show fewer projects' : 'Show all projects'}
+          </button>
+          <span className="projects-more-note">{formatCount(hiddenCount)} hidden</span>
+        </div>
+      )}
+
+      {/* Says what a hide or show did, since the card it came from may be gone. */}
+      <p className="sr-only" role="status">
+        {announcement}
+      </p>
     </div>
   );
 }

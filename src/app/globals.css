@@ -1157,6 +1157,218 @@ img.rail-mark[data-agent='codex'] {
 }
 
 /* --------------------------------------------------------------------------
+   Project cards: a link that fills the card, and an options menu beside it
+
+   The card is the wrapper, not the link. The link is laid out exactly as the
+   card used to be (same padding, same content), which is what keeps the
+   measured 177px card and its skeleton honest; the options button is laid over
+   the bottom-right corner as the link's sibling, because a button inside an
+   <a> is invalid and would follow the link when clicked.
+   ------------------------------------------------------------------------ */
+
+.project-card {
+  position: relative;
+  margin-bottom: 14px;
+}
+
+/* Every card is its own stacking context - the `rise` animation leaves a
+   transform on it - so the NEXT card paints over anything that hangs out of
+   this one. An open menu does exactly that, so its card is lifted while it is
+   open. `:has()` rather than React state: the DOM already knows. */
+.project-card:has(.card-menu-button[aria-expanded='true']) {
+  z-index: 5;
+}
+
+/* Hidden, and listed only because every project is being shown. Marked by
+   the pill and a dashed edge, NOT by fading: most of a card's text is already
+   `--text-faint`, which sits just above 4.5:1 and fails the moment it is
+   dimmed. */
+.project-card.is-hidden {
+  border-style: dashed;
+  border-color: var(--border-bright);
+}
+
+.project-card-link {
+  display: block;
+  padding: 22px 26px;
+  color: inherit;
+  border-radius: inherit;
+}
+
+.project-card-link:hover {
+  color: inherit;
+}
+
+.project-card-link:focus-visible {
+  border-radius: inherit;
+  outline-offset: 2px;
+}
+
+/* The right margin is the room the options button is laid into: it sits at
+   `right: 19px` and is 30px wide, which leaves ~8px between the two. */
+.project-card-cta {
+  margin-left: auto;
+  margin-right: 34px;
+  color: var(--accent);
+  font-weight: 550;
+}
+
+/* Centred on the stats line, the link's last: 22px of padding below it plus
+   half its ~24px line box, less half the button. `right` puts the dots' right
+   edge under the cost figure's. */
+.project-card > .card-menu-wrap {
+  position: absolute;
+  right: 19px;
+  bottom: 21px;
+}
+
+.hidden-pill {
+  display: inline-block;
+  margin-left: 10px;
+  padding: 1px 8px;
+  vertical-align: 3px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border: 1px solid var(--border-bright);
+  border-radius: 999px;
+}
+
+.card-menu-wrap {
+  display: inline-flex;
+}
+
+.card-menu-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 26px;
+  padding: 0;
+  color: var(--text-faint);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  cursor: pointer;
+  transition:
+    color 180ms var(--ease),
+    background 180ms var(--ease),
+    border-color 180ms var(--ease);
+}
+
+.project-card:hover .card-menu-button {
+  color: var(--text-muted);
+}
+
+.card-menu-button:hover,
+.card-menu-button[aria-expanded='true'] {
+  color: var(--text);
+  background: var(--surface-hover);
+  border-color: var(--border-bright);
+}
+
+.card-menu-button:focus-visible {
+  outline-offset: 1px;
+  border-radius: 7px;
+}
+
+.card-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 10;
+  width: 260px;
+  padding: 6px;
+  background: var(--tooltip-bg);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.95);
+  animation: menuIn 160ms var(--ease) both;
+}
+
+@keyframes menuIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-menu-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 9px 11px;
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 550;
+  line-height: 1.4;
+  text-align: left;
+  color: var(--text);
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 150ms var(--ease);
+}
+
+.card-menu-item:hover,
+.card-menu-item:focus-visible {
+  background: var(--surface-hover);
+}
+
+.card-menu-item:focus-visible {
+  outline-offset: -2px;
+  border-radius: 6px;
+}
+
+.card-menu-item[aria-disabled='true'] {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.card-menu-hint {
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--text-faint);
+}
+
+.card-menu-error {
+  margin: 4px 0 2px;
+  padding: 0 11px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--warn);
+}
+
+/* The end of the list: "Show all projects", when anything is hidden. */
+.projects-more {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 6px;
+}
+
+.projects-more-note {
+  font-size: 14px;
+  color: var(--text-faint);
+}
+
+.projects-all-hidden {
+  margin: 4px 0 14px;
+  font-size: 14.5px;
+  color: var(--text-faint);
+}
+
+/* --------------------------------------------------------------------------
    Panels + charts
    ------------------------------------------------------------------------ */
 
@@ -1185,6 +1397,60 @@ img.rail-mark[data-agent='codex'] {
   font-size: 14.5px;
   color: var(--text-faint);
   margin: 5px 0 0;
+}
+
+/* The title block of a panel head that also carries a control.
+
+   Without it the title block's flex basis is its subtitle's full one-line
+   width, which is wider than the panel on a narrow shell - so the control
+   wrapped onto a line of its own and made the panel taller. A small basis lets
+   the subtitle wrap beside the control instead; the control only drops below
+   once there is genuinely no room for both. */
+.panel-head-main {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+/* The date-range picker on the daily charts. A native <select> - see
+   DayRangeSelect for why - drawn to match `.btn`. The caret is two gradients
+   rather than an SVG data URI, so it takes `currentColor` and follows the
+   hover colour for free. */
+.range-select {
+  flex: none;
+  appearance: none;
+  /* The option list is drawn by the browser; this asks for its dark one. */
+  color-scheme: dark;
+  padding: 6px 34px 6px 12px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 550;
+  line-height: 1.4;
+  color: var(--text-muted);
+  background-color: var(--surface);
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 55%,
+    calc(100% - 13px) 55%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition:
+    color 180ms var(--ease),
+    border-color 180ms var(--ease);
+}
+
+.range-select:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.range-select option {
+  color: var(--text);
+  background: var(--surface);
 }
 
 /* Charts size themselves to the container via ResponsiveContainer, so they

@@ -14,8 +14,10 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import { ChartFigure } from '../src/components/ChartFigure';
+import { DayRangeSelect } from '../src/components/DayRangeSelect';
 import { EmptyState } from '../src/components/EmptyState';
 import { InfoTip } from '../src/components/InfoTip';
+import { ProjectMenu } from '../src/components/ProjectMenu';
 import { ProviderScope } from '../src/components/ProviderScope';
 import { PROVIDERS } from '../src/lib/providers';
 
@@ -158,5 +160,39 @@ describe('EmptyState', () => {
     assert.doesNotMatch(quiet, /<details/);
     assert.match(quiet, /No Codex usage found yet/);
     assert.match(quiet, /CODEX_HOME/);
+  });
+});
+
+describe('DayRangeSelect', () => {
+  const html = render(<DayRangeSelect value="30" onChange={() => {}} label="Days shown" />);
+
+  it('is a native select, named although it has no visible label', () => {
+    assert.match(html, /<select[^>]*aria-label="Days shown"/);
+  });
+
+  it('offers the three ranges, with the last 30 days chosen', () => {
+    assert.match(html, /<option value="30" selected="">Last 30 days<\/option>/);
+    assert.match(html, /<option value="60">Last 60 days<\/option>/);
+    assert.match(html, /<option value="all">All days<\/option>/);
+  });
+});
+
+describe('ProjectMenu', () => {
+  const html = render(
+    <ProjectMenu projectName="My App" hidden={false} onToggle={async () => {}} />,
+  );
+
+  it('is a button that says which project it is for', () => {
+    assert.match(html, /<button[^>]*type="button"[^>]*aria-label="Options for My App"/);
+  });
+
+  it('announces that it opens a menu, and that the menu is closed', () => {
+    assert.match(html, /aria-haspopup="menu"/);
+    assert.match(html, /aria-expanded="false"/);
+    assert.doesNotMatch(html, /role="menu"/);
+  });
+
+  it('hides the drawn dots from assistive tech', () => {
+    assert.match(html, /<svg[^>]*aria-hidden="true"/);
   });
 });

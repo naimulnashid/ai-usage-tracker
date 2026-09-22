@@ -59,6 +59,7 @@ output, the archive or any file it writes.
 | Path | What | Why |
 |---|---|---|
 | `data/history.json`, `data/codex-history.json` | Daily totals: tokens, cost, runtime, project names and paths | Both agents delete old transcripts; this keeps past days from vanishing ([details](#the-local-archive)) |
+| `data/hidden-projects.json`, `data/codex-hidden-projects.json` | The ids of projects you have hidden from the Projects page | So a project hidden on one device stays hidden on the others ([details](#hiding-a-project)) |
 | `out/*.json` | Full report, only when you run `npm run parse` / `parse:codex` | Inspecting numbers without the UI |
 | `logs/dashboard.log` | Launcher output | Only when using the Windows background service |
 
@@ -82,9 +83,11 @@ refuses every request rather than opening up.
 - **Overview:** total estimated spend, tokens and runtime; daily spend with
   unusual days flagged; per-model cost; token detail by model; activity cards
   (sessions, streaks, peak hour, longest chat); daily tokens and daily spend
-  stacked by model; a six-month heat map.
+  stacked by model, over the last 30 days, the last 60 or every day on
+  record; a six-month heat map.
 - **Projects:** a share-of-spend donut (top nine projects plus "Others") and a
-  ranked list of every project with a per-model share bar.
+  ranked list of every project with a per-model share bar. Any project can be
+  hidden from the list with its **⋯** menu.
 - **Project detail:** the same breakdowns for one project, day-by-day tables,
   and every session ranked by cost, with subagent transcripts marked.
 - **Refresh:** re-reads every transcript and recomputes. There is no background
@@ -435,6 +438,19 @@ changes the grand total, only how it is grouped.
 A project folder that holds only history replayed from another project (which
 happens when a session is resumed from a different directory) contributes
 nothing new and is hidden. `npm run parse` lists any hidden projects.
+
+#### Hiding a project
+
+To keep a project off the Projects page, open the **⋯** menu on its card and
+choose **Hide from project list**. Once anything is hidden, a **Show all
+projects** button at the end of the list brings hidden projects back into view,
+marked as hidden, and the same menu shows them again.
+
+Hiding changes what the list shows and nothing else. A hidden project's spend
+still counts in every total and chart; in the share-of-spend donut it is added
+to the remainder slice rather than named. The choice is saved in `data/`
+rather than in the browser, so it applies on every device you open the
+dashboard from.
 
 ### The local archive
 

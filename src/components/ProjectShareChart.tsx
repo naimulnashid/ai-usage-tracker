@@ -21,9 +21,22 @@ interface Slice {
   tokens: number;
   share: number;
   fill: string;
-  /** How many projects this slice stands for. 1 for a real project, N for the
-      "Others" remainder, which is the only slice that is not one project. */
+  /** True for the remainder slice, the only one that is not one project. */
+  remainder: boolean;
+  /** How many projects this slice stands for: 1, or the remainder's count. */
   projects: number;
+  /** How many of those are projects you have hidden. */
+  hidden: number;
+}
+
+/** "the 3 smallest projects and 2 hidden, combined" - what a remainder is. */
+function remainderNote(slice: Slice): string {
+  const small = slice.projects - slice.hidden;
+  const smallest = small === 1 ? 'the smallest project' : `the ${small} smallest projects`;
+  if (!slice.hidden) return `${smallest}, combined`;
+  if (!small)
+    return slice.hidden === 1 ? '1 hidden project' : `${slice.hidden} hidden projects, combined`;
+  return `${smallest} and ${slice.hidden} hidden, combined`;
 }
 
 /**
@@ -95,9 +108,9 @@ function ChartTooltip({ active, payload }: TooltipContentProps) {
       <div className="num" style={{ color: 'var(--text-muted)', marginTop: 6 }}>
         {formatUsd(slice.cost)} · {formatTokens(slice.tokens)} tokens
       </div>
-      {slice.projects > 1 && (
+      {slice.remainder && (
         <div style={{ color: 'var(--text-faint)', marginTop: 4, fontSize: 13 }}>
-          the {slice.projects} smallest projects, combined
+          {remainderNote(slice)}
         </div>
       )}
     </div>
@@ -114,14 +127,22 @@ function ChartTooltip({ active, payload }: TooltipContentProps) {
  * Only the top MAX_SLICES get a slice; the tail is summed into a neutral
  * "Others". Shares are still taken against the WHOLE total, so the slices add
  * up to 100% and no spend is dropped on the floor.
+ *
+ * **Projects you have hidden are summed into that remainder too**, never named
+ * and never dropped. Naming one would undo hiding it; dropping it would make
+ * the ring disagree with the total in its own centre. When the remainder is
+ * nothing but hidden projects it is called "Hidden" rather than "Others".
  */
 export function ProjectShareChart({
   projects,
   totalCost,
+  hiddenIds,
   height = 260,
 }: {
   projects: ProjectSummary[];
   totalCost: number;
+  /** Projects hidden from the list; see hidden-projects.ts. */
+  hiddenIds?: ReadonlySet<string>;
   height?: number;
 }) {
   /*
@@ -140,16 +161,22 @@ export function ProjectShareChart({
 
   if (!ranked.length || totalCost <= 0) return null;
 
+  const listed = hiddenIds?.size ? ranked.filter((p) => !hiddenIds.has(p.id)) : ranked;
+  const hidden = hiddenIds?.size ? ranked.filter((p) => hiddenIds.has(p.id)) : [];
+
   /*
    * Collapse only when the tail is worth collapsing. At exactly MAX_SLICES + 1
    * projects an "Others" slice would stand for a single project — hiding its
    * name behind a euphemism and saving no room at all — so that case shows
    * them all. The legend is therefore never more than MAX_SLICES + 1 rows,
    * which is what `skeleton.projectDonut` is measured against.
+   *
+   * A hidden project forces the remainder slice to exist, and that slot comes
+   * out of the named ones, so the ten-row cap holds either way.
    */
-  const collapse = ranked.length > MAX_SLICES + 1;
-  const shown = collapse ? ranked.slice(0, MAX_SLICES) : ranked;
-  const rest = collapse ? ranked.slice(MAX_SLICES) : [];
+  const collapse = hidden.length > 0 || listed.length > MAX_SLICES + 1;
+  const shown = collapse ? listed.slice(0, MAX_SLICES) : listed;
+  const rest = collapse ? [...listed.slice(MAX_SLICES), ...hidden] : [];
 
   const data: Slice[] = shown.map((project, index) => ({
     id: project.id,
@@ -158,21 +185,26 @@ export function ProjectShareChart({
     tokens: project.combined.totalTokens,
     share: (project.combined.costUsd / totalCost) * 100,
     fill: rampColor(index, shown.length),
+    remainder: false,
     projects: 1,
+    hidden: 0,
   }));
 
   if (rest.length) {
     const cost = rest.reduce((sum, project) => sum + project.combined.costUsd, 0);
     data.push({
       id: '__others__',
-      name: 'Others',
+      name: hidden.length === rest.length ? 'Hidden' : 'Others',
       cost,
       tokens: rest.reduce((sum, project) => sum + project.combined.totalTokens, 0),
       share: (cost / totalCost) * 100,
       fill: OTHERS_FILL,
+      remainder: true,
       projects: rest.length,
+      hidden: hidden.length,
     });
   }
+  const remainder = data.find((slice) => slice.remainder);
 
   /*
    * Plain functions, not useCallback: they close over `data`, which is built
@@ -186,8 +218,8 @@ export function ProjectShareChart({
     <ChartFigure
       label="Share of spend by project."
       summary={
-        collapse
-          ? `Top ${MAX_SLICES} projects, with the remaining ${rest.length} summed as Others.`
+        remainder
+          ? `${shown.length ? `The top ${shown.length === 1 ? 'project' : `${shown.length} projects`}, then ` : ''}${remainder.name}: ${remainderNote(remainder)}.`
           : `All ${ranked.length} project${ranked.length === 1 ? '' : 's'}.`
       }
       columns={[
@@ -264,8 +296,9 @@ export function ProjectShareChart({
                 aria-hidden
               />
               {/* A monogram here would draw "O" and read as a project called
-                Others. The remainder gets a count instead. */}
-              {slice.projects > 1 ? (
+                Others. The remainder gets a count instead - even a remainder
+                of one, which a hidden project can make. */}
+              {slice.remainder ? (
                 <span className="donut-legend-more num" aria-hidden>
                   +{slice.projects}
                 </span>

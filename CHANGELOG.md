@@ -8,6 +8,19 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **The two stacked charts have a date range.** "Daily tokens by model" and
+  "Daily spend by model" — on the overview and on every project page — can
+  show the last 30 days (the default), the last 60, or every day on record.
+  A window is calendar days ending today, so idle days show as empty columns
+  instead of being skipped, and each chart's legend describes just the days it
+  is showing.
+- **Projects can be hidden from the Projects page.** Each card has a **⋯**
+  menu that hides it; once anything is hidden, **Show all projects** at the end
+  of the list brings it back. Hiding never changes a number: hidden projects
+  still count in every total, and the share-of-spend donut adds them to its
+  remainder slice. The list is saved under `data/`, so it follows you from
+  device to device.
+
 - **The rate card's age is on the page.** The Cost by model panel now names the
   file its rates came from and the date they were last verified. Every money
   figure in this dashboard is a token count multiplied by that file, and

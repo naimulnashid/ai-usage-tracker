@@ -142,3 +142,26 @@ export async function verifySession(
   const expiry = Number(payload);
   return Number.isFinite(expiry) && Date.now() < expiry;
 }
+
+/**
+ * True unless a browser says this request came from another site.
+ *
+ * For the routes that WRITE something. The session cookie is `SameSite=Lax`,
+ * so another site cannot make a signed-in browser send it with a PUT anyway,
+ * and a JSON body forces a CORS preflight this app never answers - this is
+ * the third lock on the same door, and the only one that does not depend on
+ * how a browser treats cookies or content types.
+ *
+ * A request with no `Origin` is allowed: browsers always send one on a
+ * cross-origin write, so its absence means a non-browser client, which still
+ * has to present the cookie like anything else.
+ */
+export function isSameOrigin(request: Request): boolean {
+  const origin = request.headers.get('origin');
+  if (!origin) return true;
+  try {
+    return new URL(origin).host === request.headers.get('host');
+  } catch {
+    return false;
+  }
+}

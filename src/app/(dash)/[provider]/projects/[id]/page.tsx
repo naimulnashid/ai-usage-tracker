@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useUsage } from '@/components/UsageProvider';
@@ -8,6 +9,7 @@ import { CountUp } from '@/components/CountUp';
 import { DailySpendChart } from '@/components/DailySpendChart';
 import { DailyTokensByModelChart } from '@/components/DailyTokensByModelChart';
 import { DailySpendByModelChart } from '@/components/DailySpendByModelChart';
+import { DayRangeSelect } from '@/components/DayRangeSelect';
 import { CombinedDailyTable, ModelDailyTable } from '@/components/DailyTables';
 import { ModelBreakdownTable } from '@/components/ModelBreakdownTable';
 import { SessionsTable } from '@/components/SessionsTable';
@@ -23,6 +25,7 @@ import {
   formatUsd,
 } from '@/lib/format';
 import { modelColor } from '@/lib/model-colors';
+import { DEFAULT_DAY_RANGE, reportToday, type DayRange } from '@/lib/day-range';
 
 /** `useParams` decodes already; only decode a still-encoded id, and never throw. */
 function decodeParam(raw: string): string {
@@ -46,6 +49,9 @@ export default function ProjectDetailPage() {
   // the page. Decode only if it is still encoded, and never throw.
   const projectId = decodeParam(String(params?.id ?? ''));
   const { report, initialLoading, error, version } = useUsage();
+  // The overview's two range pickers, for this project's copies of the charts.
+  const [tokensRange, setTokensRange] = useState<DayRange>(DEFAULT_DAY_RANGE);
+  const [spendRange, setSpendRange] = useState<DayRange>(DEFAULT_DAY_RANGE);
 
   if (initialLoading) {
     return (
@@ -159,6 +165,7 @@ export default function ProjectDetailPage() {
         .map(([model]) => model),
     ),
   ];
+  const today = reportToday(report.generatedAt, report.settings.localUtcOffsetHours);
 
   return (
     <div className="page-enter" style={{ paddingTop: 26 }}>
@@ -325,35 +332,45 @@ export default function ProjectDetailPage() {
 
       <section className="card panel rise" style={{ animationDelay: '150ms' }}>
         <div className="panel-head">
-          <div>
+          <div className="panel-head-main">
             <h2 className="panel-title">Daily tokens by model</h2>
             <p className="panel-sub">
               Stacked by model, most expensive at the bottom — so the darker the base of a column,
               the more of that day went on premium tokens.
             </p>
           </div>
+          <DayRangeSelect
+            value={tokensRange}
+            onChange={setTokensRange}
+            label="Days shown in Daily tokens by model"
+          />
         </div>
         <DailyTokensByModelChart
           daily={daily}
-          perModel={perModel}
-          combined={combined}
+          range={tokensRange}
+          today={today}
           replayKey={version}
         />
       </section>
 
       <section className="card panel rise" style={{ animationDelay: '160ms' }}>
         <div className="panel-head">
-          <div>
+          <div className="panel-head-main">
             <h2 className="panel-title">Daily spend by model</h2>
             <p className="panel-sub">
               Stacked, so the height of each column is that day&apos;s combined total.
             </p>
           </div>
+          <DayRangeSelect
+            value={spendRange}
+            onChange={setSpendRange}
+            label="Days shown in Daily spend by model"
+          />
         </div>
         <DailySpendByModelChart
           daily={daily}
-          perModel={perModel}
-          combined={combined}
+          range={spendRange}
+          today={today}
           replayKey={version}
         />
       </section>

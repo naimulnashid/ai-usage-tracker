@@ -431,6 +431,9 @@ src/lib/parser.ts                    CLAUDE CODE CORE. Scan -> parse -> de-dupli
 src/lib/codex-parser.ts              CODEX CORE. Same output, completely different traps.
 src/lib/usage-math.ts                The arithmetic BOTH parsers do, once. Cells, buckets, daily rollup.
 src/lib/history.ts                   Daily archive. One file per agent, keyed off report.provider.
+src/lib/data-dir.ts                  Where the app writes its own state. Honours DASHBOARD_DATA_DIR.
+src/lib/hidden-projects.ts           Projects hidden from the Projects page. One file per agent, in data/.
+src/lib/day-range.ts                 The stacked charts' date windows. Client-safe.
 src/lib/auth.ts                      Password gate: session cookie signing. Web Crypto only.
 src/lib/rail.ts                      Sidebar state + the before-paint init script.
 src/proxy.ts                         The single auth gate in front of every route.
@@ -852,6 +855,123 @@ something false. The spend legend carries no token counts for the same reason.
 the markup does not describe a token count as a cost. `.model-legend-compact`
 drops the middle column for the spend legend while keeping the share in the same
 62px gutter, so the two legends line up when stacked.
+
+### The two stacked charts carry a date range
+
+Both stacked charts, on the overview and on the project page, have a picker in
+their panel head: **Last 30 days** (the default), **Last 60 days**, **All
+days**. The logic is `src/lib/day-range.ts`; the picker is `DayRangeSelect`.
+
+- **A window is calendar days ending on the report's "today"**, derived from
+  `generatedAt` at the configured offset, exactly as the heat map derives its
+  last column - never the clock. Every day in the window gets a column, idle
+  ones as empty columns, so "Last 30 days" is always 30 columns. **All days**
+  is the old behaviour unchanged: every day on record, gaps closed up, and the
+  `(unknown date)` bucket included. A window leaves that bucket out, since it
+  is not a day.
+- **A dormant project shows an empty window, not an older stretch.** "Last 30
+  days" over a window that ended in July would be a label that lies. The empty
+  state names the last active date instead, which answers the question the
+  reader actually has.
+- **The legend is summed over the days shown** (`sumDays`), never the
+  all-time `perModel`. This is the legend rule above, one level up: thirty
+  columns beside all-time shares is two denominators again. A model with no
+  usage in the window drops out of the legend - which is why the panel's height
+  now depends on the window (see below).
+- **The sr-only table carries active days only.** A window's idle columns are
+  zeroes, and a screen reader would otherwise hear sixty rows of them.
+- **One range per chart, not one per page.** A control inside a panel changes
+  that panel; linking the two would make the tokens picker silently move the
+  spend chart. Neither persists: every page load starts at 30 days, as asked.
+- **A native `<select>`,** so its list cannot be clipped, raise a scrollbar or
+  be painted over by the next card - the failure modes every hand-built overlay
+  in this layout has had. `color-scheme: dark` gets the browser's dark list.
+- **`.panel-head-main` is what keeps the picker beside the title.** Without it
+  the title block's flex basis is its subtitle's full one-line width, and on a
+  narrow shell the picker wrapped onto its own line and made the panel taller.
+
+**This moved the skeleton numbers.** The default view is now 30 days, and the
+legend has a row per model *used in those days*, so `dailyTokens` and
+`dailySpendByModel` (overview and `detail`) measure the 30-day panel, not the
+all-time one. Re-measured with the iframe recipe, 997px / 1680px:
+
+| | tokens | spend | entries (were) |
+|---|---|---|---|
+| Claude overview | 577 / 553 | 577 / 553 | 565, 565 (659, 659) |
+| Claude project | 530 / 506 | 506 / 506 | 518, 506 (581, 569) |
+| Codex overview | 603 / 553 | 577 / 553 | unchanged |
+| Codex project | 577-603 / 553 | 553 / 553 | 572, 553 (578, 553) |
+
+Claude Code's dropped because an all-time legend of four models became a 30-day
+legend of two (one, on a project). Codex's barely moved: both of its models are
+in the window. **Codex's unchanged overview is the proof the picker costs the
+panel head no height** - it sits beside the title rather than wrapping under it.
+Re-measure if the default range changes, and expect drift as the models you use
+change: an old model leaving the window takes a legend row with it.
+
+### Hiding a project
+
+Each project card has a **⋯** menu (`ProjectMenu`) that hides it from the
+Projects page; **Show all projects** at the end of the list brings hidden ones
+back, marked with a pill and a dashed edge, and the same menu shows them again.
+The button exists only while something is hidden.
+
+**It is a view preference, never a filter on the data.** A hidden project counts
+in every total, every chart and every share. In the donut it is summed into the
+remainder slice - named "Hidden" when the remainder is only hidden projects,
+"Others" otherwise, with the tooltip saying which - because naming it would
+undo hiding it and dropping it would make the ring disagree with the total in
+its own centre. A hidden project also forces that remainder slice to exist,
+and the slot comes out of the named ones, so the ten-row legend cap holds.
+
+Not to be confused with `diagnostics.emptyProjectsHidden`, which the PARSER
+drops for holding nothing but replayed history.
+
+- **Stored in `data/`, one file per agent** (`hidden-projects.json`,
+  `codex-hidden-projects.json`), through `dataDir()`, so `DASHBOARD_DATA_DIR`
+  moves it with the archive and a demo run cannot touch the real list. Ids
+  only. Not `localStorage`, because this dashboard is used from several
+  devices and a hide should follow you. Not `config/projects.json`, because that
+  file is hand-written and carries its documentation as `_comment` keys - an app
+  rewriting it would reformat it on the first click.
+- **Not part of the `UsageReport`**, on the logo reasoning: a click must not
+  cost a parse. But `UsageProvider` fetches it **alongside** the report, so the
+  page never renders once with every project and then drops the hidden ones.
+  A save bumps a counter, and a load that started before a save does not apply
+  its (stale) list over it.
+- **`/api/hidden-projects/<agent>` is the first route that writes what a
+  request asked for.** Behind the gate like everything, validated against the
+  registry like `/api/usage`, and it also refuses a write whose `Origin` is not
+  its own host (`isSameOrigin` in `auth.ts`) - the third lock after the `Lax`
+  cookie and the JSON preflight. Bounded: id length, list size.
+- **Not optimistic.** The card leaves the list when the server says the write
+  landed. An optimistic hide that failed would vanish a card and bring it back,
+  and the error would have nowhere to go; this way it shows in the menu.
+
+**The card is a wrapper now, not a link.** The menu cannot live inside the
+`<a>` - a button inside a link is invalid and a click on it follows the link -
+so `.project-card` is a `div` holding the link and, as its sibling, the menu,
+laid absolutely over the bottom-right corner. The link keeps the old card's
+padding and content exactly, which is what keeps the measured 177px row;
+`.project-card-cta` carries a right margin that is the room the button sits in.
+A stretched-link overlay was the other option and was rejected: it covers the
+share bar's per-model `title`s and the path's, which the card relies on.
+
+**Two traps met building it:**
+
+- **Every card is a stacking context** - `rise` leaves a transform on it - so
+  the NEXT card paints over a menu hanging out of this one, whatever z-index
+  the menu has. The card with an open menu is lifted with
+  `.project-card:has([aria-expanded='true'])`, not React state.
+- **Hidden cards are not faded.** Most of a card's text is `--text-faint`,
+  which clears 4.5:1 by a hair; any opacity at all fails it. They are marked by
+  the pill and a dashed border instead.
+
+The menu item is `aria-disabled` while saving, not `disabled`: a focused button
+that becomes disabled drops focus, which the menu reads as focus leaving it,
+and it closed itself mid-save. And a hide that removes the focused card moves
+focus to the next card's link (or the Show-all button), in an effect that only
+acts if focus really did fall to `<body>`.
 
 ### The projects page opens with a share-of-spend donut
 

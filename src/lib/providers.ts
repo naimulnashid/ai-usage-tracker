@@ -152,6 +152,11 @@ export interface SkeletonMetrics {
    * stacked column chart plus one legend row per model - but not the same
    * height: the spend legend drops the in/out/cached column, which is what
    * makes a legend row wrap on a narrow shell.
+   *
+   * **Measured at the default range, the last 30 days**, whose legend has a row
+   * per model used IN those days - not every model the agent has ever used.
+   * So these follow what you have been using lately, and move when a model
+   * enters or leaves the window. See day-range.ts.
    */
   dailyTokens: number;
   dailySpendByModel: number;
@@ -256,8 +261,10 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
       dailySpend: 466, // 499 / 433
       costByModel: 405, // 417 / 393 - the rate-card line wraps at the narrow width
       tokenTable: 510, // 530 / 491
-      dailyTokens: 659, // 671 / 647
-      dailySpendByModel: 659, // 671 / 647 - same as its tokens twin here
+      // Re-measured 2026-09-22 at the 30-day default: two models in the window
+      // where all-time had four (671 / 647 before the range existed).
+      dailyTokens: 565, // 577 / 553
+      dailySpendByModel: 565, // 577 / 553 - same as its tokens twin here
       heatmap: 457, // 403 / 512
       projectDonut: 458, // 522 / 393 - ten legend rows, one column at 997px
       // Measured across three projects (2, 4 and 4 models) at both widths.
@@ -266,8 +273,10 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
         dailySpend: 446, // 479 / 413, identical on every project
         combinedTable: 560, // capped: one screen of a table as long as the data
         modelCards: 4, // the projects' own model counts, not the agent's five
-        dailyTokens: 581, // 624/624/530 @997, 600/600/506 @1680
-        dailySpendByModel: 569, // 600/600/506 at both widths
+        // Re-measured 2026-09-22 at the 30-day default, on the same three
+        // projects: one model each in the window, where all-time had 2-4.
+        dailyTokens: 518, // 530 @997, 506 @1680, on all three
+        dailySpendByModel: 506, // flat at both widths and on all three
         tokenTable: 383, // 425/425/321 @997, 410/410/305 @1680
         modelDailyTable: 620, // capped, as above
         sessionsTable: 868, // 876 / 860 - twelve rows, flat across projects
@@ -311,6 +320,8 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
       dailySpend: 466, // 499 / 433
       costByModel: 405, // 417 / 393 - the rate-card line wraps at the narrow width
       tokenTable: 353, // 373 / 334 - two models, not five
+      // Unchanged by the 30-day default (re-measured 2026-09-22): both models
+      // are in the window, so the legend is the same two rows.
       dailyTokens: 578, // 603 / 553
       dailySpendByModel: 565, // 577 / 553 - one legend row fewer than the
       // tokens chart, whose detail column wraps at 997px
@@ -323,7 +334,10 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
         dailySpend: 446, // 479 / 413, identical to Claude Code's
         combinedTable: 560, // capped: one screen of a table as long as the data
         modelCards: 2, // a Codex project uses both models, so this matches above
-        dailyTokens: 578, // 603 / 553
+        // Re-measured 2026-09-22 at the 30-day default. The legend's detail
+        // column now wraps at 997px on one project and not the other - its
+        // 30-day counts are shorter strings than the all-time ones were.
+        dailyTokens: 572, // 577/603 @997, 553 @1680
         dailySpendByModel: 553, // flat at both widths and on both projects
         tokenTable: 313, // 321 / 305 - two models, not five
         modelDailyTable: 620, // capped, as above
