@@ -225,3 +225,32 @@ describe('project detail skeleton metrics', () => {
     });
   }
 });
+
+describe('a chart legend row gives way in a narrow window', () => {
+  // A bare `1fr` name column never shrank below its text, so in a narrow
+  // window a row spilled out of its card - 3px past the page at 320px.
+  const start = css.indexOf('@media (max-width: 760px) {\n  .model-legend-row {');
+  const block = css.slice(start, css.indexOf('\n}', start));
+
+  it('lets the name column shrink, in both legends', () => {
+    assert.ok(start >= 0, 'narrow-window legend block not found');
+    assert.match(block, /\.model-legend-row \{\s*grid-template-columns: minmax\(0, 1fr\) auto;/);
+    assert.match(
+      block,
+      /\.model-legend-compact \.model-legend-row \{\s*grid-template-columns: minmax\(0, 1fr\) auto auto;/,
+    );
+  });
+
+  it('wraps the name instead of letting it push the row wider', () => {
+    assert.match(block, /\.model-legend-name \{[^}]*min-width: 0;[^}]*overflow-wrap: anywhere;/);
+  });
+
+  it('gives the spend legend’s name a line of its own in the narrowest windows', () => {
+    // Beside a cost and a share at 320px the name had ~20px - wrapped, a word
+    // a letter at a time; truncated, "o…".
+    const narrow = css.indexOf('@media (max-width: 440px) {');
+    assert.ok(narrow > start, 'the 440px block must follow the 760px one');
+    const rules = css.slice(narrow, css.indexOf('\n}', narrow));
+    assert.match(rules, /\.model-legend-compact \.model-legend-name \{\s*grid-column: 1 \/ -1;/);
+  });
+});

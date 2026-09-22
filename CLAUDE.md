@@ -308,9 +308,18 @@ the next section.
 Measured with the page-overflow check, in iframes with scrollbars hidden to
 match a phone's overlay ones: 0px at 360, 393 and 412px on the overview, the
 projects page and a project page, both agents; the bar is 109px tall there
-(84px before, in one row). Unchanged above 720px: one row, 84px. One leftover,
-narrower than any phone this was for: **3px at 320px** from a chart legend's
-share column.
+(84px before, in one row). Unchanged above 720px: one row, 84px.
+
+**The last straggler was a chart legend, at 320px.** Its name column was a
+bare `1fr`, which never shrinks below its text, so a row spilled ~47px out of
+its card - the page's padding hid all but 3px of it. Below 760px the column is
+now `minmax(0, 1fr)` and the name wraps (`overflow-wrap: anywhere` as the last
+resort); in the tokens legend it spans the line it already had to itself, and
+below 440px the spend legend gives it a line of its own above the cost and
+share. **Truncating it was tried first and rejected:** with ~20px left beside
+the two figures at 320px, names came out as "o…". Measured: 0px of overflow
+and every row inside its card at 320, 360, 440 and 600px, both agents;
+unchanged heights at 997 and 1680px, where none of this applies.
 
 ### The headline total is sized to fit its own length
 

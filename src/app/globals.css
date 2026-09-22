@@ -1044,20 +1044,51 @@ img.rail-mark[data-agent='codex'] {
   grid-template-columns: minmax(130px, 1fr) auto 62px;
 }
 
+/* `minmax(0, 1fr)`, not `1fr`, for the name column. A bare `1fr` never shrinks
+   below its text, so in a narrow window a row simply spilled out of its
+   panel - ~47px past the card's edge at 320px, which the page's padding
+   hid down to a 3px page overflow. Now the name wraps instead (at a space or
+   a hyphen, or anywhere if it has to), and nothing leaves the card. Only
+   here: above 760px the rows have room, and the measured skeleton heights
+   come from those widths. */
 @media (max-width: 760px) {
   .model-legend-row {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     row-gap: 4px;
   }
   /* Three real cells and nothing that spans, so they stay on one line
      rather than orphaning the share onto a row of its own. */
   .model-legend-compact .model-legend-row {
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     gap: 12px;
+  }
+  .model-legend-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  /* In the tokens legend the name is already alone on its line - the detail
+     spans the next one, the figures the one after - so it may as well have
+     that line's full width rather than wrapping beside an empty cell. */
+  .model-legend:not(.model-legend-compact) .model-legend-name {
+    grid-column: 1 / -1;
   }
   .model-legend-detail {
     grid-column: 1 / -1;
     text-align: left;
+  }
+}
+
+/* Narrower still, the spend legend's one line would leave the name ~20px
+   beside a cost and a share (at 320px), so the name takes a line of its own
+   and the two figures go under it. Wrapping it into that gap instead would
+   print a word a letter at a time; truncating it was tried and cut names
+   down to "o…". */
+@media (max-width: 440px) {
+  .model-legend-compact .model-legend-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .model-legend-compact .model-legend-name {
+    grid-column: 1 / -1;
   }
 }
 
