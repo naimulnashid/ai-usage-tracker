@@ -44,7 +44,10 @@ It is a **local-only** dashboard that reads coding agents' session transcripts
 from your own home directory and renders numbers from them. There is no
 database, no server component you do not run, and no outbound network call: a
 content security policy with `connect-src 'self'` enforces that last point in
-the browser rather than leaving it to the code.
+the browser rather than leaving it to the code. It writes only inside its own
+data folder (`data/`, or `DASHBOARD_DATA_DIR`): the daily archive, and the list
+of projects hidden from the Projects page — the one thing a request can
+change.
 
 Two consequences shape what counts as a vulnerability here:
 
@@ -66,6 +69,10 @@ Two consequences shape what counts as a vulnerability here:
   through a project id, a logo filename, or anything else that reaches the
   filesystem.
 - Getting the app to send data anywhere off the machine.
+- Getting it to write anywhere but its data folder, or changing the
+  hidden-project list without a session or from another site —
+  `/api/hidden-projects/<agent>` refuses both, and accepts only a bounded list
+  of project ids.
 - Code execution from a malformed transcript, a crafted `config/*.json`, or a
   file dropped into a project-logo folder.
 - Stored or reflected script execution in the dashboard, including through a

@@ -30,9 +30,9 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   can see the dashboard, take a screenshot or try a change without pointing it
   at your own machine. The fake transcripts go through the real parsers, so the
   numbers are computed the way yours are.
-- `DASHBOARD_DATA_DIR` moves the daily archive. Set it whenever you point the
-  app at transcripts that are not yours, or invented days get merged into your
-  real history.
+- `DASHBOARD_DATA_DIR` moves the daily archive and the hidden-project list.
+  Set it whenever you point the app at transcripts that are not yours, or
+  invented days get merged into your real history.
 - `CONTRIBUTING.md`, issue and pull-request templates, and Dependabot. The
   templates lead with the privacy rule, because an app that reads your real
   code and paths makes a public bug report the easiest way to leak them.

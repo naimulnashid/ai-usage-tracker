@@ -88,8 +88,8 @@ export interface ProviderMeta {
  * The loading skeleton's job is that nothing moves when the data lands, so it
  * reproduces the real page section by section at measured heights. Those
  * heights are NOT the same for both agents: Codex has two models to Claude
- * Code's five, so its stat grid is one row where the other wraps to three, and
- * its token table is ~150px shorter.
+ * Code's five, so its stat grid is one row where the other wraps to two at
+ * 997px (three with the rail expanded), and its token table is ~150px shorter.
  *
  * A single shared set of numbers is therefore wrong for at least one agent by
  * a couple of hundred pixels, which is the exact failure the skeletons were
@@ -204,8 +204,10 @@ export interface SkeletonMetrics {
    *
    * That is also why `modelCards` is here rather than reusing the agent-wide
    * `modelCards` above. The overview shows every model, a project does not: at
-   * 997px the agent's five cells wrap to three rows where a four-model project
-   * takes two, which was 166px of error on its own.
+   * 997px the agent's five cells wrapped to three rows where a four-model
+   * project took two, which was 166px of error on its own. (That was with the
+   * rail expanded; collapsed, both are two rows at 997px, but the counts still
+   * part at other widths.)
    *
    * The two long tables stay capped: their height follows the number of days
    * and sessions, which the skeleton cannot know. Everything above them lands

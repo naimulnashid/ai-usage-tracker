@@ -186,6 +186,7 @@ npm start
 | `SESSION_SECRET` | Before LAN use | A long random value mixed into the session-cookie key; see below. |
 | `CLAUDE_CONFIG_DIR` | No | Claude Code's config directory, if not `~/.claude` |
 | `CODEX_HOME` | No | Codex's home directory, if not `~/.codex` |
+| `DASHBOARD_DATA_DIR` | No | Where the dashboard writes its own files — the daily archive and the list of hidden projects — if not `./data`. Set it whenever the transcripts are not yours ([why](#trying-it-without-your-own-data)). |
 
 **Restart the server after changing `.env.local`.** The production server
 (`npm start`, and the background service) reads it once, at startup: until you
@@ -350,7 +351,8 @@ produce. It is seeded, so the same command always gives the same dashboard.
 > agents deleting old transcripts, and without that variable these invented
 > days are merged into it. The merge keeps whichever copy has more messages,
 > so a fabricated day can overwrite a real one, and the archive is the one
-> thing here that cannot rebuild itself from disk.
+> thing here that cannot rebuild itself from disk. The same variable keeps any
+> projects you hide in the demo out of your real hidden list.
 
 Delete `./demo-data` when you are done; it is gitignored either way.
 

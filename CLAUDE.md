@@ -397,8 +397,8 @@ moves when the data lands.
 **The measurements are per agent, in `ProviderMeta.skeleton`.** A single shared
 set is wrong for at least one of them, because the two pages are genuinely
 different shapes: with typical usage Codex has two models to Claude Code's five
-(a one-row stat grid against a three-row one at 997px) and a token table ~150px
-shorter.
+(a one-row stat grid against a two-row one at 997px - three with the rail
+expanded) and a token table ~150px shorter.
 
 Three rules keep them honest:
 
@@ -535,7 +535,9 @@ the mean across every project measured at both widths, which is a weaker
 guarantee than the overview's and is documented as such in the type. Reusing the
 overview's numbers there, which is what it used to do, meant the agent-wide
 model count: at 997px five cells wrapped to three rows where a four-model
-project takes two, 166px of error from that one constant.
+project takes two, 166px of error from that one constant. (Measured with the
+rail expanded, then the default; collapsed, both take two rows at 997px, but
+the counts still part at other widths.)
 
 Measured after the fix, on a four-model project, skeleton minus real:
 
