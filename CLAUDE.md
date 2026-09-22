@@ -105,6 +105,20 @@ root layout (`src/lib/rail.ts`), which sets `data-rail` on `<html>` **before
 first paint**. Do this from React instead and a collapsed rail mounts expanded
 and visibly snaps shut on every page load.
 
+**The rail starts collapsed** unless the browser has chosen expanded, and
+storage that is blocked gets collapsed too. It used to start expanded; it
+changed with phones getting the desktop layout, where an expanded rail is a
+quarter of a 1024px page spent on two links. Two details:
+
+- **The storage key is versioned** (`aiusage.rail.v2`). Under the old key a
+  browser holding `'expanded'` - written by anyone who had ever collapsed and
+  re-opened it - would have kept the old default for good, and the change would
+  have looked like it never shipped. The new key starts everyone collapsed
+  once; after that the choice is remembered as before.
+- **The server snapshot is `true`** (`isRailCollapsedOnServer`), so the
+  server-rendered burger already says "Expand sidebar". Only that label depends
+  on it - the rail's width is CSS off the attribute.
+
 ## Tech stack
 
 - Next.js (App Router) + TypeScript (`strict`)
@@ -426,6 +440,14 @@ constant has drifted rather than the window having changed.
 **The rail changed all of these.** It takes 252px out of the viewport, so at
 997px the shell went from ~961px to 730px. Nothing measured before the rail
 existed is comparable.
+
+**And then its default changed them again.** The rail now starts collapsed
+(70px), so the 997px column is measured with it collapsed - 182px more shell -
+and was re-measured on 2026-09-22. Mostly subtitles stopped wrapping: the
+overview's Daily combined spend went 499 → 433 and Cost by model 417 → 393 at
+997px, both now flat across widths, and the project page's Daily total spend
+479 → 413. The 1680px column did not move: the shell hits its max-width there
+with the rail in either state. The tables above record the expanded era.
 
 These heights depend on how many models and projects the measuring machine had.
 Re-measure against your own data when a panel changes shape, and expect a few

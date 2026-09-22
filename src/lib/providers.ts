@@ -253,24 +253,27 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
     subagentNoun: 'subagent',
 
     // Measured 2026-08-19 at 997px and 1680px viewport (scoreCard 2026-08-21,
-    // twelve cards in a fixed 4-column grid).
+    // twelve cards in a fixed 4-column grid). The 997px column was re-measured
+    // 2026-09-22 with the rail COLLAPSED, its new default: 182px more shell,
+    // so several subtitles stopped wrapping. 1680px is the same either way -
+    // the shell reaches its max-width before the rail makes a difference.
     skeleton: {
       modelCards: 5,
       scoreCard: 129, // grid 840 in 6 rows @997 / 415 in 3 rows @1680
-      headline: 278, // 282 / 275
-      dailySpend: 466, // 499 / 433
-      costByModel: 405, // 417 / 393 - the rate-card line wraps at the narrow width
-      tokenTable: 510, // 530 / 491
+      headline: 269, // 263 / 275 (282 at 997 with the rail expanded)
+      dailySpend: 433, // flat - 499 at 997 with the rail expanded
+      costByModel: 393, // flat - the rate-card line no longer wraps at 997
+      tokenTable: 499, // 506 / 491
       // Re-measured 2026-09-22 at the 30-day default: two models in the window
       // where all-time had four (671 / 647 before the range existed).
       dailyTokens: 565, // 577 / 553
       dailySpendByModel: 565, // 577 / 553 - same as its tokens twin here
-      heatmap: 457, // 403 / 512
+      heatmap: 457, // 402 / 512
       projectDonut: 458, // 522 / 393 - ten legend rows, one column at 997px
       // Measured across three projects (2, 4 and 4 models) at both widths.
       detail: {
-        headline: 374, // 368/389/413 @997, 358 flat @1680 - the cwd path wraps
-        dailySpend: 446, // 479 / 413, identical on every project
+        headline: 359, // 342/368/368 @997, 358 flat @1680 - the cwd path wraps
+        dailySpend: 413, // flat at both widths, identical on every project
         combinedTable: 560, // capped: one screen of a table as long as the data
         modelCards: 4, // the projects' own model counts, not the agent's five
         // Re-measured 2026-09-22 at the 30-day default, on the same three
@@ -279,7 +282,7 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
         dailySpendByModel: 506, // flat at both widths and on all three
         tokenTable: 383, // 425/425/321 @997, 410/410/305 @1680
         modelDailyTable: 620, // capped, as above
-        sessionsTable: 868, // 876 / 860 - twelve rows, flat across projects
+        sessionsTable: 860, // twelve rows, flat across widths and projects
       },
     },
   },
@@ -312,32 +315,31 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
     subagentNoun: 'auto-review',
 
     // Measured 2026-08-19 at 997px and 1680px viewport (scoreCard 2026-08-21,
-    // twelve cards in a fixed 4-column grid).
+    // twelve cards in a fixed 4-column grid). The 997px column was re-measured
+    // 2026-09-22 with the rail collapsed, as for Claude Code above.
     skeleton: {
       modelCards: 2,
       scoreCard: 129, // same as Claude Code: 840 / 415, both measured
-      headline: 290, // 306 / 275
-      dailySpend: 466, // 499 / 433
-      costByModel: 405, // 417 / 393 - the rate-card line wraps at the narrow width
+      headline: 269, // 263 / 275 (306 at 997 with the rail expanded)
+      dailySpend: 433, // flat - 499 at 997 with the rail expanded
+      costByModel: 393, // flat - the rate-card line no longer wraps at 997
       tokenTable: 353, // 373 / 334 - two models, not five
-      // Unchanged by the 30-day default (re-measured 2026-09-22): both models
-      // are in the window, so the legend is the same two rows.
-      dailyTokens: 578, // 603 / 553
-      dailySpendByModel: 565, // 577 / 553 - one legend row fewer than the
-      // tokens chart, whose detail column wraps at 997px
-      heatmap: 432, // 353 / 512
+      // Both models are in the 30-day window, so the legend is the same two
+      // rows; the collapsed rail is what stopped its detail column wrapping.
+      dailyTokens: 565, // 577 / 553 (603 at 997 with the rail expanded)
+      dailySpendByModel: 565, // 577 / 553
+      heatmap: 457, // 402 / 512 (353 at 997 with the rail expanded)
       projectDonut: 405, // 417 / 393 - two projects, so the ring governs
       // Derived from the overview's measured panels - see SkeletonMetrics.detail.
       // Measured across both Codex projects at both widths.
       detail: {
-        headline: 374, // 368/413 @997, 358 flat @1680 - same as Claude Code's
-        dailySpend: 446, // 479 / 413, identical to Claude Code's
+        headline: 363, // 368/368 @997, 358 flat @1680
+        dailySpend: 413, // flat at both widths, identical to Claude Code's
         combinedTable: 560, // capped: one screen of a table as long as the data
         modelCards: 2, // a Codex project uses both models, so this matches above
-        // Re-measured 2026-09-22 at the 30-day default. The legend's detail
-        // column now wraps at 997px on one project and not the other - its
-        // 30-day counts are shorter strings than the all-time ones were.
-        dailyTokens: 572, // 577/603 @997, 553 @1680
+        // Re-measured 2026-09-22 at the 30-day default and the collapsed rail:
+        // the legend's detail column no longer wraps at 997px on either.
+        dailyTokens: 565, // 577/577 @997, 553 @1680
         dailySpendByModel: 553, // flat at both widths and on both projects
         tokenTable: 313, // 321 / 305 - two models, not five
         modelDailyTable: 620, // capped, as above

@@ -27,10 +27,11 @@ function isRailCollapsed(): boolean {
   return document.documentElement.dataset.rail === 'collapsed';
 }
 
-// The server cannot see the attribute, so it renders the rail expanded, as it
-// always has; the first client render then reads the real value.
+// The server cannot see the attribute, so it renders the default - collapsed,
+// see RAIL_INIT_SCRIPT - and the first client render then reads the real value.
+// Only the burger's label depends on this; the rail's width is pure CSS.
 function isRailCollapsedOnServer(): boolean {
-  return false;
+  return true;
 }
 
 /**

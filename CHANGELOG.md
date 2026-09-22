@@ -95,6 +95,9 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Phones show the desktop dashboard, scaled to fit the screen,** the way a
   browser's "Desktop site" option does. Pinch to zoom in on the details. The
   login page is unchanged.
+- **The sidebar starts collapsed.** Expanding it is remembered per browser, as
+  before; every browser starts collapsed once, including ones where it had been
+  left expanded.
 - **Next.js 16**, which needs **Node.js 20.9 or newer**. The password gate
   moves from `src/middleware.ts` to `src/proxy.ts`, Next's new name for it,
   and now runs on Node rather than the Edge runtime. One visible effect:
