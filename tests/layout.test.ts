@@ -121,6 +121,51 @@ describe('the top bar gives way instead of overflowing', () => {
   });
 });
 
+describe('the top bar becomes two rows on a phone', () => {
+  // The single row needs ~560px and a 360px phone leaves it 262. Chrome did not
+  // scroll the overflow, it zoomed the whole dashboard out to ~45% to show it.
+  const start = css.indexOf('@media (max-width: 720px) {');
+  const end = css.indexOf('\n}', start);
+  const phone = css.slice(start, end);
+  const inPhone = (selector: string, property: string, value: string) => {
+    const at = phone.indexOf(`  ${selector} {`);
+    assert.ok(at >= 0, `phone rule not found: ${selector}`);
+    const body = phone.slice(at, phone.indexOf('}', at));
+    return new RegExp(`${property}\\s*:\\s*${value}\\s*;`).test(body);
+  };
+
+  it('has a phone layout at all', () => {
+    assert.ok(start >= 0, 'no @media (max-width: 720px) block');
+  });
+
+  it('wraps rather than using a grid, whose columns both rows would share', () => {
+    // A grid gave Refresh's column to the tabs' row too, which then overflowed.
+    assert.ok(inPhone('.topbar-inner', 'flex-wrap', 'wrap'));
+    assert.doesNotMatch(phone, /display\s*:\s*grid/);
+  });
+
+  it('lets the right-hand cluster join the rows, and forces the break', () => {
+    assert.ok(inPhone('.topbar-spacer', 'display', 'contents'));
+    assert.ok(inPhone('.topbar-inner::after', 'flex-basis', '100%'));
+  });
+
+  it('keeps the tabs narrow enough to share a row with Sign out at 360px', () => {
+    // At the desktop's 15px side padding the row was 0.5px short of fitting.
+    assert.ok(inPhone('.nav-link', 'padding', '7px 11px'));
+  });
+
+  it('scales the headline total to its card, AFTER the rule it overrides', () => {
+    // 58px of "$1,234.56" is ~268px against ~212px of card at 360px. The first
+    // version of this override sat above `.headline-value` in the file and
+    // lost to it on source order, so the order is what this checks.
+    const base = css.indexOf('.headline-value {');
+    const phone = css.indexOf('  .headline-value {\n    font-size: clamp(30px, 19cqi, 58px);');
+    assert.ok(base >= 0 && phone >= 0, 'headline rules not found');
+    assert.ok(phone > base, 'the phone override must come after the base rule');
+    assert.ok(css.lastIndexOf('@media (max-width: 720px) {', phone) > base);
+  });
+});
+
 describe('project detail skeleton metrics', () => {
   for (const provider of Object.values(PROVIDERS)) {
     describe(provider.label, () => {

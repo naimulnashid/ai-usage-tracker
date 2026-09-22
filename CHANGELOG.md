@@ -44,6 +44,12 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **The dashboard fits a phone screen.** The top bar was one row that needed
+  about 560px, so on a phone Chrome zoomed the whole page out to show it — to
+  under half size on a 360px-wide screen. Below 720px it is now two rows: the
+  agent's name and Refresh, then the page tabs and Sign out. The headline total
+  also scales down to fit its card on a phone, which was the last thing still
+  wider than the screen.
 - **Starting the background service a second time no longer fails without a
   trace.** While the dashboard ran, the server's output held
   `logs/dashboard.log` open against other writers, so a second launch — a

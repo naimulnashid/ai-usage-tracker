@@ -263,6 +263,82 @@ a:hover {
   white-space: nowrap;
 }
 
+/* Phones: two rows instead of one.
+
+   The single row needs ~560px however much the status line gives way - the
+   title, both tabs, Sign out and Refresh are all fixed-width - and a phone
+   leaves it a fraction of that: 262px at 360px, after the 62px rail and the
+   padding. Rather than shrink the page to fit, Chrome then zooms the WHOLE
+   dashboard out to show it, to ~45% at 360px, which is how this failed: not
+   a scrollbar, just everything tiny. The bar is now
+
+     Claude Code            ⟳ Refresh
+     [Overview] [Projects]   Sign out
+
+   A viewport query rather than a container query, unlike the score grid:
+   below 900px the rail is a fixed 62px whatever its stored state, so the
+   viewport says exactly how much room the bar has. 720px is where one row
+   stops fitting (~680px with the button reading "Refreshing") plus a margin.
+
+   It is flex-wrap with a forced break rather than a grid on purpose. Grid
+   columns are shared by both rows, so Refresh's width would have been taken
+   out of the tabs' row as well - and wrapping degrades instead of
+   overflowing: below ~330px an item that does not fit drops to a line of its
+   own rather than off the edge.
+
+   The one cost is focus order. The markup is still title, tabs, Sign out,
+   Refresh, which is the desktop order, so Tab reaches Refresh last although
+   it is drawn top right. On a touch screen that order is rarely used; moving
+   the markup instead would put the same mismatch on the desktop. */
+@media (max-width: 720px) {
+  .topbar {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  .topbar-inner {
+    flex-wrap: wrap;
+    /* No row gap: the break below is the space between the two rows. */
+    gap: 0 10px;
+  }
+  /* The cluster's children join the bar's own rows, so each can be placed. */
+  .topbar-spacer {
+    display: contents;
+  }
+  /* Already the first thing to give way; here there is no room to give. */
+  .refresh-meta {
+    display: none;
+  }
+  .topbar-heading {
+    order: 1;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .topbar-spacer .btn {
+    order: 2;
+    padding: 8px 15px;
+  }
+  /* The forced break: a full-width item between the rows. */
+  .topbar-inner::after {
+    content: '';
+    order: 3;
+    flex-basis: 100%;
+    height: 10px;
+  }
+  .nav {
+    order: 4;
+  }
+  /* 15px of side padding put the tabs' row 0.5px short of fitting at 360px. */
+  .nav-link {
+    padding: 7px 11px;
+  }
+  .topbar-spacer .signout {
+    order: 5;
+    margin-left: auto;
+  }
+}
+
 /* --------------------------------------------------------------------------
    Agent rail
    --------------------------------------------------------------------------
@@ -2014,6 +2090,32 @@ table.data tfoot td {
     padding-left: 0;
     padding-right: 0;
     gap: 0;
+  }
+}
+
+/* Phones, continued - the top bar's own phone rules sit beside the bar.
+
+   The headline total is drawn at 58px, the floor of its desktop clamp, and
+   "$1,234.56" at 58px is ~268px, in a card with ~212px of room at 360px. The
+   page overflowed by 13px and Chrome zoomed it out - hidden behind the top
+   bar's far larger overflow until the bar was fixed. On a phone the figure
+   scales with the card instead, never larger than those same 58px: 19% of the
+   card's width fits a ten-character figure ("$12,345.67").
+
+   Down here, after `.headline-value`, on purpose: the first attempt sat in the
+   bar's phone block near the top of the file, where the base rule - same
+   specificity, later in the file - quietly won.
+
+   `cqi` rather than `vw`, so no copy of the rail's width and the paddings has
+   to live here. The containment that needs is harmless on this card: a
+   full-width block whose width never came from its content, and already a
+   stacking context through the `rise` transform. */
+@media (max-width: 720px) {
+  .headline-card {
+    container-type: inline-size;
+  }
+  .headline-value {
+    font-size: clamp(30px, 19cqi, 58px);
   }
 }
 

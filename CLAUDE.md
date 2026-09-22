@@ -221,6 +221,51 @@ measures at constantly — but the skeleton recipe walks `main.shell`'s children
 and never looks at the bar above them. Chrome that every page shares is exactly
 what a per-page measurement misses.
 
+**On a phone it has to become two rows.** The single row needs ~560px however
+much the status line gives way; a 360px phone leaves it 262px after the 62px
+rail and the padding. And the symptom was not a scrollbar: **Chrome on a phone
+zooms the whole page out to fit what overflows**, so at 360px the dashboard
+rendered at ~45% - everything tiny, which reads as "the site isn't mobile"
+rather than as a bug. `@media (max-width: 720px)` beside the bar's rules
+makes it
+
+```
+Claude Code            ⟳ Refresh
+[Overview] [Projects]   Sign out
+```
+
+with `.topbar-spacer` set to `display: contents` so its children can join the
+bar's rows, a zero-height full-width `::after` as the forced break, and the
+status line hidden. Three things about it that are not obvious:
+
+- **Flex-wrap, not a grid.** Grid columns are shared by both rows, so Refresh's
+  column would have been taken out of the tabs' row as well, which then
+  overflowed. Wrapping also degrades instead: at 320px the rows split into
+  four rather than running off the edge.
+- **The tabs' side padding drops to 11px.** At 15px the tabs plus Sign out
+  measured 261.5px in 262 - half a pixel to spare.
+- **Focus order no longer matches on a phone.** The markup is still the
+  desktop order (title, tabs, Sign out, Refresh), so Tab reaches Refresh last
+  although it is drawn top right. Reordering the markup would move the same
+  mismatch onto the desktop, where a keyboard is actually used.
+
+**Fixing it exposed the next one down.** With the bar fitting, the page still
+overflowed by 13px at 360px: the headline total is drawn at 58px (the floor of
+its desktop clamp), which is ~268px of "$1,234.56" in ~212px of card. On a
+phone it is now `clamp(30px, 19cqi, 58px)` against the card - enough for a
+ten-character figure - in a second `max-width: 720px` block **after** the base
+rule. The first attempt sat in the bar's block near the top of the file and
+lost to `.headline-value` on source order, with nothing to say so; the layout
+test checks the order now.
+
+Measured with the page-overflow check, in iframes with scrollbars hidden to
+match a phone's overlay ones: 0px at 360, 393 and 412px on the overview, the
+projects page and a project page, both agents; the bar is 109px tall there
+(84px before, in one row). Unchanged above 720px: one row, 84px, headline at
+its old size. Two leftovers, both outside the phones this was for: **3px at
+320px** from a chart legend's share column, and a **five-figure total at
+997px** ("$12,345.67"), which the desktop headline does not fit.
+
 ### Hover transforms need a gutter
 
 Same family of bug, another variant. `.heatmap-cell:hover` scales the square, and
