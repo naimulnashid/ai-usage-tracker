@@ -29,7 +29,7 @@ function safeNext(pathname: string, search: string): string {
   return pathname.startsWith('/') && !pathname.startsWith('//') ? target : '/';
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
   if (pathname === '/login' || pathname === '/api/login') return NextResponse.next();

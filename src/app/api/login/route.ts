@@ -19,7 +19,7 @@ const WRONG_PASSWORD_DELAY_MS = 400;
  *
  * The global limit is a deliberate trade: someone determined can lock the login
  * form for everyone until the window passes. Devices already signed in are
- * unaffected - the middleware checks cookies, not this counter - and a locked
+ * unaffected - the proxy checks cookies, not this counter - and a locked
  * form is a far better failure than an unthrottled one.
  *
  * In memory, so a restart clears it. This is one process on one machine.

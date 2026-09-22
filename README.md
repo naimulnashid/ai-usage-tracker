@@ -184,10 +184,10 @@ npm start
 | `CLAUDE_CONFIG_DIR` | No | Claude Code's config directory, if not `~/.claude` |
 | `CODEX_HOME` | No | Codex's home directory, if not `~/.codex` |
 
-**Restart the server after changing `.env.local`.** Next.js hot-reloads the
-file, but only partly: the login route picks up a new password at once while the
-middleware that checks existing sessions keeps the old value until restart. If
-you are rotating a password because it leaked, restart, then confirm a
+**Restart the server after changing `.env.local`.** The production server
+(`npm start`, and the background service) reads it once, at startup: until you
+restart, the old password still works and every signed-in device stays signed
+in. If you are rotating a password because it leaked, restart, then confirm a
 signed-in browser is sent back to the login page.
 
 ### Config files (`config/`)

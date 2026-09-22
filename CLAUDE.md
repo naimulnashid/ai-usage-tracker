@@ -433,7 +433,7 @@ src/lib/usage-math.ts                The arithmetic BOTH parsers do, once. Cells
 src/lib/history.ts                   Daily archive. One file per agent, keyed off report.provider.
 src/lib/auth.ts                      Password gate: session cookie signing. Web Crypto only.
 src/lib/rail.ts                      Sidebar state + the before-paint init script.
-src/middleware.ts                    The single auth gate in front of every route.
+src/proxy.ts                         The single auth gate in front of every route.
 scripts/dump-usage.ts                CLI: `npm run parse`.       -> out/usage-report.json
 scripts/dump-codex-usage.ts          CLI: `npm run parse:codex`. -> out/codex-usage-report.json
 scripts/report-console.ts            The two dump scripts' shared printing. Output is a baseline - keep it byte-identical.
@@ -1002,7 +1002,7 @@ edited. To update one, replace the file with a newer official download. Rules:
   (`.rail-mark-fallback`), so a fork that removes the marks still has a usable
   rail. The check also runs after mount, because an image that fails before
   hydration fires `error` before React has attached the handler.
-- **They must be let through `middleware.ts`.** Gating an image does not hide
+- **They must be let through `proxy.ts`.** Gating an image does not hide
   anything; it just renders the login page's HTML into an `<img>` and shows a
   broken icon. The matcher excludes `agent-marks/`.
 
@@ -1077,7 +1077,7 @@ user's projects.
   required. The `onError` on the `<img>` catches exactly this and falls back to
   the monogram, so the half-state is a plain project row, not a broken image
   icon.
-- **It is NOT in the `middleware.ts` matcher, unlike the agent marks.** Those
+- **It is NOT in the `proxy.ts` matcher, unlike the agent marks.** Those
   are needed before any session exists. These are only ever requested by a page
   that is already behind the gate, so the cookie is sent and they resolve;
   leaving them gated keeps project names away from anyone without a session.
@@ -1103,12 +1103,16 @@ would serve their project paths to their whole network.
 unset password locks the door rather than opening it. Never "helpfully" make a
 missing password mean open access.
 
-- `src/lib/auth.ts` — **Web Crypto only, no `node:crypto` import.** This module
-  is pulled into `middleware.ts`, which Next runs on the Edge runtime where the
-  Node built-ins do not exist. Adding a `node:` import here breaks the build.
-- `src/middleware.ts` — the single gate. Enforcing auth here rather than
+- `src/lib/auth.ts` — **Web Crypto only, no `node:crypto` import.** This was a
+  hard requirement while the gate was `middleware.ts`, which Next ran on the
+  Edge runtime where the Node built-ins do not exist. Next 16 renamed it
+  `proxy.ts` and **always runs it on Node**, so a `node:` import would build
+  now - but Web Crypto works the same there, and keeping it costs nothing.
+- `src/proxy.ts` — the single gate. Enforcing auth here rather than
   per-page is the point: a new route cannot forget to protect itself. Pages get
-  redirected to `/login`, `/api/*` gets a 401 JSON body.
+  redirected to `/login`, `/api/*` gets a 401 JSON body. The file and its
+  exported function must both be named `proxy`; Next 16 still accepts
+  `middleware.ts` but warns that it is deprecated.
 - `src/app/api/login/route.ts` — password check, throttling, sets the session
   cookie; `DELETE` signs out.
 
@@ -1136,7 +1140,7 @@ global cap is what stops rotating fake addresses. Over either limit the route
 answers 429 with `Retry-After`, and the login page shows how long to wait. The
 trade-off is deliberate: under attack the form can be locked for everyone until
 the window passes, while already-signed-in devices are unaffected because the
-middleware never consults the counter. A restart clears it. The 400ms delay on
+proxy never consults the counter. A restart clears it. The 400ms delay on
 each wrong password stays on top.
 
 ### Security headers
@@ -1215,7 +1219,11 @@ agent means a row in `providers.ts` and a parser, not a new endpoint.
 
 ### Verified behaviour
 
-Checked rather than assumed, in dev *and* against `next build && next start`:
+Checked rather than assumed, in dev *and* against `next build && next start`.
+Re-run against Next 16's `proxy.ts` on the demo tree, where every row held
+except the dev rotation row, which changed for the better (below). The last two
+rows were not re-run: they are browser enforcement of headers, and the headers
+were confirmed present.
 
 | Check | Result |
 |---|---|
@@ -1226,7 +1234,8 @@ Checked rather than assumed, in dev *and* against `next build && next start`:
 | Session cookie | `httpOnly` — invisible to `document.cookie` |
 | Password rotation | edit `.env.local`, restart, **no rebuild**; old password 401s |
 | Old session after rotation **+ restart** | 401 — sessions really are invalidated |
-| Old session after rotation, **no restart** (dev) | still 200 — see the trap below |
+| Old session after rotation, **no restart**, `next start` | still 200 — nothing changes until the restart |
+| Old session after rotation, **no restart**, `next dev` | 401 at once since Next 16; **200 before it** — see below |
 | Session expiring on a deep link | `/login?next=` keeps the path **and** the query |
 | `/icon.svg`, `/agent-marks/*.svg` with no session | 200 — the login screen's own assets |
 | `/icon.svgx`, `/iconxsvg` with no session | **307 to `/login`** — both were let through before the matcher's exclusions were anchored |
@@ -1240,23 +1249,33 @@ expired cookie, an old-format cookie, `SESSION_SECRET` set and rotated, the
 per-client and global limits.
 
 **Env vars are read at runtime, not inlined at build time.** This was tested
-directly because the opposite is a common Edge-middleware gotcha: the password
-was changed with no rebuild, the server restarted, and the new value took
-effect. Do not add a rebuild step to the rotation instructions.
+directly because the opposite is a common gotcha of Edge middleware, which is
+what this gate was until Next 16: the password was changed with no rebuild, the
+server restarted, and the new value took effect. Do not add a rebuild step to
+the rotation instructions.
 
-**A rotation is only half-applied until you restart the dev server.** Next
-hot-reloads `.env.local` (it logs `Reload env: .env.local`), but that reload
-reaches the **Node** runtime only. `/api/login` immediately starts rejecting the
-old password — which makes the rotation look complete — while `middleware.ts`,
-which is what actually validates session cookies, keeps the old value until the
-process restarts. Net effect: nobody can log in with the old password, but every
-device already holding a session **stays logged in**.
+**Under `next start` - which is what the background service runs - a rotation
+does nothing until the restart.** It reads `.env.local` once, at startup.
+Measured with the server left running: the old password still logged in, the
+new one was refused, and an existing cookie still returned 200. After a
+restart, the old password and cookie both 401'd.
 
-That is the dangerous direction for a rotation done because a password leaked:
-after editing `.env.local` with the server left running, the old password 401'd
-but an existing cookie still returned 200; after a restart, both 401'd.
-**Always restart, and verify by loading the dashboard in a browser that was
-already signed in.**
+**Under `next dev` it used to be half-applied, which was the dangerous kind.**
+Next hot-reloads `.env.local` there (it logs `Reload env: .env.local`), but the
+reload reaches the **Node** runtime only. While the gate was `middleware.ts` on
+the Edge runtime, `/api/login` started rejecting the old password at once -
+which made the rotation look complete - while the middleware, which is what
+validates session cookies, kept the old value until the process restarted.
+Nobody could log in with the old password, but every device already holding a
+session **stayed logged in**: the wrong direction for a rotation done because a
+password leaked.
+
+`proxy.ts` always runs on Node, so it gets the reload too. Measured under
+Next 16: the moment `Reload env` was logged, the old password AND the old
+cookie were both 401. The trap is gone, but only because of where the gate
+runs - if Next ever lets the proxy run elsewhere again, re-measure.
+**Always restart anyway, and verify by loading the dashboard in a browser that
+was already signed in** - under `next start` there is no other way.
 
 **Enter submits the login form.** If you test this through browser automation
 and it appears not to, that is the harness: a synthetic `Enter` does not drive
@@ -1870,3 +1889,13 @@ Conventional commit messages. Before committing, re-read the privacy rules at
 the top of this file: no real project names, paths or figures in the diff **or
 the message**. Personal commit rules (author identity, push policy) belong in
 `CLAUDE.local.md`.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

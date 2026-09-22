@@ -10,7 +10,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import nextConfig from '../next.config.mjs';
-import { config as middlewareConfig } from '../src/middleware';
+import { config as proxyConfig } from '../src/proxy';
 
 /** The policy the config would send for a given path. */
 async function headersFor(path: string): Promise<Record<string, string>> {
@@ -86,7 +86,7 @@ describe('security headers', () => {
 });
 
 describe('the auth matcher', () => {
-  const pattern = middlewareConfig.matcher[0];
+  const pattern = proxyConfig.matcher[0];
   const gated = (path: string) => new RegExp(`^${pattern}$`).test(path);
 
   it('lets through exactly the assets the login screen needs', () => {

@@ -7,9 +7,11 @@
  * this gate is all that stands in front of it. One shared password, held in
  * `.env.local`.
  *
- * Deliberately Web Crypto only, no `node:crypto` import: this module is used
- * from `middleware.ts`, which Next runs on the Edge runtime where the Node
- * built-ins do not exist.
+ * Web Crypto only, no `node:crypto` import. That was a hard requirement while
+ * this was used from `middleware.ts`, which Next ran on the Edge runtime where
+ * the Node built-ins do not exist. Next 16's `proxy.ts` always runs on Node, so
+ * it no longer is one - but Web Crypto works the same there, and keeping it
+ * means the module still runs anywhere.
  *
  * The session cookie is `<expiry-ms>.<HMAC-SHA256(expiry-ms)>`. The HMAC key is
  * derived from the password, so changing it in `.env.local` still invalidates
