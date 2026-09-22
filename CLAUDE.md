@@ -221,13 +221,51 @@ measures at constantly — but the skeleton recipe walks `main.shell`'s children
 and never looks at the bar above them. Chrome that every page shares is exactly
 what a per-page measurement misses.
 
-**On a phone it has to become two rows.** The single row needs ~560px however
-much the status line gives way; a 360px phone leaves it 262px after the 62px
-rail and the padding. And the symptom was not a scrollbar: **Chrome on a phone
-zooms the whole page out to fit what overflows**, so at 360px the dashboard
-rendered at ~45% - everything tiny, which reads as "the site isn't mobile"
-rather than as a bug. `@media (max-width: 720px)` beside the bar's rules
-makes it
+### Phones get the desktop layout, on purpose
+
+`(dash)/[provider]/layout.tsx` exports `viewport = { width: 1024,
+initialScale: undefined }`. A phone lays the dashboard out 1024px wide and fits
+that to its screen - what the browser's own "Desktop site" option does - so a
+360px phone draws everything at ~35% and pinch-zoom is how the small print is
+read.
+
+**This was chosen after trying both, not left unexamined.** The responsive
+layout below was built first and works (0px of overflow at 360-412px,
+measured); the owner, looking at both on a real phone, preferred the whole
+desktop dashboard at once. Things to know before touching it:
+
+- **`initialScale: undefined` is load-bearing.** Next's default viewport is
+  `width=device-width, initial-scale=1`, and it merges yours key by key -
+  `mergeViewport` copies every key present, an undefined one included. So
+  `{ width: 1024 }` alone keeps `initial-scale=1`, which shows the left third of
+  the page at full size instead of fitting it. The built HTML must read
+  `content="width=1024"` and nothing else.
+- **1024, not 1280.** The smallest width that is still the desktop layout -
+  above the 900px breakpoint that forces the rail to icons - since every pixel
+  more shrinks everything further. Close to 997, which is what the skeletons
+  are measured at.
+- **The login page keeps `width=device-width`.** It sits outside `(dash)`, and a
+  password field drawn at 35% is the worst place for this.
+- **Accepted costs.** WCAG 1.4.10 (Reflow) asks for content that reflows at
+  320px without scrolling in two directions, which a fixed layout width does
+  not; and on a phone the ⋯ project menu is a ~10px target. Acceptable for
+  one owner who chose it. **Revisit if the dashboard gets readers who did not
+  choose it** - the same audience argument as the Codex cost notice.
+
+To go back to the responsive layout, delete the export: phones then get the
+`max-width: 720px` rules below, which still apply to a desktop window that
+narrow.
+
+### Below 720px the top bar is two rows
+
+Built for phones before the desktop layout was forced on them; it now serves
+narrow desktop windows, and is what phones get back if the export above goes.
+The single row needs ~560px however much the status line gives way; a 360px
+phone leaves it 262px after the 62px rail and the padding. And the symptom was
+not a scrollbar: **Chrome on a phone zooms the whole page out to fit what
+overflows**, so at 360px the dashboard rendered at ~45% - everything tiny,
+which reads as "the site isn't mobile" rather than as a bug.
+`@media (max-width: 720px)` beside the bar's rules makes it
 
 ```
 Claude Code            ⟳ Refresh

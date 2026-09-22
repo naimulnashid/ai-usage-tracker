@@ -121,9 +121,21 @@ describe('the top bar gives way instead of overflowing', () => {
   });
 });
 
-describe('the top bar becomes two rows on a phone', () => {
+describe('phones get the desktop layout, fitted to the screen', () => {
+  it('lays the dashboard out 1024px wide, with no initial scale', async () => {
+    // Next merges this over its default `initial-scale=1`; left in, that shows
+    // the left third of the page at full size instead of fitting it.
+    const { viewport } = await import('../src/app/(dash)/[provider]/layout');
+    assert.equal(viewport.width, 1024);
+    assert.ok('initialScale' in viewport, 'initialScale must be present to override the default');
+    assert.equal(viewport.initialScale, undefined);
+  });
+});
+
+describe('the top bar becomes two rows in a narrow window', () => {
   // The single row needs ~560px and a 360px phone leaves it 262. Chrome did not
   // scroll the overflow, it zoomed the whole dashboard out to ~45% to show it.
+  // Phones get the desktop layout now, so this serves narrow desktop windows.
   const start = css.indexOf('@media (max-width: 720px) {');
   const end = css.indexOf('\n}', start);
   const phone = css.slice(start, end);

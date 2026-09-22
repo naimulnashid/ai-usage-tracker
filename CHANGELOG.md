@@ -44,12 +44,10 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- **The dashboard fits a phone screen.** The top bar was one row that needed
-  about 560px, so on a phone Chrome zoomed the whole page out to show it — to
-  under half size on a 360px-wide screen. Below 720px it is now two rows: the
-  agent's name and Refresh, then the page tabs and Sign out. The headline total
-  also scales down to fit its card on a phone, which was the last thing still
-  wider than the screen.
+- **The top bar fits a narrow window.** It was one row that needed about
+  560px, so anything narrower was pushed sideways. Below 720px it is now two
+  rows: the agent's name and Refresh, then the page tabs and Sign out. The
+  headline total also scales down to fit its card at those widths.
 - **Starting the background service a second time no longer fails without a
   trace.** While the dashboard ran, the server's output held
   `logs/dashboard.log` open against other writers, so a second launch — a
@@ -94,6 +92,9 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **Phones show the desktop dashboard, scaled to fit the screen,** the way a
+  browser's "Desktop site" option does. Pinch to zoom in on the details. The
+  login page is unchanged.
 - **Next.js 16**, which needs **Node.js 20.9 or newer**. The password gate
   moves from `src/middleware.ts` to `src/proxy.ts`, Next's new name for it,
   and now runs on Node rather than the Edge runtime. One visible effect:

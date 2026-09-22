@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 
 import { UsageProvider } from '@/components/UsageProvider';
 import { ProviderScope } from '@/components/ProviderScope';
@@ -16,6 +16,22 @@ import { PROVIDER_IDS, getProvider } from '@/lib/providers';
  * written once: the pages below never branch on which agent they are showing,
  * they read <ProviderScope> for the handful of things that genuinely differ.
  */
+
+/**
+ * Phones get the desktop layout: laid out 1024px wide and fitted to the
+ * screen, like the browser's own "Desktop site" option. Chosen over the
+ * responsive layout after trying both on a phone - see "Phones get the desktop
+ * layout, on purpose" in CLAUDE.md, including what it costs.
+ *
+ * `initialScale: undefined` is what makes it FIT. Next merges this over its
+ * default `initial-scale=1`, which would otherwise show the left third of the
+ * page at full size. Here rather than in the root layout, so the login page
+ * stays sized for the phone.
+ */
+export const viewport: Viewport = {
+  width: 1024,
+  initialScale: undefined,
+};
 
 /** Pre-render both agents' shells; there will never be a third at runtime. */
 export function generateStaticParams() {

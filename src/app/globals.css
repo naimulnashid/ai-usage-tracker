@@ -263,7 +263,11 @@ a:hover {
   white-space: nowrap;
 }
 
-/* Phones: two rows instead of one.
+/* Narrow windows: two rows instead of one.
+
+   Built for phones, which now get the desktop layout instead (the viewport
+   export in the `(dash)` layout; see CLAUDE.md). This still serves a desktop
+   window this narrow, and it is what phones get back if that export goes.
 
    The single row needs ~560px however much the status line gives way - the
    title, both tabs, Sign out and Refresh are all fixed-width - and a phone
@@ -2093,7 +2097,7 @@ table.data tfoot td {
   }
 }
 
-/* Phones, continued - the top bar's own phone rules sit beside the bar.
+/* Narrow windows, continued - the top bar's own rules sit beside the bar.
 
    The headline total is drawn at 58px, the floor of its desktop clamp, and
    "$1,234.56" at 58px is ~268px, in a card with ~212px of room at 360px. The

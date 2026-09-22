@@ -243,6 +243,9 @@ The server then prints a `Network:` address to open from a phone or laptop on
 the same network. Windows asks to allow `node.exe` through the firewall the
 first time.
 
+A phone shows the full desktop dashboard scaled to fit its screen, rather than a
+rearranged phone layout; pinch to zoom in on the details.
+
 **Before you do, understand what the gate is and isn't.**
 
 - **It's plain HTTP.** Your password and session cookie cross the network
