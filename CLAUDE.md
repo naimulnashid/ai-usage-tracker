@@ -1796,6 +1796,34 @@ The same goes for a port already in use: an `EADDRINUSE` is only guaranteed
 when the other listener has the *same* address. Check the port is free with
 `Get-NetTCPConnection` before starting, rather than trusting the bind to fail.
 
+### The README screenshots are full pages
+
+`npm run demo:shots` captures each page from top to bottom, not its first
+screen. Three things about how, all found by doing it:
+
+- **The window is grown to the page's height, not captured "beyond the
+  viewport".** The rail is `100vh` tall, so a capture past the viewport showed
+  it stopping dead after the first 900px. Grown, the page is one real frame,
+  rail included - re-read until the height holds, since the page's own
+  `min-height: 100vh` means growing the window can grow the page.
+- **Chrome caps a capture at ~16,384 device pixels.** The project page's
+  day-by-day table made it 7,963px tall, 15,926 at the 2x supersampling - just
+  under. `MAX_DEVICE_PX` lowers the scale for a taller page instead of failing
+  or returning it cut short.
+- **Full pages cost file size:** ~2.2 MB for the four, the project page alone
+  ~1 MB, against ~0.5 MB for four first screens.
+
+**Get the session from a throwaway server, not from your own browser.** The
+script takes a cookie so that it never handles a password, but copying a real
+session cookie into a command line hands out a 30-day key to the real
+dashboard. Instead, start the demo server with its own random
+`DASHBOARD_PASSWORD` and `SESSION_SECRET` in its environment - Next leaves
+`.env.local`'s values alone when the environment already has them - and mint a
+cookie for it with `issueSession()` from `src/lib/auth.ts`, reading the same
+two values. Verified: that cookie is 200 on the demo server and 401 on the real
+one. The shots are taken in a fresh Chrome profile, so they also show the rail
+at its default, collapsed.
+
 ## The four states a page can be in
 
 Loading, failed, empty, and has-data. The middle two used to be told apart by

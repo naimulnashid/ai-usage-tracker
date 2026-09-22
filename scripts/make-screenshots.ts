@@ -36,6 +36,13 @@ const CHROME = [
 const VIEWPORT = { width: 1440, height: 900 };
 /** Captured at 2x and downscaled by the caller, so the result is supersampled. */
 const SCALE = 2;
+/**
+ * Chrome's largest capturable surface, in device pixels. Full-page shots run
+ * into it: a project page with a long day-by-day table was 7,963px tall, which
+ * is 15,926 at 2x. A taller page is captured at a lower scale rather than
+ * failing or coming back cut short.
+ */
+const MAX_DEVICE_PX = 16_384;
 
 interface Shot {
   name: string;
@@ -204,6 +211,30 @@ async function main(): Promise<void> {
       }
       await sleep(shot.settleMs ?? 400);
 
+      // The whole page, not the first screen. The window is grown to the
+      // page's height rather than captured "beyond the viewport": the rail is
+      // `100vh` tall, so a capture past the viewport showed it stopping dead
+      // after the first 900px. Grown, the page is one real frame of that
+      // height, rail and all. Re-read until it holds, since the page's own
+      // `min-height: 100vh` means growing the window can grow the page.
+      let height = VIEWPORT.height;
+      let scale = SCALE;
+      for (let i = 0; i < 5; i++) {
+        const content = await cdp.evaluate<number>(
+          'Math.ceil(document.documentElement.scrollHeight)',
+        );
+        if (content <= height) break;
+        height = content;
+        scale = Math.min(SCALE, MAX_DEVICE_PX / height);
+        await cdp.send('Emulation.setDeviceMetricsOverride', {
+          ...VIEWPORT,
+          height,
+          deviceScaleFactor: scale,
+          mobile: false,
+        });
+        await sleep(300);
+      }
+
       // WebP rather than PNG: these are 2x captures of a dark UI, where the
       // supersampled gradients defeat PNG's compression - the same image is
       // ~295 KB as a PNG and ~77 KB here, indistinguishable at q92. Chrome
@@ -217,7 +248,17 @@ async function main(): Promise<void> {
       const file = path.join(outDir, `${shot.name}.webp`);
       fs.writeFileSync(file, Buffer.from(res.data, 'base64'));
       const kb = (fs.statSync(file).size / 1024).toFixed(0);
-      console.log(`  ${path.relative(process.cwd(), file)}  ${kb} KB`);
+      console.log(
+        `  ${path.relative(process.cwd(), file)}  ${kb} KB, ${VIEWPORT.width}x${height} at ${scale.toFixed(2)}x`,
+      );
+
+      // Back to the window's own size, so the next page is measured from a
+      // screen and not from this page's height.
+      await cdp.send('Emulation.setDeviceMetricsOverride', {
+        ...VIEWPORT,
+        deviceScaleFactor: SCALE,
+        mobile: false,
+      });
     }
 
     cdp.close();

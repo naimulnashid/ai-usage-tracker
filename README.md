@@ -7,7 +7,7 @@ day.
 It works by reading the session transcripts both agents already write to your
 disk. There is no account, no database and no cloud service.
 
-![The Claude Code overview: total estimated spend, tokens and runtime, above a daily spend chart](docs/screenshots/overview-claude.webp)
+![The whole Claude Code overview, top to bottom: total estimated spend, tokens and runtime; daily spend; the breakdown by model; activity cards; daily tokens and spend by model; and the six-month heat map](docs/screenshots/overview-claude.webp)
 
 <details>
 <summary><b>Codex, the projects page, and one project in detail</b></summary>
@@ -16,17 +16,17 @@ Codex's headline says **API-equivalent spend**, not "total spend" — it is
 commonly used on a flat subscription, where these tokens were never billed
 individually. The two figures answer different questions and are never added.
 
-![The Codex overview, in its own accent, headed API-equivalent spend](docs/screenshots/overview-codex.webp)
+![The whole Codex overview, in its own accent, headed API-equivalent spend](docs/screenshots/overview-codex.webp)
 
 Projects open with a share-of-spend ring, because a ranked list looks the same
 whether the top project is 37% of your spend or 15%.
 
-![The projects page: a share-of-spend donut above a ranked list of projects](docs/screenshots/projects.webp)
+![The projects page: a share-of-spend donut above the ranked list of projects, each with its options menu](docs/screenshots/projects.webp)
 
 Each project has its own page: daily spend, a breakdown by model, and every
 session ranked by cost.
 
-![A single project's page, with its own spend, tokens and runtime](docs/screenshots/project-detail.webp)
+![A single project's page in full, from its own spend, tokens and runtime down to every session](docs/screenshots/project-detail.webp)
 
 </details>
 
@@ -372,9 +372,13 @@ Then, from another terminal:
 npm run demo:shots -- http://127.0.0.1:7942 "<your session cookie>"
 ```
 
-It drives headless Chrome over the DevTools protocol and writes
-`docs/screenshots/`. The cookie is passed in rather than minted, so the script
-never handles a password.
+It drives headless Chrome over the DevTools protocol, captures each page from
+top to bottom, and writes `docs/screenshots/`. The cookie is passed in rather
+than minted, so the script never handles a password. Rather than copying your
+own session cookie into a command line, you can give the demo server a
+throwaway `DASHBOARD_PASSWORD` and `SESSION_SECRET` of its own (set in its
+environment, they take precedence over `.env.local`) and sign in to that; the
+resulting cookie is refused by your real dashboard.
 
 > **Stop the demo server with Ctrl+C, or by the PID of the process you
 > started — never by killing whatever is listening on the port.** A server
