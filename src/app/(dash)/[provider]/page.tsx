@@ -443,6 +443,7 @@ export default function OverviewPage() {
           generatedAt={report.generatedAt}
           offsetHours={report.settings.localUtcOffsetHours}
           weekStartsOn={report.settings.weekStartsOn}
+          expandHref={`${provider.basePath}/activity`}
         />
       </section>
     </div>

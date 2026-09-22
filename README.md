@@ -84,7 +84,8 @@ refuses every request rather than opening up.
   unusual days flagged; per-model cost; token detail by model; activity cards
   (sessions, streaks, peak hour, longest chat); daily tokens and daily spend
   stacked by model, over the last 30 days, the last 60 or every day on
-  record; a six-month heat map.
+  record; a six-month heat map, with an Expand link to every day on record
+  once there is more history than that.
 - **Projects:** a share-of-spend donut (top nine projects plus "Others") and a
   ranked list of every project with a per-model share bar. Any project can be
   hidden from the list with its **⋯** menu.

@@ -976,6 +976,26 @@ img.rail-mark[data-agent='codex'] {
   gap: 5px;
 }
 
+/* Only rendered when there is history older than the strip above, so the
+   overview's measured `skeleton.heatmap` holds until then. */
+.heatmap-expand {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+}
+
+/* The full-history page stacks strips; each is the overview's grid unchanged. */
+.heatmap-strip + .heatmap-strip {
+  margin-top: 14px;
+}
+
+.heatmap-strip-label {
+  font-size: 13px;
+  font-weight: 560;
+  color: var(--text-muted);
+  padding: 0 7px;
+}
+
 /* --------------------------------------------------------------------------
    Model legend under the stacked token chart
    ------------------------------------------------------------------------ */

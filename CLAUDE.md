@@ -587,6 +587,7 @@ src/lib/history.ts                   Daily archive. One file per agent, keyed of
 src/lib/data-dir.ts                  Where the app writes its own state. Honours DASHBOARD_DATA_DIR.
 src/lib/hidden-projects.ts           Projects hidden from the Projects page. One file per agent, in data/.
 src/lib/day-range.ts                 The stacked charts' date windows. Client-safe.
+src/lib/heatmap.ts                   Where each heat-map day goes, for both layouts. Client-safe.
 src/lib/auth.ts                      Password gate: session cookie signing. Web Crypto only.
 src/lib/rail.ts                      Sidebar state + the before-paint init script.
 src/proxy.ts                         The single auth gate in front of every route.
@@ -1061,6 +1062,31 @@ in the window. **Codex's unchanged overview is the proof the picker costs the
 panel head no height** - it sits beside the title rather than wrapping under it.
 Re-measure if the default range changes, and expect drift as the models you use
 change: an old model leaving the window takes a legend row with it.
+
+### The heat map has a full-history page
+
+The overview's heat map is one strip of 26 weeks. Once any recorded day is
+older than that strip, an **Expand** link appears centred under it and opens
+`/<agent>/activity`: the same strip repeated downwards, oldest first, so every
+strip keeps the overview's width and cell size and more history makes the page
+taller rather than the cells smaller. Both layouts come from
+`src/lib/heatmap.ts`, so a change to how a day is placed lands in both.
+
+- **It starts on the first of the month holding the earliest recorded day**
+  (`fullHistoryStart`), not on a date in code - each agent from its own data.
+  Days in the first week before that are blank, and a column is named after the
+  month of its first SHOWN day, so a strip opening on a Wednesday the 1st does
+  not say the month before.
+- **Strips are 26-week blocks from the start week**, not calendar half-years:
+  a half-year is 26 weeks and a day or three, so calendar-aligned strips would
+  need a 27th column sometimes and the cells would change size between them.
+  Each strip carries its span with years ("Jul 2026 – Dec 2026"), since the
+  month labels inside it have none.
+- **Expand exists only when it shows something the overview does not.** The
+  page itself is reachable by URL either way. The overview's measured
+  `skeleton.heatmap` does not include the button, so the skeleton runs one
+  button-row short once it appears; the activity page's own skeleton is sized
+  for one strip, and a longer history grows below it.
 
 ### Hiding a project
 
