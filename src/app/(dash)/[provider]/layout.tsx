@@ -49,7 +49,8 @@ export default async function ProviderLayout({
     <ProviderScope provider={meta}>
       <Sidebar />
       <div className="app-main">
-        <UsageProvider>
+        {/* Keyed so switching agent starts from empty state - see UsageProvider. */}
+        <UsageProvider key={meta.id}>
           <TopBar />
           <main className="shell">
             {children}

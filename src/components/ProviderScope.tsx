@@ -1,8 +1,37 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react';
 import type { ProviderMeta } from '@/lib/providers';
 import { RAIL_STORAGE_KEY } from '@/lib/rail';
+
+/*
+ * The rail's state lives in one place: `data-rail` on <html>, where
+ * RAIL_INIT_SCRIPT sets it before first paint and where the CSS reads it.
+ * React subscribes to that attribute rather than keeping a copy of it, because
+ * a copy has to be synced after hydration - and that sync was an effect setting
+ * state on mount, which costs a second render.
+ */
+function subscribeRail(onChange: () => void): () => void {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-rail'] });
+  return () => observer.disconnect();
+}
+
+function isRailCollapsed(): boolean {
+  return document.documentElement.dataset.rail === 'collapsed';
+}
+
+// The server cannot see the attribute, so it renders the rail expanded, as it
+// always has; the first client render then reads the real value.
+function isRailCollapsedOnServer(): boolean {
+  return false;
+}
 
 /**
  * Which agent the page below is showing, plus the rail's expand/collapse state.
@@ -26,28 +55,26 @@ export function ProviderScope({
   provider: ProviderMeta;
   children: ReactNode;
 }) {
-  // Mirrors whatever RAIL_INIT_SCRIPT already put on <html>. Initialising from
+  // Reads whatever RAIL_INIT_SCRIPT already put on <html>. Initialising from
   // localStorage here instead would not match what the server rendered.
-  const [railCollapsed, setRailCollapsed] = useState(false);
+  const railCollapsed = useSyncExternalStore(
+    subscribeRail,
+    isRailCollapsed,
+    isRailCollapsedOnServer,
+  );
 
-  useEffect(() => {
-    setRailCollapsed(document.documentElement.dataset.rail === 'collapsed');
-  }, []);
-
+  // Only writes the attribute; the subscription above re-renders from it.
   const toggleRail = useCallback(() => {
-    setRailCollapsed((collapsed) => {
-      const next = !collapsed;
-      const root = document.documentElement;
-      if (next) root.dataset.rail = 'collapsed';
-      else delete root.dataset.rail;
-      try {
-        localStorage.setItem(RAIL_STORAGE_KEY, next ? 'collapsed' : 'expanded');
-      } catch {
-        // Private mode, or storage disabled. The rail still works for this
-        // session; it just will not be remembered.
-      }
-      return next;
-    });
+    const next = !isRailCollapsed();
+    const root = document.documentElement;
+    if (next) root.dataset.rail = 'collapsed';
+    else delete root.dataset.rail;
+    try {
+      localStorage.setItem(RAIL_STORAGE_KEY, next ? 'collapsed' : 'expanded');
+    } catch {
+      // Private mode, or storage disabled. The rail still works for this
+      // session; it just will not be remembered.
+    }
   }, []);
 
   return (

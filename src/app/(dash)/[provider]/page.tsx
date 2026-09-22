@@ -423,6 +423,7 @@ export default function OverviewPage() {
         </div>
         <ActivityHeatmap
           daily={daily}
+          generatedAt={report.generatedAt}
           offsetHours={report.settings.localUtcOffsetHours}
           weekStartsOn={report.settings.weekStartsOn}
         />

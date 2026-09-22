@@ -62,10 +62,17 @@ function isoDay(date: Date): string {
  */
 export function ActivityHeatmap({
   daily,
+  generatedAt,
   offsetHours,
   weekStartsOn = 'monday',
 }: {
   daily: DailyEntry[];
+  /**
+   * The report's `generatedAt`, which decides the last column. Not the clock:
+   * reading it while rendering makes the render impure, and the report is the
+   * moment the data describes anyway.
+   */
+  generatedAt: string;
   offsetHours: number;
   /** From settings.json; decides which weekday is row 0. */
   weekStartsOn?: WeekStart;
@@ -81,7 +88,7 @@ export function ActivityHeatmap({
 
     // "Today" in the same local offset the parser bucketed days with, so the
     // last column lines up with the user's calendar day.
-    const today = new Date(Date.now() + offsetHours * 3_600_000);
+    const today = new Date(Date.parse(generatedAt) + offsetHours * 3_600_000);
     today.setUTCHours(0, 0, 0, 0);
 
     // Row 0 is the configured first day of the week: shift getUTCDay() so that
@@ -130,7 +137,7 @@ export function ActivityHeatmap({
     }
 
     return { cells: flat, months: monthMarks, max: peak, total: sum, activeDays: active };
-  }, [daily, offsetHours, startDay]);
+  }, [daily, generatedAt, offsetHours, startDay]);
 
   /*
    * The grid is decoration for assistive tech, and the table below carries the
