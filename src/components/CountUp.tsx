@@ -67,7 +67,10 @@ export function CountUp({ value, format, durationMs = 850, className, replayKey 
     const ease = (t: number) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t));
 
     let frame = requestAnimationFrame(function tick(now: number) {
-      const progress = Math.min(1, (now - start) / durationMs);
+      // Clamped at 0 too: a frame's timestamp is when the frame BEGAN, which
+      // can be a few milliseconds before `start` was read. Below 0 the curve
+      // falls away steeply, so the first frame drew a negative number.
+      const progress = Math.min(1, Math.max(0, (now - start) / durationMs));
       // Land on `to` exactly, not on `from + (to - from)`, which floating
       // point can miss by an ulp - and then the next run would animate again.
       const n = progress < 1 ? from + (to - from) * ease(progress) : to;
