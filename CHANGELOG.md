@@ -65,8 +65,23 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   relies on — so two full-height tables stayed laid out, invisible, adding
   around 1200px of empty scroll below the overview's footer. Every page now
   ends where its footer does.
+- **Counters no longer start below zero.** The first frame of every count-up
+  could draw a negative figure — `$-2.45`, say — for a moment before climbing
+  to the real number. They now start at zero.
+- **Back no longer returns you to a page that throws you straight out.** When
+  a session expired mid-visit, the login page was added as a new history
+  entry, so Back went to the dashboard, which sent you to the login page
+  again. It now replaces the entry, as Sign out already did.
 
 ### Changed
+
+- **Next.js 16**, which needs **Node.js 20.9 or newer**. The password gate
+  moves from `src/middleware.ts` to `src/proxy.ts`, Next's new name for it,
+  and now runs on Node rather than the Edge runtime. One visible effect:
+  under `npm run dev`, changing the password in `.env.local` now signs
+  existing sessions out at once, where they used to stay signed in until a
+  restart. The production server still reads the file only when it starts,
+  so a restart is still what applies a new password there.
 
 - The arithmetic both parsers share — tokens into a cell, cells into a bucket,
   buckets into a sorted daily array — now lives in one module instead of two
