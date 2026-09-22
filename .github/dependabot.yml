@@ -15,6 +15,15 @@ updates:
     commit-message:
       prefix: chore
       include: scope
+    ignore:
+      # `@types/node` describes Node's API, so its major has to follow the
+      # Node versions this app runs on - `engines` and the CI matrix - not the
+      # newest Node there is. Ahead of them, code using an API the supported
+      # versions lack still typechecks, and fails only at runtime. Move it by
+      # hand, together with the CI matrix, when the supported range moves.
+      # Minor and patch updates still arrive.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
     groups:
       # `eslint-config-next` must stay on the same major as `next` — it lints
       # for a framework version, and letting the two drift apart means linting
