@@ -1066,7 +1066,8 @@ change: an old model leaving the window takes a legend row with it.
 ### The heat map has a full-history page
 
 The overview's heat map is one strip of 26 weeks. Once any recorded day is
-older than that strip, an **Expand** link appears centred under it and opens
+older than that strip, an **Expand** link appears in the middle of its legend
+row and opens
 `/<agent>/activity`: the same strip repeated downwards, oldest first, so every
 strip keeps the overview's width and cell size and more history makes the page
 taller rather than the cells smaller. Both layouts come from
@@ -1083,10 +1084,13 @@ taller rather than the cells smaller. Both layouts come from
   Each strip carries its span with years ("Jul 2026 – Dec 2026"), since the
   month labels inside it have none.
 - **Expand exists only when it shows something the overview does not.** The
-  page itself is reachable by URL either way. The overview's measured
-  `skeleton.heatmap` does not include the button, so the skeleton runs one
-  button-row short once it appears; the activity page's own skeleton is sized
-  for one strip, and a longer history grows below it.
+  page itself is reachable by URL either way. It sits in the legend row rather
+  than a row of its own, as a compact button, so the row grows only by the
+  button's extra height over the text; the overview's measured
+  `skeleton.heatmap` predates it. The legend becomes a `1fr auto 1fr` grid
+  while it is there, which is what centres it on the panel rather than between
+  two texts of different widths. The activity page's own skeleton is sized for
+  one strip, and a longer history grows below it.
 
 ### Hiding a project
 

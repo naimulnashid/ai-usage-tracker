@@ -80,11 +80,9 @@ export function ActivityHeatmap({
       legend={`in the last ${RANGE_LABEL}`}
     >
       {hasMore && (
-        <div className="heatmap-expand">
-          <Link href={expandHref} className="btn">
-            Expand
-          </Link>
-        </div>
+        <Link href={expandHref} className="btn heatmap-expand">
+          Expand
+        </Link>
       )}
     </HeatmapFigure>
   );
@@ -151,6 +149,7 @@ function HeatmapFigure({
   /** Completes "$X across N active days …" under the grid. */
   legend: string;
   labelStrips?: boolean;
+  /** Centred in the legend row, between the total and the scale. */
   children?: ReactNode;
 }) {
   const { strips, max, total, activeDays } = heatmap;
@@ -195,11 +194,12 @@ function HeatmapFigure({
           </div>
         ))}
 
-        <div className="heatmap-legend">
+        <div className={`heatmap-legend${children ? ' has-action' : ''}`}>
           <span>
             {formatUsd(total)} across {activeDays} active {activeDays === 1 ? 'day' : 'days'}{' '}
             {legend}
           </span>
+          {children}
           <span className="heatmap-scale">
             Less
             {HEATMAP_RAMP.map((color) => (
@@ -208,8 +208,6 @@ function HeatmapFigure({
             More
           </span>
         </div>
-
-        {children}
       </div>
     </ChartFigure>
   );

@@ -976,12 +976,26 @@ img.rail-mark[data-agent='codex'] {
   gap: 5px;
 }
 
-/* Only rendered when there is history older than the strip above, so the
-   overview's measured `skeleton.heatmap` holds until then. */
-.heatmap-expand {
-  display: flex;
-  justify-content: center;
-  margin-top: 18px;
+/*
+  With the Expand link, the legend row is three columns: the total, the link
+  centred on the panel, the scale. Equal `1fr` sides are what centre it - flex
+  `space-between` would centre it between two texts of different widths.
+*/
+.heatmap-legend.has-action {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+}
+
+.heatmap-legend.has-action .heatmap-scale {
+  justify-self: end;
+}
+
+/* Compact, so it sits in the legend line rather than making it a tall row.
+   Only rendered when there is history older than the strip above. `.btn`
+   comes later in this file, so the pair of classes is what lets this win. */
+.btn.heatmap-expand {
+  padding: 5px 14px;
+  font-size: 13.5px;
 }
 
 /* The full-history page stacks strips; each is the overview's grid unchanged. */
