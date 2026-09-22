@@ -1688,16 +1688,39 @@ npm run format:check  # prettier --check . - `format` writes
 **`.nvmrc` says 22, which is not what this machine runs.** It names the newest
 LTS that CI actually tests (the matrix is 20 and 22), so a contributor running
 `nvm use` lands on a version the build is proven against rather than on
-whatever is newest. `engines` stays `>=20` because nothing here needs more.
-Note the gap that leaves: development happens on Node 24, which CI never
-exercises — if that ever matters, widen the matrix rather than the `.nvmrc`.
+whatever is newest. `engines` says `>=20.9.0` because that is Next 16's own
+floor; nothing else here needs more. Note the gap that leaves: development
+happens on Node 24, which CI never exercises — if that ever matters, widen the
+matrix rather than the `.nvmrc`.
 
-**Lint and format config.** ESLint 9 flat config (`eslint.config.mjs`) loads
-`eslint-config-next` through `FlatCompat`, because that package is still
-written in the old `.eslintrc` shape. **Keep `eslint-config-next` pinned to the
-same major as `next`** - `npm install` will happily fetch the next major, which
-lints for a framework version this app is not on. `eslint-config-prettier` goes
-last so nothing fights Prettier over formatting.
+**Lint and format config.** ESLint 9 flat config (`eslint.config.mjs`) imports
+`eslint-config-next`'s flat config arrays directly. Until version 16 that
+package was in the old `.eslintrc` shape and went through `FlatCompat`; do not
+put the shim back, because handed a flat config it crashes with "Converting
+circular structure to JSON" rather than saying what is wrong. **Keep
+`eslint-config-next` pinned to the same major as `next`** - `npm install` will
+happily fetch the next major, which lints for a framework version this app is
+not on. `eslint-config-prettier` goes last so nothing fights Prettier over
+formatting.
+
+**The React Compiler rules are errors, and they are fixed, not disabled.**
+`eslint-config-next` 16 brings `eslint-plugin-react-hooks` 7, whose
+`set-state-in-effect` and `purity` rules flagged four components on arrival. Each was restructured rather than silenced, and the patterns are the
+ones to reach for next time:
+
+- **State that lives outside React is read with `useSyncExternalStore`**, not
+  copied into state by an effect: the rail's `data-rail` attribute
+  (`ProviderScope`) and `prefers-reduced-motion` (`CountUp`).
+- **"Reset when X changes" is a `key`**, not an effect that clears state:
+  `UsageProvider` is keyed by agent in the layout. That key is load-bearing -
+  without it, switching agent would show the old agent's report.
+- **Nothing reads the clock while rendering.** The heat map's "today" comes
+  from the report's `generatedAt`.
+- **`set-state-in-effect` follows calls into `async` functions.** An effect
+  calling an `async load()` still fails, even when every `setState` in it comes
+  after an `await`. `UsageProvider` therefore fetches in a function that holds
+  no state and applies the result from a `.then` callback, which the rule reads
+  correctly as asynchronous.
 
 `@next/next/no-img-element` is off repo-wide, with the reasoning in the config:
 the three `<img>`s are local files of unknown dimensions on a localhost-only

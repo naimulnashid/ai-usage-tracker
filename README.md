@@ -112,7 +112,7 @@ authoritative billing, use each vendor's own console.
 
 ## Requirements
 
-- **Node.js 20 or newer**, with npm
+- **Node.js 20.9 or newer**, with npm
 - Claude Code and/or Codex installed and used at least once. Either alone is
   fine; the other agent's page is simply empty.
 

@@ -28,9 +28,6 @@ if (!files.length) {
 const result = spawnSync(process.execPath, ['--import', 'tsx', '--test', ...files], {
   cwd: root,
   stdio: 'inherit',
-  // See tsconfig.test.json: without it, rendering any component throws
-  // "React is not defined".
-  env: { ...process.env, TSX_TSCONFIG_PATH: path.join(root, 'tsconfig.test.json') },
 });
 
 process.exit(result.status ?? 1);
