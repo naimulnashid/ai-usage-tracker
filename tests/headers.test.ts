@@ -96,6 +96,14 @@ describe('the auth matcher', () => {
     assert.equal(gated('/_next/static/chunks/main.js'), false);
   });
 
+  it('lets the web app manifest and its icons through', () => {
+    // Fetched without cookies, so a gated manifest makes the app
+    // uninstallable rather than failing visibly.
+    assert.equal(gated('/manifest.webmanifest'), false);
+    assert.equal(gated('/app-icon/192'), false);
+    assert.equal(gated('/app-icon/512'), false);
+  });
+
   it('gates everything else', () => {
     assert.equal(gated('/claude'), true);
     assert.equal(gated('/api/usage/claude'), true);
@@ -110,5 +118,8 @@ describe('the auth matcher', () => {
     assert.equal(gated('/iconxsvg'), true);
     assert.equal(gated('/favicon.icon'), true);
     assert.equal(gated('/agent-marks-secret'), true);
+    assert.equal(gated('/manifest.webmanifestx'), true);
+    assert.equal(gated('/app-icon/192/x'), true);
+    assert.equal(gated('/app-icon/secret'), true);
   });
 });

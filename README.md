@@ -313,6 +313,20 @@ installs dependencies and builds if needed, starts the server, and opens your
 browser once it responds. Set `DASHBOARD_LAN=1` first for network access. Closing
 the window stops the server.
 
+### Installing it as an app
+
+With the server running, open `http://localhost:7842` in Edge or Chrome and
+choose **Install** (the icon at the end of the address bar, or **Apps → Install
+this site as an app** in Edge's menu). You then get the dashboard in its own
+window, with a Start menu entry and a taskbar icon. Right-click the taskbar icon
+to open Claude Code or Codex directly.
+
+The app is a window onto the running server, not a copy of it: it needs the
+server running, it shares the browser's sign-in, and it updates when you
+rebuild. It works only from `localhost`. Browsers only install from a secure
+context, and a LAN address over plain HTTP isn't one, so other devices can open
+the dashboard but can't install it.
+
 ---
 
 ## Inspecting the numbers without the UI

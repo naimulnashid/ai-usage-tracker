@@ -604,7 +604,9 @@ src/components/ScoreIcon.tsx         The twelve Activity card icons. Hand-drawn;
 src/lib/project-logos.ts             Name -> logo-file matching. Client-safe.
 src/components/ProjectLogo.tsx       The mark beside a project name, or its monogram.
 src/app/api/project-logos/[provider]/  Lists that agent's logo folder.
-src/app/icon.svg                     Tab icon only. SVG-only, on purpose - see below.
+src/app/icon.svg                     Tab icon, and the source the app icons are drawn from. SVG-only - see below.
+src/app/manifest.ts                  Web app manifest: makes the dashboard installable. Ungated.
+src/app/app-icon/[size]/             The installed app's PNG icons, rasterised from icon.svg at build.
 public/agent-marks/                  The vendors' official marks for the sidebar. Unmodified.
 public/claude_code_project_logos/    One image per project, named after it. Contents gitignored.
 public/codex_project_logos/          The same, for Codex. Per agent, never shared.
@@ -1274,6 +1276,29 @@ magick -background none src/app/icon.svg -define icon:auto-resize=48,32,16 src/a
 
 Then the two files must be kept in sync by hand — nothing checks that they
 still show the same thing, which is the actual reason to keep resisting it.
+
+### The installable app: a manifest, and PNGs drawn from `icon.svg`
+
+`src/app/manifest.ts` makes the dashboard installable as a standalone window
+(Edge/Chrome **Install**). It serves at `/manifest.webmanifest`, and Next links
+it from every page. Its icons come from `src/app/app-icon/[size]/route.tsx`,
+which rasterises **`icon.svg` itself** with `next/og` at build time. That keeps
+the mark to one source for the reason above: no committed PNG to forget.
+Sizes live in `src/lib/app-icon.ts`, and any other size 404s
+(`dynamicParams = false`).
+
+- **Both are ungated in `proxy.ts`, and must stay that way.** A browser fetches
+  the manifest *without cookies*. Gated, it comes back as a redirect to
+  `/login`, and the app simply stops being installable, with nothing visibly
+  broken. `tests/headers.test.ts` pins this, and pins the anchoring.
+- **No service worker, on purpose.** Chromium no longer needs one to install,
+  and all it could add is an offline copy of a report: a stale cache, which
+  this app promises not to have.
+- **Only `localhost` can install.** Installing needs a secure context, and
+  `http://<LAN address>` is not one. Other devices can use the dashboard but
+  not install it. Do not "fix" that with a self-signed certificate.
+- **Shortcuts come from the registry** (right-click the taskbar icon), so a
+  third agent gets one without editing the manifest.
 
 ### The sidebar's agent marks are the vendors' own files
 

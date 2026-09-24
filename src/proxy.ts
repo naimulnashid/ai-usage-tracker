@@ -11,6 +11,11 @@ import { SESSION_COOKIE, configuredPassword, verifySession } from '@/lib/auth';
  * same reason and because gating an image only makes it render as a broken
  * login page. None of it leaks anything - they are logos.
  *
+ * The web app manifest and its icons (`app-icon/192`, `app-icon/512`) go
+ * through too: a browser fetches the manifest WITHOUT cookies, so gating it
+ * would make the app uninstallable while looking fine. They hold a name,
+ * colours and the same mark as `icon.svg`.
+ *
  * **The exclusions are anchored and their dots escaped.** They were neither:
  * `icon.svg` matched any path merely STARTING with those characters, and the
  * `.` matched anything, so `/icon.svgx` or `/iconxsvg-something` read as the
@@ -20,7 +25,9 @@ import { SESSION_COOKIE, configuredPassword, verifySession } from '@/lib/auth';
  * with a query string, not a file.
  */
 export const config = {
-  matcher: ['/((?!_next/static/|_next/image|icon\\.svg$|agent-marks/|favicon\\.ico$).*)'],
+  matcher: [
+    '/((?!_next/static/|_next/image|icon\\.svg$|agent-marks/|favicon\\.ico$|manifest\\.webmanifest$|app-icon/\\d+$).*)',
+  ],
 };
 
 /** Only same-site absolute paths may be bounced back to after login. */
