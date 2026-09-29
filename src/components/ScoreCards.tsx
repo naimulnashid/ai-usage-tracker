@@ -16,6 +16,9 @@ import {
 } from '@/lib/format';
 import { useProvider } from './ProviderScope';
 
+/** Cards shown without the third, "when" row: what was run, and what it consumed. */
+export const SCORE_CARDS_WITHOUT_WHEN = 8;
+
 /**
  * Activity at a glance: twelve cards, read as three rows of four.
  *
@@ -46,10 +49,16 @@ export function ScoreCards({
   activity,
   combined,
   replayKey,
+  showWhen = true,
 }: {
   activity: ActivityStats;
   combined: UsageCell;
   replayKey?: number;
+  /**
+   * The third row - active days, both streaks, peak hour. The project page
+   * leaves it out; the overview shows all three rows.
+   */
+  showWhen?: boolean;
 }) {
   const provider = useProvider();
   const colorOf = useModelColor();
@@ -73,7 +82,7 @@ export function ScoreCards({
     return parts.join(' · ');
   };
 
-  const cards: Array<{
+  const allCards: Array<{
     label: string;
     icon: ScoreIconName;
     value: React.ReactNode;
@@ -251,6 +260,9 @@ export function ScoreCards({
       tip: 'Busiest hour of the day by message count, in your configured local offset (settings.json).',
     },
   ];
+
+  // Rows of four, so dropping the last row keeps the other two whole.
+  const cards = showWhen ? allCards : allCards.slice(0, SCORE_CARDS_WITHOUT_WHEN);
 
   return (
     <div className="score-grid-wrap">

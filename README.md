@@ -92,8 +92,8 @@ refuses every request rather than opening up.
   ranked list of every project with a per-model share bar. Any project can be
   hidden from the list with its **⋯** menu.
 - **Project detail:** the overview's sections in the same order for one
-  project, then its day-by-day tables and every session ranked by cost, with
-  subagent transcripts marked.
+  project (without the third row of activity cards and the price table), its
+  stacked charts opening on every day, then a day-by-model table.
 - **Refresh:** re-reads every transcript and recomputes. There is no background
   polling.
 

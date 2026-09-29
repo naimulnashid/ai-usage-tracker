@@ -9,16 +9,14 @@ import { CountUp } from '@/components/CountUp';
 import { HeadlineValue } from '@/components/HeadlineValue';
 import { DailySpendChart } from '@/components/DailySpendChart';
 import { CostByModelChart } from '@/components/CostByModelChart';
-import { ScoreCards } from '@/components/ScoreCards';
+import { SCORE_CARDS_WITHOUT_WHEN, ScoreCards } from '@/components/ScoreCards';
 import { ActivityHeatmap } from '@/components/ActivityHeatmap';
-import { ModelPricesTable } from '@/components/ModelPricesTable';
-import { MODEL_PRICES_SUB, WeekTrend } from '@/components/PageParts';
+import { WeekTrend } from '@/components/PageParts';
 import { DailyTokensByModelChart } from '@/components/DailyTokensByModelChart';
 import { DailySpendByModelChart } from '@/components/DailySpendByModelChart';
 import { DayRangeSelect } from '@/components/DayRangeSelect';
-import { CombinedDailyTable, ModelDailyTable } from '@/components/DailyTables';
+import { ModelDailyTable } from '@/components/DailyTables';
 import { ModelBreakdownTable } from '@/components/ModelBreakdownTable';
-import { SessionsTable } from '@/components/SessionsTable';
 import { RUNTIME_TOOLTIP, UnpricedNotice } from '@/components/Notices';
 import { ProjectLogo } from '@/components/ProjectLogo';
 import { InfoTip } from '@/components/InfoTip';
@@ -31,7 +29,10 @@ import {
   formatTokens,
   formatUsd,
 } from '@/lib/format';
-import { DEFAULT_DAY_RANGE, reportToday, weekOverWeek, type DayRange } from '@/lib/day-range';
+import { reportToday, weekOverWeek, type DayRange } from '@/lib/day-range';
+
+/** The stacked charts' default on a project page. The overview keeps 30 days. */
+const PROJECT_DAY_RANGE: DayRange = 'all';
 
 export default function ProjectDetailPage() {
   const provider = useProvider();
@@ -46,8 +47,10 @@ export default function ProjectDetailPage() {
   const projectId = decodeParam(String(params?.id ?? ''));
   const { report, initialLoading, error, version } = useUsage();
   // The overview's two range pickers, for this project's copies of the charts.
-  const [tokensRange, setTokensRange] = useState<DayRange>(DEFAULT_DAY_RANGE);
-  const [spendRange, setSpendRange] = useState<DayRange>(DEFAULT_DAY_RANGE);
+  // All days, not the overview's 30: a project is often worked on in bursts
+  // weeks apart, and a window would show most of them as empty.
+  const [tokensRange, setTokensRange] = useState<DayRange>(PROJECT_DAY_RANGE);
+  const [spendRange, setSpendRange] = useState<DayRange>(PROJECT_DAY_RANGE);
 
   if (initialLoading) {
     return (
@@ -71,7 +74,7 @@ export default function ProjectDetailPage() {
         <div className="skeleton" style={{ height: detail.headline, marginBottom: 22 }} />
 
         {/* The overview's sections, in the overview's order - see the page
-            below - then this page's own three tables. */}
+            below - then this page's own table. */}
         <div className="skeleton" style={{ height: detail.dailySpend, marginBottom: 22 }} />
         <div className="skeleton" style={{ height: detail.costByModel, marginBottom: 22 }} />
 
@@ -88,10 +91,11 @@ export default function ProjectDetailPage() {
           <div className="skeleton" style={{ height: 13, width: 110 }} />
         </div>
 
-        {/* The same twelve cards as the overview, in the same container. */}
+        {/* The overview's cards without their "when" row, in the same
+            container, so they step 4 -> 2 -> 1 columns alike. */}
         <div className="score-grid-wrap">
           <div className="score-grid">
-            {Array.from({ length: 12 }, (_, i) => (
+            {Array.from({ length: SCORE_CARDS_WITHOUT_WHEN }, (_, i) => (
               <div key={i} className="skeleton" style={{ height: provider.skeleton.scoreCard }} />
             ))}
           </div>
@@ -101,13 +105,10 @@ export default function ProjectDetailPage() {
         <div className="skeleton" style={{ height: detail.dailyTokens, marginBottom: 22 }} />
         <div className="skeleton" style={{ height: detail.dailySpendByModel, marginBottom: 22 }} />
         <div className="skeleton" style={{ height: detail.tokenTable, marginBottom: 22 }} />
-        <div className="skeleton" style={{ height: detail.modelPrices, marginBottom: 22 }} />
 
-        {/* This page's own tables. The first two are capped: their height
-            follows the number of days, which the skeleton cannot know. */}
-        <div className="skeleton" style={{ height: detail.combinedTable, marginBottom: 22 }} />
-        <div className="skeleton" style={{ height: detail.modelDailyTable, marginBottom: 22 }} />
-        <div className="skeleton" style={{ height: detail.sessionsTable }} />
+        {/* This page's own table, capped: its height follows the number of
+            days, which the skeleton cannot know. */}
+        <div className="skeleton" style={{ height: detail.modelDailyTable }} />
       </div>
     );
   }
@@ -312,7 +313,12 @@ export default function ProjectDetailPage() {
           <h2 className="section-title" style={{ marginTop: 40 }}>
             Activity
           </h2>
-          <ScoreCards activity={project.activity} combined={combined} replayKey={version} />
+          <ScoreCards
+            activity={project.activity}
+            combined={combined}
+            replayKey={version}
+            showWhen={false}
+          />
         </>
       )}
 
@@ -395,28 +401,8 @@ export default function ProjectDetailPage() {
         <ModelBreakdownTable perModel={perModel} combined={combined} />
       </section>
 
+      {/* ---- This project's own table ------------------------------------- */}
       <section className="card panel rise" style={{ animationDelay: '100ms' }}>
-        <div className="panel-head">
-          <div>
-            <h2 className="panel-title">Model prices</h2>
-            <p className="panel-sub">{MODEL_PRICES_SUB}</p>
-          </div>
-        </div>
-        <ModelPricesTable perModel={perModel} rates={report.modelRates} />
-      </section>
-
-      {/* ---- This project's own tables ------------------------------------ */}
-      <section className="card panel rise" style={{ animationDelay: '110ms' }}>
-        <div className="panel-head">
-          <div>
-            <h2 className="panel-title">Daily totals, combined</h2>
-            <p className="panel-sub">Newest first. The bar shows each day against the peak.</p>
-          </div>
-        </div>
-        <CombinedDailyTable daily={daily} peakCost={peakDay?.combined.costUsd ?? 0} />
-      </section>
-
-      <section className="card panel rise" style={{ animationDelay: '120ms' }}>
         <div className="panel-head">
           <div>
             <h2 className="panel-title">Daily breakdown by model</h2>
@@ -424,16 +410,6 @@ export default function ProjectDetailPage() {
           </div>
         </div>
         <ModelDailyTable daily={daily} />
-      </section>
-
-      <section className="card panel rise" style={{ animationDelay: '130ms' }}>
-        <div className="panel-head">
-          <div>
-            <h2 className="panel-title">Sessions</h2>
-            <p className="panel-sub">Every transcript file in this project, ranked by cost.</p>
-          </div>
-        </div>
-        <SessionsTable sessions={sessions} />
       </section>
     </div>
   );

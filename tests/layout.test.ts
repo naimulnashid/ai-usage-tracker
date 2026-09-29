@@ -214,12 +214,11 @@ describe('project detail skeleton metrics', () => {
         }
       });
 
-      it('sizes the model tables for a project, not for the whole agent', () => {
-        // A project uses a subset of the agent's models, and both tables grow
+      it('sizes the token table for a project, not for the whole agent', () => {
+        // A project uses a subset of the agent's models, and the table grows
         // a row per model. Reusing the agent-wide heights is the mistake the
         // old stat grid made, which wrapped to an extra row at 997px.
         assert.ok(detail.tokenTable <= provider.skeleton.tokenTable);
-        assert.ok(detail.modelPrices <= provider.skeleton.modelPrices);
       });
     });
   }

@@ -1148,11 +1148,20 @@ change: an old model leaving the window takes a legend row with it.
 
 A project page is the overview at project scope: **the same sections, in the
 same order, under the same names** - Daily combined spend, Cost by model, the
-twelve Activity cards, Daily activity, Daily tokens by model, Daily spend by
-model, Token detail by model, Model prices - and only then what a project alone
-has: Daily totals, combined; Daily breakdown by model; Sessions. It used to be
-its own arrangement with its own names ("Daily total spend", "Totals by
-model"), which made the two pages read as two different products.
+Activity cards, Daily activity, Daily tokens by model, Daily spend by model,
+Token detail by model - and only then what a project alone has: Daily
+breakdown by model. It used to be its own arrangement with its own names
+("Daily total spend", "Totals by model"), which made the two pages read as two
+different products.
+
+**What the project page leaves out, by the owner's choice (2026-09-30):** the
+Activity cards' third row (active days, both streaks, peak hour -
+`ScoreCards showWhen={false}`, eight cards in two rows), the Model prices table
+(prices are per agent, so the overview's one table is the place to set them),
+the Sessions table, and "Daily totals, combined", which repeated the daily
+spend chart as a table. **Its two stacked charts open on All days**, where the
+overview's open on the last 30 - a project is often worked on in bursts weeks
+apart, and a window would show most of them empty.
 
 - **The per-model card grid ("Breakdown by model") is gone from both.** Cost by
   model shows the same figures, drawn, directly under the daily spend chart.
@@ -1165,8 +1174,8 @@ model"), which made the two pages read as two different products.
 - **The heat map's Expand goes to the project's own history**, at
   `/<agent>/projects/<id>/activity` - `ActivityHistoryPage` serves both scopes.
 - `PageParts.tsx` holds what the two pages share that is not a component of
-  its own (the week-on-week trend, the Model prices subtitle). A page file
-  cannot export them: Next.js refuses unknown exports from `page.tsx`.
+  its own (the week-on-week trend). A page file cannot export it: Next.js
+  refuses unknown exports from `page.tsx`.
 
 ### The heat map has a full-history page
 
@@ -1737,7 +1746,7 @@ parser no longer counts it at all (see *`<synthetic>` is not a model*).
 ### A price can be set from the dashboard
 
 New models reach the transcripts before anyone edits the rate card. The
-**Model prices** table - the last panel on the overview and on a project page -
+**Model prices** table - the last panel on the overview -
 lists every model the report has seen with the rate it is priced at and where
 that rate came from (rate card, yours, an alias, or none). "Set price" / "Edit"
 opens an editor under the row.

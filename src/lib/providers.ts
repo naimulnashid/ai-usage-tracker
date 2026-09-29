@@ -194,25 +194,19 @@ export interface SkeletonMetrics {
    *
    * **Three of these depend on the PROJECT, not just the agent**, which is the
    * thing that makes this page different from the other two. A project uses
-   * some subset of the models the agent has ever used, and the stat grid, the
-   * two stacked charts and the token table all grow a row per model. So unlike
-   * the overview's numbers - which describe one known page - these are the
-   * mean across every project measured at both widths, and a project at the
-   * edge of that range will still move a little. Claude Code was measured
-   * across three projects (2, 4 and 4 models), Codex across both of its.
+   * some subset of the models the agent has ever used, and the two stacked
+   * charts and the token table grow a row per model. So unlike the overview's
+   * numbers - which describe one known page - these are the mean across every
+   * project measured at both widths, and a project at the edge of that range
+   * will still move a little.
    *
-   * That is also why `modelCards` is here rather than reusing the agent-wide
-   * `modelCards` above. The overview shows every model, a project does not: at
-   * 997px the agent's five cells wrapped to three rows where a four-model
-   * project took two, which was 166px of error on its own. (That was with the
-   * rail expanded; collapsed, both are two rows at 997px, but the counts still
-   * part at other widths.)
+   * **The stacked charts open on All days here**, not the overview's 30, so
+   * their legends list every model the project has used - which is why they
+   * cannot borrow the overview's heights.
    *
-   * The two long tables stay capped: their height follows the number of days
-   * and sessions, which the skeleton cannot know. Everything above them lands
-   * without moving; below them it shifts. `sessionsTable` is NOT one of those
-   * - the table shows twelve rows before its show-more, so it is a constant
-   * for any project with at least twelve sessions, and measured as one.
+   * The one table of its own, `modelDailyTable`, is capped: its height follows
+   * the number of days, which the skeleton cannot know. It is last on the page,
+   * so nothing below it moves.
    */
   detail: {
     headline: number;
@@ -222,10 +216,7 @@ export interface SkeletonMetrics {
     dailyTokens: number;
     dailySpendByModel: number;
     tokenTable: number;
-    modelPrices: number;
-    combinedTable: number;
     modelDailyTable: number;
-    sessionsTable: number;
   };
 }
 
@@ -279,14 +270,12 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
         dailySpend: 433, // flat - the overview's chart height now, not 280
         costByModel: 393, // flat at both widths and on all three
         heatmap: 457, // 402 / 512, as on the overview
-        // The mean of the three: a project's own model count sets these.
-        dailyTokens: 549, // 530/577/577 @997, 506/553/553 @1680
-        dailySpendByModel: 549, // the same as its tokens twin on all three
+        // Re-measured 2026-09-30 at this page's All-days default, so every
+        // model the project used has a legend row: 3, 2 and 4 models.
+        dailyTokens: 612, // 624/577/671 @997, 600/553/647 @1680
+        dailySpendByModel: 612, // the same as its tokens twin on all three
         tokenTable: 394, // 402/350/454 @997, 386/334/439 @1680
-        modelPrices: 362, // 374/316/432 @997, 350/292/408 @1680
-        combinedTable: 560, // capped: one screen of a table as long as the data
-        modelDailyTable: 620, // capped, as above
-        sessionsTable: 860, // twelve rows, flat across widths and projects
+        modelDailyTable: 620, // capped: one screen of a table as long as the data
       },
     },
   },
@@ -345,10 +334,7 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
         dailyTokens: 565, // 577/577 @997, 553 @1680
         dailySpendByModel: 565, // 577/577 @997, 553 @1680
         tokenTable: 353, // 373 / 334 - its subtitle is the overview's now
-        modelPrices: 304, // 316 / 292
-        combinedTable: 560, // capped: one screen of a table as long as the data
-        modelDailyTable: 620, // capped, as above
-        sessionsTable: 1017, // 1251/1095 @997, 860 @1680 - thread names wrap
+        modelDailyTable: 620, // capped: one screen of a table as long as the data
       },
     },
   },
