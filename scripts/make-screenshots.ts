@@ -37,12 +37,17 @@ const VIEWPORT = { width: 1440, height: 900 };
 /** Captured at 2x and downscaled by the caller, so the result is supersampled. */
 const SCALE = 2;
 /**
- * Chrome's largest capturable surface, in device pixels. Full-page shots run
+ * The tallest capture that still encodes, in device pixels. Full-page shots run
  * into it: a project page with a long day-by-day table was 7,963px tall, which
  * is 15,926 at 2x. A taller page is captured at a lower scale rather than
  * failing or coming back cut short.
+ *
+ * WebP's own limit is 16,383 px a side, one BELOW Chrome's 16,384 surface -
+ * and a capture over it comes back as an empty image, not an error. This sat
+ * at 16,384 until a 9,658px project page was scaled to exactly that and wrote
+ * a 0 KB file. The margin absorbs rounding in the scaled height.
  */
-const MAX_DEVICE_PX = 16_384;
+const MAX_DEVICE_PX = 16_300;
 
 interface Shot {
   name: string;
@@ -245,6 +250,7 @@ async function main(): Promise<void> {
         quality: 92,
         captureBeyondViewport: false,
       })) as { data: string };
+      if (!res.data) throw new Error(`${shot.path} came back as an empty image`);
       const file = path.join(outDir, `${shot.name}.webp`);
       fs.writeFileSync(file, Buffer.from(res.data, 'base64'));
       const kb = (fs.statSync(file).size / 1024).toFixed(0);

@@ -1999,6 +1999,12 @@ screen. Three things about how, all found by doing it:
   day-by-day table made it 7,963px tall, 15,926 at the 2x supersampling - just
   under. `MAX_DEVICE_PX` lowers the scale for a taller page instead of failing
   or returning it cut short.
+
+  **WebP's limit is one pixel lower, 16,383 a side, and going over it fails
+  silently**: Chrome hands back an empty image and the old script wrote a 0 KB
+  file. That happened once the project page took the overview's sections and
+  grew to 9,658px, which the cap scaled to exactly 16,384. The cap is 16,300
+  now, leaving room for rounding, and an empty capture is an error.
 - **Full pages cost file size:** ~2.2 MB for the four, the project page alone
   ~1 MB, against ~0.5 MB for four first screens.
 
