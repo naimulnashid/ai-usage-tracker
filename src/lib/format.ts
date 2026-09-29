@@ -114,3 +114,18 @@ export function displayModel(model: string): string {
   if (model === '<synthetic>') return 'synthetic';
   return modelDisplayName(model) ?? model.replace(/^claude-/, '');
 }
+
+/**
+ * A route param, decoded only if it is still encoded, and never throwing.
+ *
+ * `useParams` already decodes, so decoding again is both unnecessary and a way
+ * to throw URIError on a literal `%` in the URL - which used to blank the page.
+ */
+export function decodeParam(raw: string): string {
+  if (!raw.includes('%')) return raw;
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+}

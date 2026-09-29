@@ -1,5 +1,6 @@
 'use client';
 
+import { useModelColor } from './UsageProvider';
 import type { DailyEntry } from '@/lib/types';
 import {
   displayModel,
@@ -9,7 +10,6 @@ import {
   formatTokens,
   formatUsd,
 } from '@/lib/format';
-import { modelColor } from '@/lib/model-colors';
 import { useProvider } from './ProviderScope';
 import { InfoTip } from './InfoTip';
 import { RUNTIME_TOOLTIP } from './Notices';
@@ -19,6 +19,7 @@ import { RUNTIME_TOOLTIP } from './Notices';
  * This is the "what did this project cost me each day" table.
  */
 export function CombinedDailyTable({ daily, peakCost }: { daily: DailyEntry[]; peakCost: number }) {
+  const colorOf = useModelColor();
   const provider = useProvider();
   const rows = [...daily].sort((a, b) => b.date.localeCompare(a.date));
   const totals = rows.reduce(
@@ -61,7 +62,7 @@ export function CombinedDailyTable({ daily, peakCost }: { daily: DailyEntry[]; p
                         key={model}
                         className="model-swatch"
                         title={displayModel(model)}
-                        style={{ background: modelColor(model) }}
+                        style={{ background: colorOf(model) }}
                         aria-hidden
                       />
                     ))}
@@ -120,6 +121,7 @@ export function CombinedDailyTable({ daily, peakCost }: { daily: DailyEntry[]; p
  * The per-model daily breakdown: one row per (day, model) pair, newest first.
  */
 export function ModelDailyTable({ daily }: { daily: DailyEntry[] }) {
+  const colorOf = useModelColor();
   const provider = useProvider();
   const rows = [...daily]
     .sort((a, b) => b.date.localeCompare(a.date))
@@ -177,7 +179,7 @@ export function ModelDailyTable({ daily }: { daily: DailyEntry[] }) {
                   <span className="cell-model" style={{ justifyContent: 'flex-end' }}>
                     <span
                       className="model-swatch"
-                      style={{ background: modelColor(model) }}
+                      style={{ background: colorOf(model) }}
                       aria-hidden
                     />
                     {displayModel(model)}

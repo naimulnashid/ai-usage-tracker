@@ -12,14 +12,15 @@ export { UNKNOWN_DATE };
 import {
   costOf,
   getRate,
-  loadPricing,
   loadProjectConfig,
   loadSettings,
   resolveProjectId,
   type ProjectConfig,
 } from './pricing';
+import { loadEffectivePricing } from './model-settings';
 import type {
   ActivityStats,
+  DailyEntry,
   ParseDiagnostics,
   PricingConfig,
   ProjectSummary,
@@ -27,6 +28,7 @@ import type {
   SessionSummary,
   Settings,
   TokenCounts,
+  UsageCell,
   UsageReport,
 } from './types';
 
@@ -528,6 +530,99 @@ export function computeSessionRecords(
   };
 }
 
+/**
+ * The twelve activity stats, for the whole agent or for one project.
+ *
+ * One function so the overview and a project page cannot drift: both parsers
+ * call it once globally and once per project, with that scope's own sessions,
+ * cells, days and hour histogram.
+ */
+export function buildActivity(input: {
+  sessions: SessionSummary[];
+  combined: UsageCell;
+  perModel: Record<string, UsageCell>;
+  daily: DailyEntry[];
+  hourHistogram: number[];
+  projectNames: Map<string, string>;
+  settings: Settings;
+}): ActivityStats {
+  const { sessions, combined, perModel, daily, hourHistogram, projectNames, settings } = input;
+  const activeDates = daily.map((entry) => entry.date).filter((date) => date !== UNKNOWN_DATE);
+  const todayKey = localDate(Date.now(), settings.localUtcOffsetHours);
+  const { current, longest } = computeStreaks(activeDates, todayKey);
+
+  const peakHour = hourHistogram.some((n) => n > 0)
+    ? hourHistogram.indexOf(Math.max(...hourHistogram))
+    : null;
+
+  const favoriteModel =
+    Object.entries(perModel)
+      .filter(([model]) => model !== SYNTHETIC_MODEL)
+      .sort((a, b) => b[1].totalTokens - a[1].totalTokens)[0]?.[0] ?? null;
+
+  // Records count chats, not transcripts: computeSessionRecords folds each
+  // subagent transcript into the chat that spawned it.
+  const { peakSession, longestSession } = computeSessionRecords(
+    sessions,
+    projectNames,
+    settings.localUtcOffsetHours,
+  );
+
+  return {
+    sessions: sessions.length,
+    subagentSessions: sessions.filter((session) => session.isSubagent).length,
+    messages: combined.messages,
+    totalTokens: combined.totalTokens,
+    activeDays: activeDates.length,
+    currentStreakDays: current,
+    longestStreakDays: longest,
+    peakHour,
+    hourHistogram: [...hourHistogram],
+    favoriteModel,
+    peakSession,
+    longestSession,
+  };
+}
+
+/**
+ * Brings the day-derived stats back in line after the archive has changed the
+ * days under them. Session-derived stats stay as they were: sessions are not
+ * archived. An archive-only project gets a zeroed base.
+ */
+export function refreshActivity(
+  base: ActivityStats | undefined,
+  daily: DailyEntry[],
+  combined: UsageCell,
+  offsetHours: number,
+): ActivityStats {
+  const activeDates = daily.map((entry) => entry.date).filter((date) => date !== UNKNOWN_DATE);
+  const { current, longest } = computeStreaks(activeDates, localDate(Date.now(), offsetHours));
+  return {
+    sessions: 0,
+    subagentSessions: 0,
+    peakHour: null,
+    hourHistogram: new Array<number>(24).fill(0),
+    favoriteModel: null,
+    peakSession: null,
+    longestSession: null,
+    ...base,
+    messages: combined.messages,
+    totalTokens: combined.totalTokens,
+    activeDays: activeDates.length,
+    currentStreakDays: current,
+    longestStreakDays: longest,
+  };
+}
+
+/**
+ * Claude Code's own placeholder for a turn that made no API call - an error
+ * message, an interrupted request. No tokens, no cost, and not a model anyone
+ * chose, so the parser does not count it: it is not a message, it is not a
+ * band in any chart, and the time around it belongs to the model that was
+ * actually working.
+ */
+export const SYNTHETIC_MODEL = '<synthetic>';
+
 /* -------------------------------------------------------------------------
  * Main entry point
  * ---------------------------------------------------------------------- */
@@ -542,7 +637,7 @@ export interface ParseOptions {
 
 export async function buildUsageReport(options: ParseOptions = {}): Promise<UsageReport> {
   const projectsDir = options.projectsDir ?? resolveProjectsDir();
-  const pricing = options.pricing ?? loadPricing();
+  const pricing = options.pricing ?? loadEffectivePricing('claude');
   const settings = options.settings ?? loadSettings();
 
   const diagnostics: ParseDiagnostics = {
@@ -628,6 +723,7 @@ export async function buildUsageReport(options: ParseOptions = {}): Promise<Usag
   const countedKeys = new Set<string>();
   const maxIdleGapSeconds = settings.maxIdleGapMinutes * 60;
   const hourHistogram = new Array<number>(24).fill(0);
+  const projectHours = new Map<string, number[]>();
 
   const getDaily = (map: Map<string, Bucket>, date: string): Bucket => {
     let bucket = map.get(date);
@@ -670,6 +766,10 @@ export async function buildUsageReport(options: ParseOptions = {}): Promise<Usag
     if (!projectDaily.has(file.projectId)) projectDaily.set(file.projectId, new Map());
     const projectBucket = projectBuckets.get(file.projectId)!;
     const projectDailyMap = projectDaily.get(file.projectId)!;
+    if (!projectHours.has(file.projectId)) {
+      projectHours.set(file.projectId, new Array<number>(24).fill(0));
+    }
+    const projectHourHistogram = projectHours.get(file.projectId)!;
 
     let currentModel: string | null = null;
     let lastKeptTimestampMs: number | null = null;
@@ -695,7 +795,10 @@ export async function buildUsageReport(options: ParseOptions = {}): Promise<Usag
         countedKeys.add(record.key);
       }
 
-      if (record.lineModel) currentModel = record.lineModel;
+      // A synthetic line is not a model taking over: the gap up to it, and
+      // after it, stays with whoever was working.
+      const synthetic = record.lineModel === SYNTHETIC_MODEL;
+      if (record.lineModel && !synthetic) currentModel = record.lineModel;
 
       if (record.timestampRaw) {
         if (!firstTs) firstTs = record.timestampRaw;
@@ -728,7 +831,7 @@ export async function buildUsageReport(options: ParseOptions = {}): Promise<Usag
       }
 
       // --- Tokens and cost. ------------------------------------------------
-      if (!record.key || !record.tokens) continue;
+      if (!record.key || !record.tokens || synthetic) continue;
       const tokens = canonical.get(record.key) ?? record.tokens;
       const model = record.lineModel ?? currentModel ?? '(unknown)';
       sessionModels.add(model);
@@ -744,7 +847,10 @@ export async function buildUsageReport(options: ParseOptions = {}): Promise<Usag
 
       if (record.timestampMs !== null) {
         const hour = localHour(record.timestampMs, settings.localUtcOffsetHours);
-        if (hour !== null) hourHistogram[hour] += 1;
+        if (hour !== null) {
+          hourHistogram[hour] += 1;
+          projectHourHistogram[hour] += 1;
+        }
       }
 
       for (const bucket of [
@@ -768,7 +874,6 @@ export async function buildUsageReport(options: ParseOptions = {}): Promise<Usag
       // placeholder. Taking the max across duplicates recovers most cases;
       // anything still tiny despite a large context is flagged, not trusted.
       if (
-        model !== '<synthetic>' &&
         tokens.output < settings.suspiciousOutputTokens &&
         tokens.input + tokens.cacheRead >= settings.suspiciousContextTokens
       ) {
@@ -854,45 +959,31 @@ export async function buildUsageReport(options: ParseOptions = {}): Promise<Usag
     return !empty;
   });
 
-  // --- Headline activity stats. ------------------------------------------
-  const globalDailyPlain = dailyToPlain(globalDaily);
-  const activeDates = globalDailyPlain
-    .map((entry) => entry.date)
-    .filter((date) => date !== UNKNOWN_DATE);
-  const todayKey = localDate(Date.now(), settings.localUtcOffsetHours);
-  const { current, longest } = computeStreaks(activeDates, todayKey);
-
-  const peakHour = hourHistogram.some((n) => n > 0)
-    ? hourHistogram.indexOf(Math.max(...hourHistogram))
-    : null;
-
-  const favoriteModel =
-    [...globalBucket.perModel.entries()]
-      .filter(([model]) => model !== '<synthetic>')
-      .sort((a, b) => b[1].totalTokens - a[1].totalTokens)[0]?.[0] ?? null;
-
+  // --- Activity stats, for the agent and for each project. ----------------
   // Named from the visible projects: a hidden one is hidden precisely because
   // it holds no tokens, messages or runtime, so it can never own a record.
-  const { peakSession, longestSession } = computeSessionRecords(
+  const projectNames = new Map(visibleProjects.map((project) => [project.id, project.name]));
+  const globalDailyPlain = dailyToPlain(globalDaily);
+  const global = bucketToPlain(globalBucket);
+  const activity = buildActivity({
     sessions,
-    new Map(visibleProjects.map((project) => [project.id, project.name])),
-    settings.localUtcOffsetHours,
-  );
-
-  const activity: ActivityStats = {
-    sessions: sessions.length,
-    subagentSessions: sessions.filter((session) => session.isSubagent).length,
-    messages: globalBucket.combined.messages,
-    totalTokens: globalBucket.combined.totalTokens,
-    activeDays: activeDates.length,
-    currentStreakDays: current,
-    longestStreakDays: longest,
-    peakHour,
+    ...global,
+    daily: globalDailyPlain,
     hourHistogram,
-    favoriteModel,
-    peakSession,
-    longestSession,
-  };
+    projectNames,
+    settings,
+  });
+  for (const project of visibleProjects) {
+    project.activity = buildActivity({
+      sessions: project.sessions,
+      combined: project.combined,
+      perModel: project.perModel,
+      daily: project.daily,
+      hourHistogram: projectHours.get(project.id) ?? new Array<number>(24).fill(0),
+      projectNames,
+      settings,
+    });
+  }
 
   return {
     provider: 'claude',
@@ -902,10 +993,7 @@ export async function buildUsageReport(options: ParseOptions = {}): Promise<Usag
     pricingLastVerified: pricing.lastVerified ?? null,
     diagnostics,
     activity,
-    global: {
-      ...bucketToPlain(globalBucket),
-      daily: globalDailyPlain,
-    },
+    global: { ...global, daily: globalDailyPlain },
     projects: visibleProjects,
   };
 }

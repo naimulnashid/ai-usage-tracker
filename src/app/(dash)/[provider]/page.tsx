@@ -8,18 +8,19 @@ import { HeadlineValue } from '@/components/HeadlineValue';
 import { DailySpendChart } from '@/components/DailySpendChart';
 import { CostByModelChart } from '@/components/CostByModelChart';
 import { ModelBreakdownTable } from '@/components/ModelBreakdownTable';
+import { ModelPricesTable } from '@/components/ModelPricesTable';
 import { ScoreCards } from '@/components/ScoreCards';
 import { ActivityHeatmap } from '@/components/ActivityHeatmap';
 import { EmptyState } from '@/components/EmptyState';
 import { InfoTip } from '@/components/InfoTip';
+import { MODEL_PRICES_SUB, WeekTrend } from '@/components/PageParts';
 import { isEmptyReport, noteworthyWarnings } from '@/lib/report-state';
 import { DailyTokensByModelChart } from '@/components/DailyTokensByModelChart';
 import { DailySpendByModelChart } from '@/components/DailySpendByModelChart';
 import { DayRangeSelect } from '@/components/DayRangeSelect';
 import { ParseWarnings, RUNTIME_TOOLTIP, UnpricedNotice } from '@/components/Notices';
-import { DEFAULT_DAY_RANGE, reportToday, type DayRange } from '@/lib/day-range';
+import { DEFAULT_DAY_RANGE, reportToday, weekOverWeek, type DayRange } from '@/lib/day-range';
 import {
-  displayModel,
   formatCount,
   formatDateShort,
   formatDateStamp,
@@ -27,7 +28,6 @@ import {
   formatTokens,
   formatUsd,
 } from '@/lib/format';
-import { modelColor } from '@/lib/model-colors';
 
 export default function OverviewPage() {
   const provider = useProvider();
@@ -63,37 +63,9 @@ export default function OverviewPage() {
         {/* Headline card. */}
         <div className="skeleton" style={{ height: sk.headline, marginBottom: 22 }} />
 
-        {/* Daily combined spend. */}
+        {/* Daily combined spend, then Cost by model. */}
         <div className="skeleton" style={{ height: sk.dailySpend, marginBottom: 22 }} />
-
-        {/* "Breakdown by model" heading. */}
-        <div
-          style={{
-            height: 21,
-            marginTop: 40,
-            marginBottom: 18,
-            display: 'flex',
-            alignItems: 'center',
-          }}
-        >
-          <div className="skeleton" style={{ height: 13, width: 170 }} />
-        </div>
-
-        {/*
-         * Same grid class and the same number of cells as the real thing, so
-         * auto-fit wraps them identically at every width - one row on a wide
-         * screen, three on a narrow one. A fixed cell count would match at one
-         * width and be wrong at every other.
-         */}
-        <div className="stat-grid">
-          {Array.from({ length: sk.modelCards }, (_, i) => (
-            <div key={i} className="skeleton" style={{ height: 149 }} />
-          ))}
-        </div>
-
-        {/* Cost by model, then the token detail table. */}
         <div className="skeleton" style={{ height: sk.costByModel, marginBottom: 22 }} />
-        <div className="skeleton" style={{ height: sk.tokenTable, marginBottom: 22 }} />
 
         {/* "Activity" heading. */}
         <div
@@ -120,10 +92,12 @@ export default function OverviewPage() {
           </div>
         </div>
 
-        {/* Daily tokens by model, its spend twin, then the activity heat map. */}
+        {/* The heat map, the two stacked charts, then the two model tables. */}
+        <div className="skeleton" style={{ height: sk.heatmap, marginBottom: 22 }} />
         <div className="skeleton" style={{ height: sk.dailyTokens, marginBottom: 22 }} />
         <div className="skeleton" style={{ height: sk.dailySpendByModel, marginBottom: 22 }} />
-        <div className="skeleton" style={{ height: sk.heatmap }} />
+        <div className="skeleton" style={{ height: sk.tokenTable, marginBottom: 22 }} />
+        <div className="skeleton" style={{ height: sk.modelPrices }} />
       </div>
     );
   }
@@ -171,12 +145,7 @@ export default function OverviewPage() {
   const avgPerDay = activeDays > 0 ? combined.costUsd / activeDays : 0;
 
   // Trend: compare the most recent 7 active days against the 7 before them.
-  const recent = daily.slice(-7);
-  const previous = daily.slice(-14, -7);
-  const sum = (rows: typeof daily) => rows.reduce((a, r) => a + r.combined.costUsd, 0);
-  const recentSum = sum(recent);
-  const previousSum = sum(previous);
-  const trendPct = previousSum > 0 ? ((recentSum - previousSum) / previousSum) * 100 : null;
+  const trendPct = weekOverWeek(daily);
 
   const topProject = report.projects[0];
   const today = reportToday(report.generatedAt, report.settings.localUtcOffsetHours);
@@ -284,43 +253,7 @@ export default function OverviewPage() {
         <DailySpendChart daily={daily} replayKey={version} />
       </section>
 
-      {/* ---- Per-model breakdown ----------------------------------------- */}
-      <h2 className="section-title" style={{ marginTop: 40 }}>
-        Breakdown by model
-      </h2>
-
-      <div className="stat-grid">
-        {Object.entries(perModel)
-          .sort((a, b) => b[1].costUsd - a[1].costUsd)
-          .map(([model, cell], index) => (
-            <div
-              key={model}
-              className="card card-hover stat-card rise"
-              style={{ animationDelay: `${index * 55}ms` }}
-            >
-              <div className="stat-label">
-                <span
-                  className="model-swatch"
-                  style={{ background: modelColor(model) }}
-                  aria-hidden
-                />
-                {displayModel(model)}
-                {cell.unpriced && <span className="unpriced-pill">UNPRICED</span>}
-              </div>
-              <div className="stat-value num" style={{ color: modelColor(model) }}>
-                {cell.unpriced ? (
-                  '—'
-                ) : (
-                  <CountUp value={cell.costUsd} format={(n) => formatUsd(n)} replayKey={version} />
-                )}
-              </div>
-              <div className="stat-sub num">
-                {formatTokens(cell.totalTokens)} tokens · {formatDuration(cell.runtimeSeconds)}
-              </div>
-            </div>
-          ))}
-      </div>
-
+      {/* ---- Cost by model ------------------------------------------------ */}
       <section className="card panel rise" style={{ animationDelay: '140ms' }}>
         <div className="panel-head">
           <div>
@@ -348,27 +281,32 @@ export default function OverviewPage() {
         <CostByModelChart perModel={perModel} replayKey={version} />
       </section>
 
-      <section className="card panel rise" style={{ animationDelay: '180ms' }}>
-        <div className="panel-head">
-          <div>
-            <h2 className="panel-title">Token detail by model</h2>
-            <p className="panel-sub">
-              {provider.hasCacheWrites
-                ? 'Cache writes are split by TTL internally and priced separately; the column below shows their sum.'
-                : 'Input counts only the uncached remainder of each prompt — the cached part is billed at a tenth of the rate and has its own column.'}
-            </p>
-          </div>
-        </div>
-        <ModelBreakdownTable perModel={perModel} combined={combined} />
-      </section>
-
-      {/* ---- Activity: score cards, then tokens, then the heat map -------- */}
+      {/* ---- Activity: score cards, the heat map, then the daily charts --- */}
       <h2 className="section-title" style={{ marginTop: 40 }}>
         Activity
       </h2>
       <ScoreCards activity={report.activity} combined={combined} replayKey={version} />
 
       <section className="card panel rise" style={{ animationDelay: '60ms' }}>
+        <div className="panel-head">
+          <div>
+            <h2 className="panel-title">Daily activity</h2>
+            <p className="panel-sub">
+              Spend per day over the last 6 months. Darker means a more expensive day.
+            </p>
+          </div>
+          <WeekTrend pct={trendPct} />
+        </div>
+        <ActivityHeatmap
+          daily={daily}
+          generatedAt={report.generatedAt}
+          offsetHours={report.settings.localUtcOffsetHours}
+          weekStartsOn={report.settings.weekStartsOn}
+          expandHref={`${provider.basePath}/activity`}
+        />
+      </section>
+
+      <section className="card panel rise" style={{ animationDelay: '70ms' }}>
         <div className="panel-head">
           <div className="panel-head-main">
             <h2 className="panel-title">Daily tokens by model</h2>
@@ -391,7 +329,7 @@ export default function OverviewPage() {
         />
       </section>
 
-      <section className="card panel rise" style={{ animationDelay: '70ms' }}>
+      <section className="card panel rise" style={{ animationDelay: '80ms' }}>
         <div className="panel-head">
           <div className="panel-head-main">
             <h2 className="panel-title">Daily spend by model</h2>
@@ -414,37 +352,29 @@ export default function OverviewPage() {
         />
       </section>
 
-      <section className="card panel rise" style={{ animationDelay: '80ms' }}>
+      {/* ---- The detail tables: tokens, then the rates behind the costs --- */}
+      <section className="card panel rise" style={{ animationDelay: '90ms' }}>
         <div className="panel-head">
           <div>
-            <h2 className="panel-title">Daily activity</h2>
+            <h2 className="panel-title">Token detail by model</h2>
             <p className="panel-sub">
-              Spend per day over the last 6 months. Darker means a more expensive day.
+              {provider.hasCacheWrites
+                ? 'Cache writes are split by TTL internally and priced separately; the column below shows their sum.'
+                : 'Input counts only the uncached remainder of each prompt — the cached part is billed at a tenth of the rate and has its own column.'}
             </p>
           </div>
-          {trendPct !== null && (
-            <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-              <span
-                className="num"
-                style={{
-                  fontSize: 19,
-                  fontWeight: 640,
-                  color: trendPct > 0 ? 'var(--warn)' : '#4ADE80',
-                }}
-              >
-                {trendPct > 0 ? '↑' : '↓'} {Math.abs(trendPct).toFixed(0)}%
-              </span>{' '}
-              <span style={{ fontSize: 14, color: 'var(--text-faint)' }}>vs previous 7 days</span>
-            </div>
-          )}
         </div>
-        <ActivityHeatmap
-          daily={daily}
-          generatedAt={report.generatedAt}
-          offsetHours={report.settings.localUtcOffsetHours}
-          weekStartsOn={report.settings.weekStartsOn}
-          expandHref={`${provider.basePath}/activity`}
-        />
+        <ModelBreakdownTable perModel={perModel} combined={combined} />
+      </section>
+
+      <section className="card panel rise" style={{ animationDelay: '100ms' }}>
+        <div className="panel-head">
+          <div>
+            <h2 className="panel-title">Model prices</h2>
+            <p className="panel-sub">{MODEL_PRICES_SUB}</p>
+          </div>
+        </div>
+        <ModelPricesTable perModel={perModel} rates={report.modelRates} />
       </section>
     </div>
   );

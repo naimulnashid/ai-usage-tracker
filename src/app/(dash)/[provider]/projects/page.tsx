@@ -1,5 +1,6 @@
 'use client';
 
+import { useModelColor } from '@/components/UsageProvider';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useUsage } from '@/components/UsageProvider';
@@ -13,7 +14,6 @@ import { InfoTip } from '@/components/InfoTip';
 import { isEmptyReport } from '@/lib/report-state';
 import { ProjectShareChart } from '@/components/ProjectShareChart';
 import { displayModel, formatCount, formatDuration, formatTokens, formatUsd } from '@/lib/format';
-import { modelColor } from '@/lib/model-colors';
 import type { ProjectSummary } from '@/lib/types';
 
 /** Focus target when a hide leaves no card to move to. */
@@ -21,6 +21,7 @@ const SHOW_ALL = '__show-all__';
 
 export default function ProjectsPage() {
   const provider = useProvider();
+  const colorOf = useModelColor();
   const { report, initialLoading, error, version, hiddenProjects, setProjectHidden } = useUsage();
 
   // Hooks, so above every early return below.
@@ -282,7 +283,7 @@ export default function ProjectsPage() {
                         title={`${displayModel(model)} · ${pct.toFixed(1)}%`}
                         style={{
                           width: `${pct}%`,
-                          background: modelColor(model),
+                          background: colorOf(model),
                           transition: 'opacity 180ms var(--ease)',
                         }}
                       />

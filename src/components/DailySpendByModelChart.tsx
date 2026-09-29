@@ -1,5 +1,6 @@
 'use client';
 
+import { useModelColor } from './UsageProvider';
 import {
   Bar,
   BarChart,
@@ -12,14 +13,19 @@ import {
 } from 'recharts';
 import type { DailyEntry } from '@/lib/types';
 import { displayModel, formatDateLong, formatDateShort, formatUsd } from '@/lib/format';
-import { byPriceDesc, modelColor } from '@/lib/model-colors';
+import { byPriceDesc } from '@/lib/model-colors';
 import { daysInRange, isActiveDay, sumDays, type DayRange } from '@/lib/day-range';
 import { ChartFigure } from './ChartFigure';
 import { NoDaysInRange } from './DayRangeSelect';
 
 type Row = { date: string } & Record<string, number | string>;
 
-function ChartTooltip({ active, payload, label }: TooltipContentProps) {
+function ChartTooltip({
+  active,
+  payload,
+  label,
+  colorOf,
+}: TooltipContentProps & { colorOf: (model: string) => string }) {
   if (!active || !payload?.length) return null;
   const entries = payload
     .filter((entry) => typeof entry.value === 'number' && entry.value > 0)
@@ -58,7 +64,7 @@ function ChartTooltip({ active, payload, label }: TooltipContentProps) {
           >
             <span
               className="model-swatch"
-              style={{ background: modelColor(String(entry.dataKey)) }}
+              style={{ background: colorOf(String(entry.dataKey)) }}
               aria-hidden
             />
             {displayModel(String(entry.dataKey))}
@@ -116,6 +122,7 @@ export function DailySpendByModelChart({
   replayKey?: number;
   height?: number;
 }) {
+  const colorOf = useModelColor();
   const days = daysInRange(daily, range, today);
   const models = [...new Set(days.flatMap((entry) => Object.keys(entry.perModel)))].sort(
     byPriceDesc,
@@ -184,13 +191,16 @@ export function DailySpendByModelChart({
               tickLine={false}
               width={64}
             />
-            <Tooltip content={ChartTooltip} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+            <Tooltip
+              content={(props) => <ChartTooltip {...props} colorOf={colorOf} />}
+              cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+            />
             {models.map((model) => (
               <Bar
                 key={model}
                 dataKey={model}
                 stackId="cost"
-                fill={modelColor(model)}
+                fill={colorOf(model)}
                 animationDuration={850}
                 animationEasing="ease-out"
               />
@@ -205,11 +215,7 @@ export function DailySpendByModelChart({
           return (
             <div className="model-legend-row" key={model}>
               <span className="model-legend-name">
-                <span
-                  className="model-swatch"
-                  style={{ background: modelColor(model) }}
-                  aria-hidden
-                />
+                <span className="model-swatch" style={{ background: colorOf(model) }} aria-hidden />
                 {displayModel(model)}
               </span>
               <span className="model-legend-cost num">

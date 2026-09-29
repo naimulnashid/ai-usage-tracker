@@ -34,8 +34,9 @@ export function UnpricedNotice({ models }: { models: string[] }) {
           </code>
         ))}
         <br />
-        Tokens are counted but excluded from cost. Add {models.length === 1 ? 'it' : 'them'} to{' '}
-        <code>{provider.pricingFile}</code> to include {models.length === 1 ? 'it' : 'them'}.
+        Tokens are counted but excluded from cost. Set {models.length === 1 ? 'its' : 'their'} price
+        in <strong>Model prices</strong> at the bottom of this page, or add{' '}
+        {models.length === 1 ? 'it' : 'them'} to <code>{provider.pricingFile}</code>.
       </div>
     </div>
   );

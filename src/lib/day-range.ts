@@ -152,3 +152,15 @@ function addCell(into: UsageCell, cell: UsageCell): void {
   into.costUsd += cell.costUsd;
   into.unpriced ||= cell.unpriced;
 }
+
+/**
+ * The heat map's trend figure: the spend of the last seven recorded days
+ * against the seven before them, as a percentage change. Null when there is no
+ * earlier week to compare with.
+ */
+export function weekOverWeek(daily: DailyEntry[]): number | null {
+  const sum = (rows: DailyEntry[]) => rows.reduce((a, r) => a + r.combined.costUsd, 0);
+  const recent = sum(daily.slice(-7));
+  const previous = sum(daily.slice(-14, -7));
+  return previous > 0 ? ((recent - previous) / previous) * 100 : null;
+}

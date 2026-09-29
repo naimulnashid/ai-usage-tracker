@@ -1,9 +1,9 @@
 'use client';
 
+import { useModelColor } from './UsageProvider';
 import { useState } from 'react';
 import type { SessionSummary } from '@/lib/types';
 import { displayModel, formatCount, formatDuration, formatTokens, formatUsd } from '@/lib/format';
-import { modelColor } from '@/lib/model-colors';
 import { useProvider } from './ProviderScope';
 import { InfoTip } from './InfoTip';
 import { RUNTIME_TOOLTIP } from './Notices';
@@ -11,6 +11,7 @@ import { RUNTIME_TOOLTIP } from './Notices';
 const INITIAL_ROWS = 12;
 
 export function SessionsTable({ sessions }: { sessions: SessionSummary[] }) {
+  const colorOf = useModelColor();
   const provider = useProvider();
   const [expanded, setExpanded] = useState(false);
   const visible = expanded ? sessions : sessions.slice(0, INITIAL_ROWS);
@@ -104,7 +105,7 @@ export function SessionsTable({ sessions }: { sessions: SessionSummary[] }) {
                         key={model}
                         className="model-swatch"
                         title={displayModel(model)}
-                        style={{ background: modelColor(model) }}
+                        style={{ background: colorOf(model) }}
                         aria-hidden
                       />
                     ))}

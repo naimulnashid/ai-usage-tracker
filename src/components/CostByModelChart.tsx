@@ -1,5 +1,6 @@
 'use client';
 
+import { useModelColor } from './UsageProvider';
 import {
   Bar,
   BarChart,
@@ -14,7 +15,6 @@ import {
 } from 'recharts';
 import type { UsageCell } from '@/lib/types';
 import { displayModel, formatDuration, formatTokens, formatUsd } from '@/lib/format';
-import { modelColor } from '@/lib/model-colors';
 import { ChartFigure } from './ChartFigure';
 
 interface Row {
@@ -29,7 +29,11 @@ interface Row {
   share: number;
 }
 
-function ChartTooltip({ active, payload }: TooltipContentProps) {
+function ChartTooltip({
+  active,
+  payload,
+  colorOf,
+}: TooltipContentProps & { colorOf: (model: string) => string }) {
   if (!active || !payload?.length) return null;
   const row = payload[0].payload as Row;
   return (
@@ -53,10 +57,10 @@ function ChartTooltip({ active, payload }: TooltipContentProps) {
           marginBottom: 8,
         }}
       >
-        <span className="model-swatch" style={{ background: modelColor(row.model) }} aria-hidden />
+        <span className="model-swatch" style={{ background: colorOf(row.model) }} aria-hidden />
         {row.label}
       </div>
-      <div className="num" style={{ color: modelColor(row.model), fontSize: 21, fontWeight: 650 }}>
+      <div className="num" style={{ color: colorOf(row.model), fontSize: 21, fontWeight: 650 }}>
         {row.unpriced ? 'unpriced' : formatUsd(row.cost)}
       </div>
       {!row.unpriced && (
@@ -80,6 +84,7 @@ export function CostByModelChart({
   replayKey?: number;
   height?: number;
 }) {
+  const colorOf = useModelColor();
   // Share is against the spend this chart actually draws, so the percentages
   // add up to 100 on screen. Unpriced models contribute no cost and get no
   // share rather than a misleading 0.0%.
@@ -144,10 +149,13 @@ export function CostByModelChart({
               tickLine={false}
               width={116}
             />
-            <Tooltip content={ChartTooltip} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+            <Tooltip
+              content={(props) => <ChartTooltip {...props} colorOf={colorOf} />}
+              cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+            />
             <Bar dataKey="cost" radius={[0, 6, 6, 0]} animationDuration={850} barSize={30}>
               {data.map((row) => (
-                <Cell key={row.model} fill={modelColor(row.model)} />
+                <Cell key={row.model} fill={colorOf(row.model)} />
               ))}
             </Bar>
           </BarChart>

@@ -206,7 +206,7 @@ describe('the headline total fits its card, however long it gets', () => {
 describe('project detail skeleton metrics', () => {
   for (const provider of Object.values(PROVIDERS)) {
     describe(provider.label, () => {
-      const { detail, modelCards } = provider.skeleton;
+      const { detail } = provider.skeleton;
 
       it('carries a height for every section of the page', () => {
         for (const [key, value] of Object.entries(detail)) {
@@ -214,13 +214,12 @@ describe('project detail skeleton metrics', () => {
         }
       });
 
-      it('sizes the stat grid for a project, not for the whole agent', () => {
-        // A project uses a subset of the agent's models. Reusing the
-        // agent-wide count wrapped the placeholder to an extra row at 997px.
-        assert.ok(
-          detail.modelCards <= modelCards,
-          'a project cannot use more models than its agent',
-        );
+      it('sizes the model tables for a project, not for the whole agent', () => {
+        // A project uses a subset of the agent's models, and both tables grow
+        // a row per model. Reusing the agent-wide heights is the mistake the
+        // old stat grid made, which wrapped to an extra row at 997px.
+        assert.ok(detail.tokenTable <= provider.skeleton.tokenTable);
+        assert.ok(detail.modelPrices <= provider.skeleton.modelPrices);
       });
     });
   }

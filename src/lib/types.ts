@@ -36,6 +36,29 @@ export interface PricingConfig {
    * is spend you did not ask for directly.
    */
   aliases?: Record<string, string>;
+  /**
+   * Models whose rate came from the user's own settings (set from the Model
+   * prices table) rather than from this card. Filled in by
+   * `loadEffectivePricing`; absent on a card read straight from disk.
+   */
+  customModels?: string[];
+}
+
+/**
+ * Where one model's rate comes from, for the Model prices table.
+ *
+ * - `card`: the committed rate card.
+ * - `custom`: the user's own rate, set from the dashboard. Wins over the card.
+ * - `alias`: priced as another model (Codex's `codex-auto-review`).
+ * - `none`: no rate anywhere - the model is UNPRICED.
+ */
+export interface ModelRateInfo {
+  rate: ModelRate | null;
+  source: 'card' | 'custom' | 'alias' | 'none';
+  /** The model this one is priced as, for `alias`. */
+  aliasOf?: string;
+  /** True when the rate card has its own entry, so a custom rate can be reset. */
+  onCard: boolean;
 }
 
 /** First day of the week in the activity heat map. */
@@ -152,6 +175,11 @@ export interface ProjectSummary {
   combined: UsageCell;
   daily: DailyEntry[];
   sessions: SessionSummary[];
+  /**
+   * The same twelve activity stats the overview shows, for this project alone.
+   * Absent only on a report built by something other than the parsers.
+   */
+  activity?: ActivityStats;
 }
 
 export interface ParseDiagnostics {
@@ -300,4 +328,9 @@ export interface UsageReport {
   projects: ProjectSummary[];
   /** Absent only when the archive could not be read. */
   coverage?: HistoryCoverage;
+  /**
+   * The rate each model in the report is priced at, and where it came from.
+   * Filled in by `finishReport` - absent on a bare parser result.
+   */
+  modelRates?: Record<string, ModelRateInfo>;
 }

@@ -60,6 +60,7 @@ output, the archive or any file it writes.
 |---|---|---|
 | `data/history.json`, `data/codex-history.json` | Daily totals: tokens, cost, runtime, project names and paths | Both agents delete old transcripts; this keeps past days from vanishing ([details](#the-local-archive)) |
 | `data/hidden-projects.json`, `data/codex-hidden-projects.json` | The ids of projects you have hidden from the Projects page | So a project hidden on one device stays hidden on the others ([details](#hiding-a-project)) |
+| `data/model-settings.json`, `data/codex-model-settings.json` | Prices and colours you set in the Model prices table | So a new model can be priced before the rate card knows it ([details](#pricing)) |
 | `out/*.json` | Full report, only when you run `npm run parse` / `parse:codex` | Inspecting numbers without the UI |
 | `logs/dashboard.log` | Launcher output | Only when using the Windows background service |
 
@@ -81,16 +82,18 @@ refuses every request rather than opening up.
 ## What it shows
 
 - **Overview:** total estimated spend, tokens and runtime; daily spend with
-  unusual days flagged; per-model cost; token detail by model; activity cards
-  (sessions, streaks, peak hour, longest chat); daily tokens and daily spend
-  stacked by model, over the last 30 days, the last 60 or every day on
-  record; a six-month heat map, with an Expand link to every day on record
-  once there is more history than that.
+  unusual days flagged; cost by model; activity cards (sessions, streaks, peak
+  hour, longest chat); a six-month heat map, with an Expand link to every day
+  on record once there is more history than that; daily tokens and daily
+  spend stacked by model, over the last 30 days, the last 60 or every day on
+  record; then token detail by model and the price of each model, where a
+  price and a colour can be set.
 - **Projects:** a share-of-spend donut (top nine projects plus "Others") and a
   ranked list of every project with a per-model share bar. Any project can be
   hidden from the list with its **⋯** menu.
-- **Project detail:** the same breakdowns for one project, day-by-day tables,
-  and every session ranked by cost, with subagent transcripts marked.
+- **Project detail:** the overview's sections in the same order for one
+  project, then its day-by-day tables and every session ranked by cost, with
+  subagent transcripts marked.
 - **Refresh:** re-reads every transcript and recomputes. There is no background
   polling.
 
@@ -511,6 +514,15 @@ Rates are USD **per million tokens**, five buckets per model:
 
 A model found in your transcripts but missing from the rate card is shown as
 **unpriced** and called out on the page; it is never silently counted as $0.
+Give it a price with **Set price** in the **Model prices** table at the bottom of
+the overview. That rate is saved in `data/model-settings.json` (Codex:
+`codex-model-settings.json`), not in the rate card, and wins over the card
+until you reset it; every figure is recomputed with it, days kept only in the
+archive included. The same editor sets any model's colour, from shades of that
+agent's accent.
+
+Claude Code's own `<synthetic>` placeholder, written for a turn that made no API
+call, is not counted as a model or a message.
 Codex's card also has an `aliases` map, which is how `codex-auto-review` is priced
 as GPT-5.3 Codex while keeping its own band. Each card has a `lastVerified` date.
 Check vendors' current pricing if it is old.

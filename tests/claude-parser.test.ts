@@ -224,4 +224,47 @@ describe('Claude Code parser', () => {
     assert.equal(report.diagnostics.warnings.length, 1);
     assert.match(report.diagnostics.warnings[0], /Cannot read projects directory/);
   });
+
+  it('does not count <synthetic> as a model, a message or a holder of runtime', async () => {
+    const root = tempDir();
+    writeLines(path.join(root, DIR, 's1.jsonl'), [
+      assistantLine({ ts: '2026-08-01T10:00:00Z', id: 'msg_a', output: 10, cwd: CWD }),
+      // Claude Code's placeholder for a turn that made no API call.
+      assistantLine({ ts: '2026-08-01T10:01:00Z', id: 'msg_s', model: '<synthetic>', cwd: CWD }),
+      assistantLine({ ts: '2026-08-01T10:03:00Z', id: 'msg_b', output: 10, cwd: CWD }),
+    ]);
+
+    const report = await parse(root);
+    assert.deepEqual(Object.keys(report.global.perModel), ['test-model']);
+    assert.equal(report.global.combined.messages, 2);
+    // Both gaps - either side of the synthetic line - stay with the model
+    // that was working, so no runtime goes missing.
+    assert.equal(report.global.perModel['test-model'].runtimeSeconds, 180);
+    assert.equal(report.global.combined.runtimeSeconds, 180);
+    assert.deepEqual(report.projects[0].sessions[0].models, ['test-model']);
+  });
+
+  it('gives every project the activity stats the overview has', async () => {
+    const root = tempDir();
+    writeLines(path.join(root, DIR, 's1.jsonl'), [
+      assistantLine({ ts: '2026-08-01T10:00:00Z', id: 'msg_a', output: 10, cwd: CWD }),
+      assistantLine({ ts: '2026-08-02T10:00:00Z', id: 'msg_b', output: 20, cwd: CWD }),
+    ]);
+    writeLines(path.join(root, `${DIR}-other`, 's2.jsonl'), [
+      assistantLine({ ts: '2026-08-05T15:00:00Z', id: 'msg_c', output: 5, model: 'cheap-model' }),
+    ]);
+
+    const report = await parse(root);
+    const app = report.projects.find((p) => p.id === DIR)!;
+    assert.equal(app.activity?.sessions, 1);
+    assert.equal(app.activity?.messages, 2);
+    assert.equal(app.activity?.activeDays, 2);
+    assert.equal(app.activity?.longestStreakDays, 2);
+    assert.equal(app.activity?.peakHour, 10);
+    assert.equal(app.activity?.favoriteModel, 'test-model');
+    assert.equal(app.activity?.peakSession?.sessionId, 's1');
+    // The agent-wide figures still cover both projects.
+    assert.equal(report.activity.sessions, 2);
+    assert.equal(report.activity.activeDays, 3);
+  });
 });

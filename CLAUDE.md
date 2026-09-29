@@ -402,8 +402,9 @@ expanded) and a token table ~150px shorter.
 
 Three rules keep them honest:
 
-- **Grids use the real class and the real cell count** (`stat-grid` with the
-  agent's model count, `score-grid` with twelve, inside a `.score-grid-wrap`), so
+- **Grids use the real class and the real cell count** (`score-grid` with
+  twelve, inside a `.score-grid-wrap`; the per-model `stat-grid` it once also
+  mirrored is gone, see *Project pages mirror the overview*), so
   they re-flow exactly as the real grid does at every width. A hand-tuned cell
   count matches at one window size and is wrong at every other — and dropping
   the wrapper is the same mistake by another route, since `.score-grid` steps
@@ -551,6 +552,26 @@ tables' heights follow the number of days and sessions, which a skeleton cannot
 know. `sessionsTable` is NOT one of them — it shows twelve rows before its
 show-more, so it is a constant, and measuring it took it from 620 to 868.
 
+**Re-measured 2026-09-29, when both pages changed shape** - the per-model card
+grid went, the heat map moved up under the score cards, and a Model prices
+table joined the token table at the bottom of both; the project page gained
+Cost by model, the score cards and the heat map, and took the overview's
+daily-spend chart height (433, not 413). New entries: `modelPrices` on both
+pages, and `costByModel` / `heatmap` on `detail`. The page's own three tables
+still come last, so the capped ones are still what everything else sits above.
+Skeleton minus real, collapsed rail:
+
+| | worst above the model tables | model tables |
+|---|---|---|
+| Claude overview 997 / 1680 | +10 / −7 (heat map: +65 / −62 below it) | +41, +34 / −38, −30 |
+| Codex overview 997 / 1680 | the same | +41, +21 / −38, −19 |
+| Claude project, 4 models, 997 / 1680 | +47 / −61 | −9, −69 / −66, −110 |
+
+The overview still mirrors, which says the mid-range is centred. The heat map
+is the one panel whose two widths differ by 110px (402 / 512), so everything
+below it carries half of that at each end - as it did when it was the last
+panel on the page, where nobody saw it.
+
 **A caution about measuring this in browser automation.** If the pane is not
 displayed, `document.visibilityState` is `hidden` and CSS animations stall at
 `currentTime: 0` — so every `.rise` element sits at its opening
@@ -586,6 +607,8 @@ src/lib/usage-math.ts                The arithmetic BOTH parsers do, once. Cells
 src/lib/history.ts                   Daily archive. One file per agent, keyed off report.provider.
 src/lib/data-dir.ts                  Where the app writes its own state. Honours DASHBOARD_DATA_DIR.
 src/lib/hidden-projects.ts           Projects hidden from the Projects page. One file per agent, in data/.
+src/lib/model-settings.ts            Prices and colours set from the Model prices table. One file per agent, in data/.
+src/lib/finish-report.ts             Every parse's last step: archive, re-price, describe each model's rate.
 src/lib/day-range.ts                 The stacked charts' date windows. Client-safe.
 src/lib/heatmap.ts                   Where each heat-map day goes, for both layouts. Client-safe.
 src/lib/auth.ts                      Password gate: session cookie signing. Web Crypto only.
@@ -599,6 +622,8 @@ scripts/make-demo-data.ts            CLI: `npm run demo:data`. Synthetic transcr
 tests/                               node:test suites; fixtures are written at run time.
 scripts/*.ps1, *.vbs, *.bat          Windows background service and launchers.
 src/app/(dash)/[provider]/           The pages. One copy, two agents.
+src/components/ModelPricesTable.tsx  The Model prices table and its price/colour editor.
+src/components/ActivityHistoryPage.tsx  A heat map's full history, for the agent or one project.
 src/components/ScoreIcon.tsx         The twelve Activity card icons. Hand-drawn; the rules
                                      that keep them a set are in the file's header.
 src/lib/project-logos.ts             Name -> logo-file matching. Client-safe.
@@ -700,6 +725,29 @@ response and `npm run parse` output, with thresholds in settings. That is how
 you would notice if Claude Code's logging changed and this stopped being
 immaterial. Re-run the impact check before re-adding any UI for it.
 
+### `<synthetic>` is not a model, and is not counted
+
+Claude Code writes an assistant line with model `<synthetic>` for a turn that
+made no API call - an error, an interrupted request. It carries no tokens and
+no cost. It used to be counted as a message and shown as a model: a grey band
+in the charts, a row of zeroes in the tables. It is now skipped entirely
+(`SYNTHETIC_MODEL` in `parser.ts`):
+
+- **Not a message.** Messages are described as de-duplicated API calls, and it
+  is not one. On the reference data this took about 0.2% off the count.
+- **Not a model taking over.** It does not become the current model, so the
+  gaps either side of it stay with the model that was working. Runtime is
+  unchanged except where a synthetic line came before any real model in its
+  session - a gap with no model to credit, dropped exactly as a gap before the
+  first model always was. About 0.05% of runtime on the reference data.
+- **Cost and tokens did not move at all.** Every day and every project matched
+  to the cent before and after.
+
+Archives written before this still hold a `<synthetic>` cell. `normalizeBucket`
+drops it on load and takes its messages out of the combined count, so a stored
+day compares like for like with a fresh parse - otherwise the merge, which keeps
+whichever copy has more messages, would never replace a day that had one.
+
 ### Trap 3 — subagent transcripts are nested
 
 Subagent sessions live at
@@ -776,6 +824,13 @@ Codex prunes its own `sessions/` tree too, so the same reasoning applies there.
   set by a transcript the agent has since deleted passes to whatever is left. A
   project surviving *only* in the archive shows its totals with an empty session
   table.
+- **Re-priced on the way out.** `finishReport` hands the archive the rates the
+  parse used, and every stored day is priced again at them (`repriceBucket`).
+  The archive keeps token counts, so it can; without it, giving a new model a
+  rate from the dashboard fixed every live day and left its archived days at
+  $0. A model with no rate now keeps what was stored, and the file on disk is
+  not rewritten. A day that is still live is re-priced by the parse anyway, so
+  this only ever changes days the transcripts no longer hold.
 
 Verified by simulating deletion — thinning a real report from dozens of live
 days to a handful restored every day and reproduced the total to the cent, with
@@ -991,6 +1046,30 @@ visual order always matches the colour order. Nothing enforces monotonicity
 automatically — if you add a model or the rate card changes materially,
 re-check that luminance still rises as price falls.
 
+### A model's colour can be chosen, from its own agent's shades
+
+The Model prices table's editor picks a colour for any model - one the table
+above has never heard of included, since a new model otherwise draws in the
+desaturated "unknown" tone. The choice is limited to `ACCENT_PALETTES`, one
+ramp per agent, deepest first:
+
+- **Every palette shade clears 3:1**, and `tests/contrast.test.ts` checks each,
+  so no choice can make a band vanish into the panel.
+- **Every default shade is also a palette shade**, so a choice can always be
+  put back by picking; "Default colour" removes the override instead.
+- **The price ordering becomes the user's to keep.** Nothing stops a cheap
+  model being given the darkest shade. The editor says what the ramp means and
+  leaves it there.
+
+A colour is a view preference, not data - so it is read alongside the report,
+like the hidden projects, and changing one costs no parse. Components get it
+through `useModelColor()` from `UsageProvider`; `modelColor(model)` called bare
+still gives the defaults, which is what a component rendered outside the
+provider (a test) sees. **Chart tooltips take the colour as a prop**
+(`content={(props) => <ChartTooltip {...props} colorOf={colorOf} />}`): a
+tooltip is rendered by Recharts, not by the chart component, so it cannot call
+the hook itself.
+
 ### A legend's figures must share the share's denominator
 
 The two stacked charts each carry a legend ending in a percentage, and the rule
@@ -1064,6 +1143,30 @@ in the window. **Codex's unchanged overview is the proof the picker costs the
 panel head no height** - it sits beside the title rather than wrapping under it.
 Re-measure if the default range changes, and expect drift as the models you use
 change: an old model leaving the window takes a legend row with it.
+
+### Project pages mirror the overview
+
+A project page is the overview at project scope: **the same sections, in the
+same order, under the same names** - Daily combined spend, Cost by model, the
+twelve Activity cards, Daily activity, Daily tokens by model, Daily spend by
+model, Token detail by model, Model prices - and only then what a project alone
+has: Daily totals, combined; Daily breakdown by model; Sessions. It used to be
+its own arrangement with its own names ("Daily total spend", "Totals by
+model"), which made the two pages read as two different products.
+
+- **The per-model card grid ("Breakdown by model") is gone from both.** Cost by
+  model shows the same figures, drawn, directly under the daily spend chart.
+- **The Activity cards are per project** (`ProjectSummary.activity`). Both
+  parsers build them with the same `buildActivity` as the agent-wide ones, from
+  that project's sessions, days and its own hour histogram; the archive
+  refreshes the day-derived ones (`refreshActivity`) exactly as it does the
+  agent's. Sessions, peak hour and the two records describe live transcripts
+  only, the usual caveat.
+- **The heat map's Expand goes to the project's own history**, at
+  `/<agent>/projects/<id>/activity` - `ActivityHistoryPage` serves both scopes.
+- `PageParts.tsx` holds what the two pages share that is not a component of
+  its own (the week-on-week trend, the Model prices subtitle). A page file
+  cannot export them: Next.js refuses unknown exports from `page.tsx`.
 
 ### The heat map has a full-history page
 
@@ -1628,7 +1731,38 @@ increase to $3/$15. Cached Anthropic references may still show $3/$15 — do not
 
 A model string found in the transcripts but missing from the rate card is
 reported as **unpriced** — surfaced explicitly in the UI, never silently
-counted as $0. `<synthetic>` is deliberately priced at zero (no API call).
+counted as $0. `<synthetic>` is still priced at zero on the card, though the
+parser no longer counts it at all (see *`<synthetic>` is not a model*).
+
+### A price can be set from the dashboard
+
+New models reach the transcripts before anyone edits the rate card. The
+**Model prices** table - the last panel on the overview and on a project page -
+lists every model the report has seen with the rate it is priced at and where
+that rate came from (rate card, yours, an alias, or none). "Set price" / "Edit"
+opens an editor under the row.
+
+- **Saved in `data/`, not in the card** (`src/lib/model-settings.ts`:
+  `model-settings.json`, `codex-model-settings.json`, through `dataDir()`). The
+  card is committed, hand-written and documented with `_comment` keys; an app
+  rewriting it would reformat it and mix the user's guesses into a file meant
+  to track the vendor. Same reasoning as the hidden projects.
+- **A custom rate wins over the card**, for that model only
+  (`withCustomRates`). "Reset to rate card" removes it; for a model the card
+  does not know, the button says "Remove price" instead, since nothing would be
+  left behind.
+- **Both parsers price with it by default** (`loadEffectivePricing`), and
+  `finishReport` prices the archive with it too, so a saved rate reaches every
+  figure on the page - archived days included - on the parse the page asks for
+  right after saving. `report.modelRates` carries each model's rate and source
+  for the table.
+- **Guarded like the hidden projects**: `/api/model-settings/<agent>`, behind
+  the gate, same-origin writes only, bounded input (rates 0-10,000, model names
+  that cannot be `_` keys or reach `Object.prototype`, colours only from the
+  agent's palette).
+- **"Cache rates from input"** fills the three cache rates from the usual
+  multipliers (1.25x, 2x, 0.1x). It is a button, not a default, because the
+  cards do not always follow them - Opus 5.5 reads at 0.05x.
 
 **Each card's `lastVerified` date is shown in the UI**, in the Cost by model
 panel's subtitle, beside the name of the file it came from. Every money figure

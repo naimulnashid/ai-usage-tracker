@@ -10,7 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it } from 'node:test';
 
-import { MODEL_SHADES } from '../src/lib/model-colors';
+import { ACCENT_PALETTES, MODEL_SHADES } from '../src/lib/model-colors';
 
 const css = fs.readFileSync(path.join(process.cwd(), 'src/app/globals.css'), 'utf8');
 
@@ -133,5 +133,34 @@ describe('charts use tokens, not their own colours', () => {
       for (const [hex] of source.matchAll(/#[0-9a-fA-F]{6}\b/g)) offenders.push(`${file}: ${hex}`);
     }
     assert.deepEqual(offenders, [], 'use a CSS variable so both agents re-theme');
+  });
+});
+
+describe('the shades a user can pick', () => {
+  it('every palette shade stands out from the panel', () => {
+    for (const [agent, palette] of Object.entries(ACCENT_PALETTES)) {
+      for (const shade of palette) {
+        const ratio = contrast(shade, root['--surface']);
+        assert.ok(ratio >= 3, `${agent} ${shade} is ${ratio.toFixed(2)}:1 against the panel`);
+      }
+    }
+  });
+
+  it('runs deepest to lightest, so its order means what the ramp means', () => {
+    for (const [agent, palette] of Object.entries(ACCENT_PALETTES)) {
+      for (let i = 1; i < palette.length; i++) {
+        assert.ok(
+          luminance(palette[i]) > luminance(palette[i - 1]),
+          `${agent}: ${palette[i]} is not lighter than ${palette[i - 1]}`,
+        );
+      }
+    }
+  });
+
+  it("offers every model's default shade, so picking can always go back", () => {
+    const all = Object.values(ACCENT_PALETTES).flat();
+    for (const [model, shade] of Object.entries(MODEL_SHADES)) {
+      assert.ok(all.includes(shade.color), `${model}'s ${shade.color} is not a palette choice`);
+    }
   });
 });

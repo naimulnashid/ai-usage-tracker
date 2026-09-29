@@ -29,9 +29,10 @@ import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from '
 import path from 'node:path';
 
 import { dataDir } from './data-dir';
-import { computeStreaks, localDate } from './parser';
+import { computeStreaks, localDate, refreshActivity, SYNTHETIC_MODEL } from './parser';
+import { costOf, getRate } from './pricing';
 import type { ProviderId } from './providers';
-import type { DailyEntry, ProjectSummary, UsageCell, UsageReport } from './types';
+import type { DailyEntry, PricingConfig, ProjectSummary, UsageCell, UsageReport } from './types';
 import { UNKNOWN_DATE } from './usage-math';
 
 const HISTORY_VERSION = 1;
@@ -143,6 +144,17 @@ function normalizeCell(value: unknown): UsageCell | null {
   };
 }
 
+/**
+ * A stored bucket, or null when it is not one.
+ *
+ * Also where `<synthetic>` leaves archives written before the parser stopped
+ * counting it. Its cell is dropped and its messages come out of the combined
+ * count, so a stored day compares like for like with a fresh parse - the merge
+ * keeps whichever has more messages, and an archived day still counting
+ * synthetic lines would otherwise never be replaced. Its runtime stays in the
+ * combined figure: that time was spent, and a fresh parse now credits it to
+ * the model that was working.
+ */
 function normalizeBucket(value: unknown): ArchivedBucket | null {
   if (!isObject(value)) return null;
   const combined = normalizeCell(value.combined);
@@ -151,7 +163,12 @@ function normalizeBucket(value: unknown): ArchivedBucket | null {
   if (isObject(value.perModel)) {
     for (const [model, cell] of Object.entries(value.perModel)) {
       const normalized = normalizeCell(cell);
-      if (normalized) perModel[model] = normalized;
+      if (!normalized) continue;
+      if (model === SYNTHETIC_MODEL) {
+        combined.messages = Math.max(0, combined.messages - normalized.messages);
+        continue;
+      }
+      perModel[model] = normalized;
     }
   }
   return { perModel, combined };
@@ -329,10 +346,44 @@ function rollUp(buckets: ArchivedBucket[]): ArchivedBucket {
 }
 
 /**
- * Rebuild the report from the archive, which by this point holds the best known
- * version of every day - including the ones just parsed.
+ * A stored bucket priced at today's rates.
+ *
+ * Every money figure on the page is a token count times the rate card, and the
+ * archive keeps the counts, so a stored day can be priced again. Without this a
+ * day whose transcript is gone kept the price it was stored at - so giving a
+ * new model a rate from the dashboard would fix every live day and leave its
+ * archived days at $0. A model with no rate now keeps what was stored.
  */
-export function applyHistoryToReport(report: UsageReport, history: HistoryFile): UsageReport {
+function repriceBucket(bucket: ArchivedBucket, pricing: PricingConfig | undefined): ArchivedBucket {
+  if (!pricing) return bucket;
+  const perModel: Record<string, UsageCell> = {};
+  let delta = 0;
+  for (const [model, cell] of Object.entries(bucket.perModel)) {
+    const rate = getRate(pricing, model);
+    if (!rate) {
+      perModel[model] = cell;
+      continue;
+    }
+    const costUsd = costOf(cell, rate);
+    delta += costUsd - cell.costUsd;
+    perModel[model] = { ...cell, costUsd, unpriced: false };
+  }
+  return {
+    perModel,
+    combined: { ...bucket.combined, costUsd: bucket.combined.costUsd + delta },
+  };
+}
+
+/**
+ * Rebuild the report from the archive, which by this point holds the best known
+ * version of every day - including the ones just parsed. With `pricing`, every
+ * stored day is priced at those rates (see `repriceBucket`).
+ */
+export function applyHistoryToReport(
+  report: UsageReport,
+  history: HistoryFile,
+  pricing?: PricingConfig,
+): UsageReport {
   const archivedDates = Object.keys(history.days).sort();
   if (!archivedDates.length) return report;
 
@@ -341,7 +392,7 @@ export function applyHistoryToReport(report: UsageReport, history: HistoryFile):
   );
 
   const mergedDaily: DailyEntry[] = archivedDates.map((date) => {
-    const day = history.days[date];
+    const day = repriceBucket(history.days[date], pricing);
     return { date, perModel: day.perModel, combined: day.combined };
   });
 
@@ -366,8 +417,10 @@ export function applyHistoryToReport(report: UsageReport, history: HistoryFile):
 
       const daily: DailyEntry[] = [];
       for (const date of archivedDates) {
-        const bucket = history.days[date].projects[id];
-        if (bucket) daily.push({ date, perModel: bucket.perModel, combined: bucket.combined });
+        const stored = history.days[date].projects[id];
+        if (!stored) continue;
+        const bucket = repriceBucket(stored, pricing);
+        daily.push({ date, perModel: bucket.perModel, combined: bucket.combined });
       }
       const unknownDay = live?.daily.find((entry) => entry.date === UNKNOWN_DATE);
       if (unknownDay) daily.push(unknownDay);
@@ -388,6 +441,12 @@ export function applyHistoryToReport(report: UsageReport, history: HistoryFile):
         // Sessions cannot be reconstructed from aggregates. A project that only
         // survives in the archive shows totals with no session breakdown.
         sessions: live?.sessions ?? [],
+        activity: refreshActivity(
+          live?.activity,
+          daily,
+          rolled.combined,
+          report.settings.localUtcOffsetHours,
+        ),
       };
     })
     .filter((project) => project.combined.messages > 0 || project.combined.totalTokens > 0)
@@ -433,11 +492,11 @@ export function applyHistoryToReport(report: UsageReport, history: HistoryFile):
  * archive. The archive file is chosen by the report's own provider, so a Codex
  * parse can never write into Claude Code's history.
  */
-export function withHistory(report: UsageReport): UsageReport {
+export function withHistory(report: UsageReport, pricing?: PricingConfig): UsageReport {
   const warnings = report.diagnostics.warnings;
   const provider = report.provider ?? 'claude';
   const history = loadHistory(provider, warnings);
   mergeReportIntoHistory(history, report);
   saveHistory(history, provider, warnings);
-  return applyHistoryToReport(report, history);
+  return applyHistoryToReport(report, history, pricing);
 }

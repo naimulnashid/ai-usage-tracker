@@ -72,20 +72,13 @@ import readline from 'node:readline';
 import {
   costOf,
   getRate,
-  loadPricing,
   loadProjectConfig,
   loadSettings,
   resolveProjectId,
   type ProjectConfig,
 } from './pricing';
-import {
-  computeSessionRecords,
-  computeStreaks,
-  isRecord,
-  localDate,
-  parseTimestampMs,
-  toTokenCount,
-} from './parser';
+import { loadEffectivePricing } from './model-settings';
+import { buildActivity, isRecord, localDate, parseTimestampMs, toTokenCount } from './parser';
 import { UNKNOWN_DATE, type Bucket, localHour, usageMath } from './usage-math';
 
 // Codex reports reasoning tokens as a subset of output - Trap 3.
@@ -93,7 +86,6 @@ const { addTokens, newBucket, bucketCell, bucketToPlain, dailyToPlain } = usageM
   tracksReasoning: true,
 });
 import type {
-  ActivityStats,
   ParseDiagnostics,
   PricingConfig,
   ProjectSummary,
@@ -539,7 +531,7 @@ export interface CodexParseOptions {
 
 export async function buildCodexUsageReport(options: CodexParseOptions = {}): Promise<UsageReport> {
   const home = options.codexHome ?? resolveCodexHome();
-  const pricing = options.pricing ?? loadPricing('codex-pricing.json');
+  const pricing = options.pricing ?? loadEffectivePricing('codex');
   const settings = options.settings ?? loadSettings();
 
   const diagnostics: ParseDiagnostics = {
@@ -592,6 +584,7 @@ export async function buildCodexUsageReport(options: CodexParseOptions = {}): Pr
   const unpricedModels = new Set<string>();
   const maxIdleGapSeconds = settings.maxIdleGapMinutes * 60;
   const hourHistogram = new Array<number>(24).fill(0);
+  const projectHours = new Map<string, number[]>();
 
   const getDaily = (map: Map<string, Bucket>, date: string): Bucket => {
     let bucket = map.get(date);
@@ -696,7 +689,15 @@ export async function buildCodexUsageReport(options: CodexParseOptions = {}): Pr
 
       if (event.timestampMs !== null) {
         const hour = localHour(event.timestampMs, settings.localUtcOffsetHours);
-        if (hour !== null) hourHistogram[hour] += 1;
+        if (hour !== null) {
+          hourHistogram[hour] += 1;
+          let hours = projectHours.get(projectId);
+          if (!hours) {
+            hours = new Array<number>(24).fill(0);
+            projectHours.set(projectId, hours);
+          }
+          hours[hour] += 1;
+        }
       }
 
       for (const bucket of bucketsFor(projectId, date)) {
@@ -784,46 +785,32 @@ export async function buildCodexUsageReport(options: CodexParseOptions = {}): Pr
     return !empty;
   });
 
-  const globalDailyPlain = dailyToPlain(globalDaily);
-  const activeDates = globalDailyPlain
-    .map((entry) => entry.date)
-    .filter((date) => date !== UNKNOWN_DATE);
-  const todayKey = localDate(Date.now(), settings.localUtcOffsetHours);
-  const { current, longest } = computeStreaks(activeDates, todayKey);
-
-  const peakHour = hourHistogram.some((n) => n > 0)
-    ? hourHistogram.indexOf(Math.max(...hourHistogram))
-    : null;
-
-  const favoriteModel =
-    [...globalBucket.perModel.entries()].sort(
-      (a, b) => b[1].totalTokens - a[1].totalTokens,
-    )[0]?.[0] ?? null;
-
-  // Records count chats, not transcripts: computeSessionRecords folds each
+  // Records count chats, not transcripts: buildActivity folds each
   // auto-review thread into the chat that spawned it (tokens and cost summed,
   // runtime the parent's own), so a guardian thread can never be named the
   // longest chat on its own.
-  const { peakSession, longestSession } = computeSessionRecords(
+  const projectNames = new Map(visibleProjects.map((project) => [project.id, project.name]));
+  const globalDailyPlain = dailyToPlain(globalDaily);
+  const global = bucketToPlain(globalBucket);
+  const activity = buildActivity({
     sessions,
-    new Map(visibleProjects.map((project) => [project.id, project.name])),
-    settings.localUtcOffsetHours,
-  );
-
-  const activity: ActivityStats = {
-    sessions: sessions.length,
-    subagentSessions: sessions.filter((session) => session.isSubagent).length,
-    messages: globalBucket.combined.messages,
-    totalTokens: globalBucket.combined.totalTokens,
-    activeDays: activeDates.length,
-    currentStreakDays: current,
-    longestStreakDays: longest,
-    peakHour,
+    ...global,
+    daily: globalDailyPlain,
     hourHistogram,
-    favoriteModel,
-    peakSession,
-    longestSession,
-  };
+    projectNames,
+    settings,
+  });
+  for (const project of visibleProjects) {
+    project.activity = buildActivity({
+      sessions: project.sessions,
+      combined: project.combined,
+      perModel: project.perModel,
+      daily: project.daily,
+      hourHistogram: projectHours.get(project.id) ?? new Array<number>(24).fill(0),
+      projectNames,
+      settings,
+    });
+  }
 
   return {
     provider: 'codex',
@@ -833,10 +820,7 @@ export async function buildCodexUsageReport(options: CodexParseOptions = {}): Pr
     pricingLastVerified: pricing.lastVerified ?? null,
     diagnostics,
     activity,
-    global: {
-      ...bucketToPlain(globalBucket),
-      daily: globalDailyPlain,
-    },
+    global: { ...global, daily: globalDailyPlain },
     projects: visibleProjects,
   };
 }

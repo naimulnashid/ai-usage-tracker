@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { buildUsageReport } from '@/lib/parser';
 import { buildCodexUsageReport } from '@/lib/codex-parser';
-import { withHistory } from '@/lib/history';
+import { finishReport } from '@/lib/finish-report';
 import { getProvider, type ProviderId } from '@/lib/providers';
 
 /**
@@ -31,10 +31,10 @@ export async function GET(
 
   try {
     const startedAt = Date.now();
-    // withHistory persists today's aggregates and restores any day whose
+    // finishReport persists today's aggregates and restores any day whose
     // transcript the agent has since deleted. It picks its archive file from
     // the report's own provider, so the two can never cross.
-    const report = withHistory(await PARSERS[provider.id]());
+    const report = finishReport(await PARSERS[provider.id]());
     return NextResponse.json(
       { ...report, parseMs: Date.now() - startedAt },
       { headers: { 'Cache-Control': 'no-store, max-age=0' } },

@@ -1,8 +1,8 @@
 'use client';
 
+import { useModelColor } from './UsageProvider';
 import type { UsageCell } from '@/lib/types';
 import { displayModel, formatCount, formatDuration, formatTokens, formatUsd } from '@/lib/format';
-import { modelColor } from '@/lib/model-colors';
 import { useProvider } from './ProviderScope';
 import { InfoTip } from './InfoTip';
 import { RUNTIME_TOOLTIP } from './Notices';
@@ -26,6 +26,7 @@ export function ModelBreakdownTable({
   combined: UsageCell;
 }) {
   const provider = useProvider();
+  const colorOf = useModelColor();
   const rows = Object.entries(perModel).sort((a, b) => b[1].costUsd - a[1].costUsd);
 
   return (
@@ -58,7 +59,7 @@ export function ModelBreakdownTable({
                 <span className="cell-model">
                   <span
                     className="model-swatch"
-                    style={{ background: modelColor(model) }}
+                    style={{ background: colorOf(model) }}
                     aria-hidden
                   />
                   {displayModel(model)}

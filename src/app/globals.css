@@ -1838,6 +1838,138 @@ table.data tfoot td {
   border: 1px solid rgba(248, 113, 113, 0.3);
 }
 
+/* --------------------------------------------------------------------------
+   Model prices - the table, and the editor that opens under a row
+   ------------------------------------------------------------------------ */
+
+.btn-small {
+  padding: 6px 13px;
+  font-size: 14px;
+}
+
+.rate-source {
+  color: var(--text-muted);
+}
+
+/* The editor spans the row. The table's cells are right-aligned and never
+   wrap; this one is a form, so it is neither. */
+table.data tr.rate-editor-row td {
+  text-align: left;
+  white-space: normal;
+  padding: 18px 14px 22px;
+  background: var(--surface-hover);
+}
+
+table.data tbody tr.rate-editor-row:hover {
+  background: none;
+}
+
+.rate-editor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px 40px;
+}
+
+.rate-editor-group {
+  min-width: 0;
+}
+
+.rate-editor-heading {
+  margin-bottom: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.rate-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.rate-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.rate-field input {
+  width: 118px;
+  padding: 7px 10px;
+  font-family: inherit;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  color-scheme: dark;
+  background: var(--surface);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-sm);
+}
+
+.rate-field input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.rate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.palette {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  max-width: 330px;
+}
+
+.palette-swatch {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 7px;
+  cursor: pointer;
+  transition:
+    transform 160ms var(--ease),
+    border-color 160ms var(--ease);
+}
+
+.palette-swatch:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.palette-swatch[aria-pressed='true'] {
+  border-color: var(--text);
+}
+
+.palette-swatch:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+.rate-editor-note {
+  margin: 10px 0 0;
+  max-width: 330px;
+  font-size: 13px;
+  color: var(--text-faint);
+}
+
+.rate-editor-error {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 14px;
+  color: var(--warn);
+}
+
 /* Tooltip for the runtime assumption */
 /* Wraps the button and the copy of its text that only assistive tech reads. */
 .info-tip-wrap {

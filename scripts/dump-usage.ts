@@ -14,7 +14,7 @@
  * in `report-console.ts`.
  */
 import { buildUsageReport } from '../src/lib/parser';
-import { withHistory } from '../src/lib/history';
+import { finishReport } from '../src/lib/finish-report';
 import type { UsageCell } from '../src/lib/types';
 import {
   duration,
@@ -66,7 +66,7 @@ function printModelTable(perModel: Record<string, UsageCell>) {
 async function main() {
   const startedAt = Date.now();
   // Same archive the dashboard uses: record today, restore deleted days.
-  const report = withHistory(await buildUsageReport());
+  const report = finishReport(await buildUsageReport());
   const outFile = writeReport(report, 'usage-report.json');
 
   if (isQuiet()) {

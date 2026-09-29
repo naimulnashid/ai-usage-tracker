@@ -20,7 +20,17 @@
  * mixed hues, and holding every band above 3:1 against the panel compresses it
  * further - see the note on the table below. Colour is therefore never the only
  * way a band can be read.
+ *
+ * **The user can override a model's shade** from the Model prices table, and a
+ * model the table below has never heard of - a new release, found in the
+ * transcripts before anyone edited this file - can be given one there. The
+ * choice is limited to `ACCENT_PALETTES`, the agent's own ramp, so an
+ * overridden band still clears 3:1 and still reads as this agent's colour. The
+ * price ordering is then the user's to keep: nothing stops them giving a cheap
+ * model the darkest shade.
  */
+
+import type { ProviderId } from './providers';
 
 interface ModelShade {
   color: string;
@@ -78,6 +88,50 @@ export const MODEL_SHADES: Record<string, ModelShade> = {
 };
 
 /**
+ * The shades a model's colour can be set to, per agent, deepest first.
+ *
+ * Every one is a lightness step of that agent's accent and clears 3:1 against
+ * the panel - `tests/contrast.test.ts` checks each - so a user's choice can
+ * never produce a band that disappears into the background. The ramp above is
+ * a subset of these, so every model's default shade is also one of the
+ * choices.
+ */
+export const ACCENT_PALETTES: Record<ProviderId, readonly string[]> = {
+  claude: [
+    '#A14324',
+    '#AE4827',
+    '#BA4D2A',
+    '#C5512C',
+    '#D0562F',
+    '#D56743',
+    '#D97757',
+    '#DF8B70',
+    '#E19278',
+    '#E39981',
+    '#E7A893',
+    '#EDC0B1',
+  ],
+  codex: [
+    '#0B6D55',
+    '#0C7A5F',
+    '#0E8A6C',
+    '#0F9674',
+    '#10A37F',
+    '#12B48C',
+    '#13C69A',
+    '#3FD2AC',
+    '#6CDDBF',
+    '#98E8D3',
+  ],
+};
+
+/** True when `color` is one of the agent's palette shades (any case). */
+export function isPaletteColor(provider: ProviderId, color: string): boolean {
+  const wanted = color.toUpperCase();
+  return (ACCENT_PALETTES[provider] ?? []).some((shade) => shade.toUpperCase() === wanted);
+}
+
+/**
  * Friendlier labels for model strings that are not already readable.
  *
  * Only where the raw string is genuinely obscure — this is not a place to
@@ -112,7 +166,14 @@ const UNKNOWN = '#9C7A6C';
 export const COMBINED_COLOR = 'var(--accent)';
 export const WARN_COLOR = 'var(--warn)';
 
-export function modelColor(model: string): string {
+/**
+ * A model's colour: the user's chosen shade when there is one, else its place
+ * in the ramp above. Components call this through `useModelColor()`, which
+ * supplies the user's choices; called bare it gives the defaults.
+ */
+export function modelColor(model: string, overrides?: Record<string, string>): string {
+  const chosen = overrides?.[model];
+  if (chosen) return chosen;
   if (model === '<synthetic>') return SYNTHETIC;
   return MODEL_SHADES[model]?.color ?? UNKNOWN;
 }

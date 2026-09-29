@@ -8,6 +8,11 @@ import { useProvider } from '@/components/ProviderScope';
 import { CountUp } from '@/components/CountUp';
 import { HeadlineValue } from '@/components/HeadlineValue';
 import { DailySpendChart } from '@/components/DailySpendChart';
+import { CostByModelChart } from '@/components/CostByModelChart';
+import { ScoreCards } from '@/components/ScoreCards';
+import { ActivityHeatmap } from '@/components/ActivityHeatmap';
+import { ModelPricesTable } from '@/components/ModelPricesTable';
+import { MODEL_PRICES_SUB, WeekTrend } from '@/components/PageParts';
 import { DailyTokensByModelChart } from '@/components/DailyTokensByModelChart';
 import { DailySpendByModelChart } from '@/components/DailySpendByModelChart';
 import { DayRangeSelect } from '@/components/DayRangeSelect';
@@ -18,25 +23,15 @@ import { RUNTIME_TOOLTIP, UnpricedNotice } from '@/components/Notices';
 import { ProjectLogo } from '@/components/ProjectLogo';
 import { InfoTip } from '@/components/InfoTip';
 import {
-  displayModel,
+  decodeParam,
   formatCount,
   formatDateLong,
+  formatDateStamp,
   formatDuration,
   formatTokens,
   formatUsd,
 } from '@/lib/format';
-import { modelColor } from '@/lib/model-colors';
-import { DEFAULT_DAY_RANGE, reportToday, type DayRange } from '@/lib/day-range';
-
-/** `useParams` decodes already; only decode a still-encoded id, and never throw. */
-function decodeParam(raw: string): string {
-  if (!raw.includes('%')) return raw;
-  try {
-    return decodeURIComponent(raw);
-  } catch {
-    return raw;
-  }
-}
+import { DEFAULT_DAY_RANGE, reportToday, weekOverWeek, type DayRange } from '@/lib/day-range';
 
 export default function ProjectDetailPage() {
   const provider = useProvider();
@@ -75,11 +70,12 @@ export default function ProjectDetailPage() {
         {/* Headline card: logo, name, path, then the three totals. */}
         <div className="skeleton" style={{ height: detail.headline, marginBottom: 22 }} />
 
-        {/* Daily total spend, then the combined daily table. */}
+        {/* The overview's sections, in the overview's order - see the page
+            below - then this page's own three tables. */}
         <div className="skeleton" style={{ height: detail.dailySpend, marginBottom: 22 }} />
-        <div className="skeleton" style={{ height: detail.combinedTable, marginBottom: 22 }} />
+        <div className="skeleton" style={{ height: detail.costByModel, marginBottom: 22 }} />
 
-        {/* "Breakdown by model" heading. */}
+        {/* "Activity" heading. */}
         <div
           style={{
             height: 21,
@@ -89,26 +85,27 @@ export default function ProjectDetailPage() {
             alignItems: 'center',
           }}
         >
-          <div className="skeleton" style={{ height: 13, width: 170 }} />
+          <div className="skeleton" style={{ height: 13, width: 110 }} />
         </div>
 
-        {/* Same grid class as the real one, so it wraps alike - but the
-            PROJECT's model count, not the agent's. A project uses a subset,
-            and the agent-wide count wrapped to an extra row at 997px. */}
-        <div className="stat-grid">
-          {Array.from({ length: detail.modelCards }, (_, i) => (
-            <div key={i} className="skeleton" style={{ height: 149 }} />
-          ))}
+        {/* The same twelve cards as the overview, in the same container. */}
+        <div className="score-grid-wrap">
+          <div className="score-grid">
+            {Array.from({ length: 12 }, (_, i) => (
+              <div key={i} className="skeleton" style={{ height: provider.skeleton.scoreCard }} />
+            ))}
+          </div>
         </div>
 
-        {/* The two stacked charts are the same components as the overview's,
-            but not the same height: fewer models here, so fewer legend rows.
-            These used to borrow the overview's numbers and ran ~60px tall. */}
+        <div className="skeleton" style={{ height: detail.heatmap, marginBottom: 22 }} />
         <div className="skeleton" style={{ height: detail.dailyTokens, marginBottom: 22 }} />
         <div className="skeleton" style={{ height: detail.dailySpendByModel, marginBottom: 22 }} />
-
-        {/* Totals by model, the per-day-per-model table, then sessions. */}
         <div className="skeleton" style={{ height: detail.tokenTable, marginBottom: 22 }} />
+        <div className="skeleton" style={{ height: detail.modelPrices, marginBottom: 22 }} />
+
+        {/* This page's own tables. The first two are capped: their height
+            follows the number of days, which the skeleton cannot know. */}
+        <div className="skeleton" style={{ height: detail.combinedTable, marginBottom: 22 }} />
         <div className="skeleton" style={{ height: detail.modelDailyTable, marginBottom: 22 }} />
         <div className="skeleton" style={{ height: detail.sessionsTable }} />
       </div>
@@ -167,6 +164,7 @@ export default function ProjectDetailPage() {
     ),
   ];
   const today = reportToday(report.generatedAt, report.settings.localUtcOffsetHours);
+  const trendPct = weekOverWeek(daily);
 
   return (
     <div className="page-enter" style={{ paddingTop: 26 }}>
@@ -258,13 +256,20 @@ export default function ProjectDetailPage() {
         <UnpricedNotice models={unpricedHere} />
       </div>
 
-      {/* ---- Combined daily total: chart then table ---------------------- */}
+      {/*
+       * ---- The overview's sections, in the overview's order ------------------
+       *
+       * Same panels, same names, same components, with this project's data -
+       * so the two pages read as one page at two scopes. What only a project
+       * page has (the per-day tables and the sessions) comes after, at the
+       * bottom.
+       */}
       <section className="card panel rise" style={{ animationDelay: '100ms' }}>
         <div className="panel-head">
           <div>
-            <h2 className="panel-title">Daily total spend</h2>
+            <h2 className="panel-title">Daily combined spend</h2>
             <p className="panel-sub">
-              All models combined for this project. Days marked in red sit well above trend.
+              All models, this project. Days marked in red sit well above trend.
             </p>
           </div>
           {peakDay && (
@@ -279,57 +284,58 @@ export default function ProjectDetailPage() {
             </div>
           )}
         </div>
-        <DailySpendChart daily={daily} replayKey={version} height={280} />
+        <DailySpendChart daily={daily} replayKey={version} />
       </section>
 
       <section className="card panel rise" style={{ animationDelay: '140ms' }}>
         <div className="panel-head">
           <div>
-            <h2 className="panel-title">Daily totals, combined</h2>
-            <p className="panel-sub">Newest first. The bar shows each day against the peak.</p>
+            <h2 className="panel-title">Cost by model</h2>
+            <p className="panel-sub">
+              Estimated spend per model in this project.
+              {report.pricingLastVerified && (
+                <>
+                  {' '}
+                  Rates from <code>{provider.pricingFile}</code>, last verified{' '}
+                  {formatDateStamp(report.pricingLastVerified)}.
+                </>
+              )}
+            </p>
           </div>
         </div>
-        <CombinedDailyTable daily={daily} peakCost={peakDay?.combined.costUsd ?? 0} />
+        <CostByModelChart perModel={perModel} replayKey={version} />
       </section>
 
-      {/* ---- Per-model breakdown ----------------------------------------- */}
-      <h2 className="section-title" style={{ marginTop: 40 }}>
-        Breakdown by model
-      </h2>
+      {/* ---- Activity: score cards, the heat map, then the daily charts --- */}
+      {project.activity && (
+        <>
+          <h2 className="section-title" style={{ marginTop: 40 }}>
+            Activity
+          </h2>
+          <ScoreCards activity={project.activity} combined={combined} replayKey={version} />
+        </>
+      )}
 
-      <div className="stat-grid">
-        {Object.entries(perModel)
-          .sort((a, b) => b[1].costUsd - a[1].costUsd)
-          .map(([model, cell], index) => (
-            <div
-              key={model}
-              className="card card-hover stat-card rise"
-              style={{ animationDelay: `${index * 55}ms` }}
-            >
-              <div className="stat-label">
-                <span
-                  className="model-swatch"
-                  style={{ background: modelColor(model) }}
-                  aria-hidden
-                />
-                {displayModel(model)}
-                {cell.unpriced && <span className="unpriced-pill">UNPRICED</span>}
-              </div>
-              <div className="stat-value num" style={{ color: modelColor(model) }}>
-                {cell.unpriced ? (
-                  '—'
-                ) : (
-                  <CountUp value={cell.costUsd} format={(n) => formatUsd(n)} replayKey={version} />
-                )}
-              </div>
-              <div className="stat-sub num">
-                {formatTokens(cell.totalTokens)} tokens · {formatDuration(cell.runtimeSeconds)}
-              </div>
-            </div>
-          ))}
-      </div>
+      <section className="card panel rise" style={{ animationDelay: '60ms' }}>
+        <div className="panel-head">
+          <div>
+            <h2 className="panel-title">Daily activity</h2>
+            <p className="panel-sub">
+              Spend per day over the last 6 months. Darker means a more expensive day.
+            </p>
+          </div>
+          <WeekTrend pct={trendPct} />
+        </div>
+        <ActivityHeatmap
+          daily={daily}
+          generatedAt={report.generatedAt}
+          offsetHours={report.settings.localUtcOffsetHours}
+          weekStartsOn={report.settings.weekStartsOn}
+          expandHref={`${provider.basePath}/projects/${encodeURIComponent(project.id)}/activity`}
+        />
+      </section>
 
-      <section className="card panel rise" style={{ animationDelay: '150ms' }}>
+      <section className="card panel rise" style={{ animationDelay: '70ms' }}>
         <div className="panel-head">
           <div className="panel-head-main">
             <h2 className="panel-title">Daily tokens by model</h2>
@@ -352,12 +358,13 @@ export default function ProjectDetailPage() {
         />
       </section>
 
-      <section className="card panel rise" style={{ animationDelay: '160ms' }}>
+      <section className="card panel rise" style={{ animationDelay: '80ms' }}>
         <div className="panel-head">
           <div className="panel-head-main">
             <h2 className="panel-title">Daily spend by model</h2>
             <p className="panel-sub">
-              Stacked, so the height of each column is that day&apos;s combined total.
+              The same columns priced instead of counted — so a day that looks modest above and tall
+              here went on the expensive models.
             </p>
           </div>
           <DayRangeSelect
@@ -374,16 +381,42 @@ export default function ProjectDetailPage() {
         />
       </section>
 
-      <section className="card panel rise" style={{ animationDelay: '180ms' }}>
+      <section className="card panel rise" style={{ animationDelay: '90ms' }}>
         <div className="panel-head">
           <div>
-            <h2 className="panel-title">Totals by model</h2>
+            <h2 className="panel-title">Token detail by model</h2>
+            <p className="panel-sub">
+              {provider.hasCacheWrites
+                ? 'Cache writes are split by TTL internally and priced separately; the column below shows their sum.'
+                : 'Input counts only the uncached remainder of each prompt — the cached part is billed at a tenth of the rate and has its own column.'}
+            </p>
           </div>
         </div>
         <ModelBreakdownTable perModel={perModel} combined={combined} />
       </section>
 
-      <section className="card panel rise" style={{ animationDelay: '200ms' }}>
+      <section className="card panel rise" style={{ animationDelay: '100ms' }}>
+        <div className="panel-head">
+          <div>
+            <h2 className="panel-title">Model prices</h2>
+            <p className="panel-sub">{MODEL_PRICES_SUB}</p>
+          </div>
+        </div>
+        <ModelPricesTable perModel={perModel} rates={report.modelRates} />
+      </section>
+
+      {/* ---- This project's own tables ------------------------------------ */}
+      <section className="card panel rise" style={{ animationDelay: '110ms' }}>
+        <div className="panel-head">
+          <div>
+            <h2 className="panel-title">Daily totals, combined</h2>
+            <p className="panel-sub">Newest first. The bar shows each day against the peak.</p>
+          </div>
+        </div>
+        <CombinedDailyTable daily={daily} peakCost={peakDay?.combined.costUsd ?? 0} />
+      </section>
+
+      <section className="card panel rise" style={{ animationDelay: '120ms' }}>
         <div className="panel-head">
           <div>
             <h2 className="panel-title">Daily breakdown by model</h2>
@@ -393,8 +426,7 @@ export default function ProjectDetailPage() {
         <ModelDailyTable daily={daily} />
       </section>
 
-      {/* ---- Sessions ---------------------------------------------------- */}
-      <section className="card panel rise" style={{ animationDelay: '220ms' }}>
+      <section className="card panel rise" style={{ animationDelay: '130ms' }}>
         <div className="panel-head">
           <div>
             <h2 className="panel-title">Sessions</h2>

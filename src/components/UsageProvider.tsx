@@ -11,7 +11,8 @@ import {
   type ReactNode,
 } from 'react';
 import { useRouter } from 'next/navigation';
-import type { UsageReport } from '@/lib/types';
+import type { ModelRate, UsageReport } from '@/lib/types';
+import { modelColor } from '@/lib/model-colors';
 import { useProvider } from './ProviderScope';
 
 interface UsageState {
@@ -31,12 +32,31 @@ interface UsageState {
   hiddenProjects: string[];
   /** Hide or show one project. Rejects with a readable message if the save fails. */
   setProjectHidden: (id: string, hidden: boolean) => Promise<void>;
+  /**
+   * The user's chosen model colours - a view preference, read alongside the
+   * report like the hidden projects. See model-settings.ts.
+   */
+  modelColors: Record<string, string>;
+  /**
+   * Save one model's rate and/or colour (`null` clears it). A rate change is
+   * followed by a fresh parse, since it moves every cost on the page; a colour
+   * change is not. Rejects with a readable message if the save fails.
+   */
+  saveModelSetting: (
+    model: string,
+    change: { rate?: ModelRate | null; color?: string | null },
+  ) => Promise<void>;
 }
 
 const UsageContext = createContext<UsageState | null>(null);
 
 type LoadResult =
-  | { kind: 'report'; report: UsageReport & { parseMs?: number }; hidden: string[] }
+  | {
+      kind: 'report';
+      report: UsageReport & { parseMs?: number };
+      hidden: string[];
+      colors: Record<string, string>;
+    }
   | { kind: 'failed'; message: string }
   | { kind: 'signed-out' };
 
@@ -58,6 +78,26 @@ async function fetchHidden(providerId: string): Promise<string[]> {
   }
 }
 
+function colorMap(value: unknown): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (typeof value !== 'object' || value === null) return out;
+  for (const [model, color] of Object.entries(value)) {
+    if (typeof color === 'string') out[model] = color;
+  }
+  return out;
+}
+
+/** The chosen model colours. Fails soft to none: the default shades are fine. */
+async function fetchColors(providerId: string): Promise<Record<string, string>> {
+  try {
+    const response = await fetch(`/api/model-settings/${providerId}`, { cache: 'no-store' });
+    if (!response.ok) return {};
+    return colorMap((await response.json())?.colors);
+  } catch {
+    return {};
+  }
+}
+
 /**
  * One request for one agent's report. Touches no React state, so the component
  * can apply the result from a callback - which is what makes it plain to React
@@ -70,6 +110,7 @@ async function fetchHidden(providerId: string): Promise<string[]> {
  */
 async function fetchReport(providerId: string): Promise<LoadResult> {
   const hidden = fetchHidden(providerId);
+  const colors = fetchColors(providerId);
   try {
     // cache: 'no-store' matters - a manual Refresh must actually re-read disk.
     const response = await fetch(`/api/usage/${providerId}`, { cache: 'no-store' });
@@ -85,6 +126,7 @@ async function fetchReport(providerId: string): Promise<LoadResult> {
       kind: 'report',
       report: payload as UsageReport & { parseMs?: number },
       hidden: await hidden,
+      colors: await colors,
     };
   } catch (err) {
     return { kind: 'failed', message: err instanceof Error ? err.message : String(err) };
@@ -113,6 +155,7 @@ export function UsageProvider({ children }: { children: ReactNode }) {
   const [lastRefreshed, setLastRefreshed] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
   const [hiddenProjects, setHiddenProjects] = useState<string[]>([]);
+  const [modelColors, setModelColors] = useState<Record<string, string>>({});
 
   /*
    * Counts saves to the hidden list. A load that started before a save would
@@ -120,6 +163,8 @@ export function UsageProvider({ children }: { children: ReactNode }) {
    * click; a load only applies its list if no save happened in the meantime.
    */
   const hiddenEdits = useRef(0);
+  /** The same guard, for colour saves. */
+  const colorEdits = useRef(0);
 
   // A session that expired while the tab sat open should send the user to the
   // login screen, not surface a bare "Request failed (401)".
@@ -162,6 +207,7 @@ export function UsageProvider({ children }: { children: ReactNode }) {
       const ticket = (sequence.current += 1);
       inFlight.current = ticket;
       const edits = hiddenEdits.current;
+      const colorEditsAtStart = colorEdits.current;
 
       void fetchReport(providerId).then((result) => {
         if (result.kind === 'signed-out') {
@@ -173,6 +219,7 @@ export function UsageProvider({ children }: { children: ReactNode }) {
         if (result.kind === 'report') {
           setReport(result.report);
           if (edits === hiddenEdits.current) setHiddenProjects(result.hidden);
+          if (colorEditsAtStart === colorEdits.current) setModelColors(result.colors);
           setLastRefreshed(new Date().toISOString());
           setVersion((v) => v + 1);
         } else {
@@ -223,6 +270,37 @@ export function UsageProvider({ children }: { children: ReactNode }) {
   }, [load, provider.id]);
 
   /*
+   * Not optimistic, like the hidden projects. A rate then needs a fresh parse
+   * to reach the numbers - forced even if one is already running, since that
+   * one started before the rate existed.
+   */
+  const saveModelSetting = useCallback(
+    async (model: string, change: { rate?: ModelRate | null; color?: string | null }) => {
+      colorEdits.current += 1;
+      const response = await fetch(`/api/model-settings/${provider.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, ...change }),
+      });
+      if (response.status === 401) {
+        toLogin();
+        throw new Error('Your session has expired.');
+      }
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(payload?.detail || payload?.error || `Request failed (${response.status})`);
+      }
+      setModelColors(colorMap(payload?.colors));
+      if (change.rate !== undefined) {
+        setLoading(true);
+        setError(null);
+        load(provider.id);
+      }
+    },
+    [load, provider.id, toLogin],
+  );
+
+  /*
    * The first load. There is nothing to clear first: see the key note above.
    *
    * No polling afterwards - refresh is manual only, so the transcripts on disk
@@ -243,6 +321,8 @@ export function UsageProvider({ children }: { children: ReactNode }) {
       version,
       hiddenProjects,
       setProjectHidden,
+      modelColors,
+      saveModelSetting,
     }),
     [
       report,
@@ -254,6 +334,8 @@ export function UsageProvider({ children }: { children: ReactNode }) {
       version,
       hiddenProjects,
       setProjectHidden,
+      modelColors,
+      saveModelSetting,
     ],
   );
 
@@ -264,4 +346,14 @@ export function useUsage(): UsageState {
   const context = useContext(UsageContext);
   if (!context) throw new Error('useUsage must be used inside <UsageProvider>');
   return context;
+}
+
+/**
+ * `modelColor` with the user's chosen shades applied. Tolerates having no
+ * provider above it - a component rendered on its own (a test, say) gets the
+ * default shades rather than an exception.
+ */
+export function useModelColor(): (model: string) => string {
+  const colors = useContext(UsageContext)?.modelColors;
+  return useCallback((model: string) => modelColor(model, colors), [colors]);
 }

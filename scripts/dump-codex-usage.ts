@@ -16,7 +16,7 @@
  * spine lives in `report-console.ts`.
  */
 import { buildCodexUsageReport } from '../src/lib/codex-parser';
-import { withHistory } from '../src/lib/history';
+import { finishReport } from '../src/lib/finish-report';
 import type { UsageCell } from '../src/lib/types';
 import {
   duration,
@@ -67,7 +67,7 @@ function printModelTable(perModel: Record<string, UsageCell>) {
 
 async function main() {
   const startedAt = Date.now();
-  const report = withHistory(await buildCodexUsageReport());
+  const report = finishReport(await buildCodexUsageReport());
   const outFile = writeReport(report, 'codex-usage-report.json');
 
   if (isQuiet()) {

@@ -1,5 +1,6 @@
 'use client';
 
+import { useModelColor } from './UsageProvider';
 import type { ActivityStats, SessionRecord, UsageCell } from '@/lib/types';
 import { CountUp } from './CountUp';
 import { ScoreIcon, type ScoreIconName } from './ScoreIcon';
@@ -13,7 +14,6 @@ import {
   formatTokens,
   formatUsd,
 } from '@/lib/format';
-import { modelColor } from '@/lib/model-colors';
 import { useProvider } from './ProviderScope';
 
 /**
@@ -52,6 +52,7 @@ export function ScoreCards({
   replayKey?: number;
 }) {
   const provider = useProvider();
+  const colorOf = useModelColor();
   const cacheWritten = combined.cacheWrite5m + combined.cacheWrite1h;
   const cachedTotal = combined.cacheRead + cacheWritten;
   const capitalisedMessages =
@@ -131,12 +132,12 @@ export function ScoreCards({
             display: 'inline-flex',
             alignItems: 'center',
             gap: 10,
-            color: modelColor(activity.favoriteModel),
+            color: colorOf(activity.favoriteModel),
           }}
         >
           <span
             className="model-swatch"
-            style={{ background: modelColor(activity.favoriteModel) }}
+            style={{ background: colorOf(activity.favoriteModel) }}
             aria-hidden
           />
           {displayModel(activity.favoriteModel)}
