@@ -182,6 +182,20 @@ npm outdated
 ```
 
 - Patch/minor lag is fine if Dependabot has a PR open for it.
+- **Held majors** are listed, with the reason, in the `ignore:` block of
+  `.github/dependabot.yml`, and `npm outdated` will keep showing them - that is
+  expected, not a finding. Only report one when its reason has lifted. For
+  ESLint 10 and TypeScript 7, the test is the plugins `eslint-config-next`
+  bundles, not its own open-ended peer ranges:
+
+  ```bash
+  for p in typescript-eslint eslint-plugin-react eslint-plugin-import eslint-plugin-jsx-a11y eslint-plugin-react-hooks; do
+    echo "$p: eslint $(npm view $p@latest peerDependencies.eslint) | ts $(npm view $p@latest peerDependencies.typescript)"
+  done
+  ```
+
+  When every range admits the new major (and `eslint-config-next`'s latest
+  depends on those versions), propose the upgrade and remove its `ignore`.
 - `next` and `eslint-config-next` share a major.
 - The Node versions in `.github/workflows/ci.yml`, `.nvmrc` and `engines` are
   still supported releases (check the Node release schedule). When they move,

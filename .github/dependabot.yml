@@ -24,6 +24,16 @@ updates:
       # Minor and patch updates still arrive.
       - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']
+      # ESLint 10 and TypeScript 7 wait for Next.js's lint stack (the owner's
+      # decision, 2026-10-01). eslint-config-next's own peer ranges are
+      # open-ended and prove nothing; the plugins it bundles are what block
+      # them - eslint-plugin-react, -import and -jsx-a11y accept ESLint 9 at
+      # most, and typescript-eslint accepts TypeScript below 6.1. The
+      # health check's dependency section says how to tell when that lifts.
+      - dependency-name: 'eslint'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
     groups:
       # `eslint-config-next` must stay on the same major as `next` — it lints
       # for a framework version, and letting the two drift apart means linting
