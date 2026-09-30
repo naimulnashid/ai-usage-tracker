@@ -85,7 +85,7 @@ refuses every request rather than opening up.
 - **Overview:** total estimated spend, tokens and runtime; daily spend with
   unusual days flagged; cost by model; activity cards (sessions, streaks, peak
   hour, longest chat); a six-month heat map, with an Expand link to every day
-  on record once there is more history than that; daily tokens and daily
+  on record; daily tokens and daily
   spend stacked by model, over the last 30 days, the last 60 or every day on
   record; then token detail by model and the price of each model, where a
   price and a colour can be set. Between the heat map and the model charts,

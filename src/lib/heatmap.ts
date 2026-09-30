@@ -113,20 +113,6 @@ export function earliestActiveDate(daily: DailyEntry[]): string | null {
 }
 
 /**
- * True when some recorded day is older than the overview's window - which is
- * exactly when the overview is not showing everything, and so when it offers
- * the full-history page.
- */
-export function hasHistoryBeforeWindow(
-  daily: DailyEntry[],
-  today: Date,
-  startDay: number,
-): boolean {
-  const earliest = earliestActiveDate(daily);
-  return earliest !== null && earliest < isoDay(windowStart(today, startDay));
-}
-
-/**
  * Where the full-history page starts: the first of the month holding the
  * earliest recorded day. A month boundary rather than the day itself, so the
  * first strip opens on a whole month instead of a stray week of blanks.

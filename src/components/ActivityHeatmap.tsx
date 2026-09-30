@@ -14,7 +14,6 @@ import { HEATMAP_RAMP, heatmapColor } from '@/lib/model-colors';
 import {
   HEATMAP_WEEKS,
   fullHeatmap,
-  hasHistoryBeforeWindow,
   heatmapToday,
   recentHeatmap,
   stripLabel,
@@ -48,10 +47,10 @@ interface HeatmapProps {
  * Daily spend over the last `RANGE_LABEL`, GitHub-style, coloured with the
  * accent ramp.
  *
- * When there is history older than that, an Expand link at the bottom leads to
- * the full-history page (`FullActivityHeatmap`). It is absent otherwise: a
- * link to a page showing exactly what is already here would be a control that
- * does nothing.
+ * An Expand link at the bottom leads to the full-history page
+ * (`FullActivityHeatmap`) - always, by the owner's choice (2026-09-30). It
+ * used to appear only once some day was older than this strip, which made a
+ * control that came and went with the data.
  */
 export function ActivityHeatmap({
   daily,
@@ -64,13 +63,10 @@ export function ActivityHeatmap({
   expandHref: string;
 }) {
   const startDay = weekStartDay(weekStartsOn);
-  const { heatmap, hasMore } = useMemo(() => {
-    const today = heatmapToday(generatedAt, offsetHours);
-    return {
-      heatmap: recentHeatmap(daily, today, startDay),
-      hasMore: hasHistoryBeforeWindow(daily, today, startDay),
-    };
-  }, [daily, generatedAt, offsetHours, startDay]);
+  const heatmap = useMemo(
+    () => recentHeatmap(daily, heatmapToday(generatedAt, offsetHours), startDay),
+    [daily, generatedAt, offsetHours, startDay],
+  );
 
   return (
     <HeatmapFigure
@@ -79,11 +75,9 @@ export function ActivityHeatmap({
       span={`over the last ${RANGE_LABEL}`}
       legend={`in the last ${RANGE_LABEL}`}
     >
-      {hasMore && (
-        <Link href={expandHref} className="btn heatmap-expand">
-          Expand
-        </Link>
-      )}
+      <Link href={expandHref} className="btn heatmap-expand">
+        Expand
+      </Link>
     </HeatmapFigure>
   );
 }

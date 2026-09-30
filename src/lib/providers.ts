@@ -267,7 +267,7 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
       // window now (577 / 553 with two, 671 / 647 before the range existed).
       dailyTokens: 612, // 624 / 600
       dailySpendByModel: 612, // 624 / 600 - same as its tokens twin here
-      heatmap: 457, // 402 / 512
+      heatmap: 467, // 412 / 523 with Expand always shown (2026-09-30)
       // Measured 2026-09-30 at the 30-day default: nine chips, three lines of
       // them at 997 and two at 1680.
       dailyByProject: 578, // 611 / 544
@@ -279,7 +279,7 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
         headline: 359, // 342/368/368 @997, 358 flat @1680 - the cwd path wraps
         dailySpend: 433, // flat - the overview's chart height now, not 280
         costByModel: 393, // flat at both widths and on all three
-        heatmap: 457, // 402 / 512, as on the overview
+        heatmap: 467, // 412 / 523, as on the overview
         // Re-measured 2026-09-30 at this page's All-days default, so every
         // model the project used has a legend row: 3, 2 and 4 models.
         dailyTokens: 612, // 624/577/671 @997, 600/553/647 @1680
@@ -330,7 +330,7 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
       // rows; the collapsed rail is what stopped its detail column wrapping.
       dailyTokens: 565, // 577 / 553 (603 at 997 with the rail expanded)
       dailySpendByModel: 565, // 577 / 553
-      heatmap: 457, // 402 / 512 (353 at 997 with the rail expanded)
+      heatmap: 467, // 412 / 523 with Expand always shown (2026-09-30)
       dailyByProject: 514, // 526 / 502 - two chips, one line; the subtitle wraps at 997
       modelPrices: 304, // 316 / 292 - two models
       projectDonut: 405, // 417 / 393 - two projects, so the ring governs
@@ -341,7 +341,7 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
         headline: 363, // 368/368 @997, 358 flat @1680
         dailySpend: 433, // flat
         costByModel: 393, // flat
-        heatmap: 457, // 402 / 512
+        heatmap: 467, // 412 / 523 with Expand always shown (2026-09-30)
         dailyTokens: 565, // 577/577 @997, 553 @1680
         dailySpendByModel: 565, // 577/577 @997, 553 @1680
         tokenTable: 353, // 373 / 334 - its subtitle is the overview's now

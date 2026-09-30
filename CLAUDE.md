@@ -622,7 +622,7 @@ src/lib/rail.ts                      Sidebar state + the before-paint init scrip
 src/lib/theme.ts                     Light/dark choice + its before-paint init script.
 src/lib/project-colors.ts            Project chart colours: logo extraction, fitting, fallbacks. Client-safe.
 src/lib/project-colors-store.ts      Colours chosen for projects. One file per agent, in data/.
-src/components/ThemeToggle.tsx       The theme menu at the rail's foot, and useTheme().
+src/components/ThemeToggle.tsx       The theme menu in the top bar, and useTheme().
 src/components/ProjectColors.tsx     useProjectColors(): reads logos and hands out colours.
 src/components/DailySpendByProjectChart.tsx  Daily spend stacked by project.
 src/proxy.ts                         The single auth gate in front of every route.
@@ -1191,9 +1191,8 @@ apart, and a window would show most of them empty.
 
 ### The heat map has a full-history page
 
-The overview's heat map is one strip of 26 weeks. Once any recorded day is
-older than that strip, an **Expand** link appears in the middle of its legend
-row and opens
+The overview's heat map is one strip of 26 weeks. An **Expand** link in the
+middle of its legend row opens
 `/<agent>/activity`: the same strip repeated downwards, oldest first, so every
 strip keeps the overview's width and cell size and more history makes the page
 taller rather than the cells smaller. Both layouts come from
@@ -1209,14 +1208,16 @@ taller rather than the cells smaller. Both layouts come from
   need a 27th column sometimes and the cells would change size between them.
   Each strip carries its span with years ("Jul 2026 – Dec 2026"), since the
   month labels inside it have none.
-- **Expand exists only when it shows something the overview does not.** The
-  page itself is reachable by URL either way. It sits in the legend row rather
-  than a row of its own, as a compact button, so the row grows only by the
-  button's extra height over the text; the overview's measured
-  `skeleton.heatmap` predates it. The legend becomes a `1fr auto 1fr` grid
-  while it is there, which is what centres it on the panel rather than between
-  two texts of different widths. The activity page's own skeleton is sized for
-  one strip, and a longer history grows below it.
+- **Expand is always shown**, by the owner's choice (2026-09-30). It used to
+  appear only once some day was older than the strip - a control that came and
+  went with the data - and the helper that decided it is gone. With a short
+  history the page it opens shows the same one strip, which is accepted.
+  It sits in the legend row rather than a row of its own, as a compact button,
+  so the row grows only by the button's extra height over the text:
+  `skeleton.heatmap` went 457 -> 467 (412 / 523) when it became permanent. The
+  legend is a `1fr auto 1fr` grid, which is what centres the button on the
+  panel rather than between two texts of different widths. The activity page's
+  own skeleton is sized for one strip, and a longer history grows below it.
 
 ### Hiding a project
 
