@@ -6,6 +6,14 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Security
+
+- **Next.js 16.3.8**, which fixes a critical advisory (GHSA-vcvr-r3jv-pc5j:
+  remote code execution in `next/og`'s `ImageResponse`). The dashboard uses
+  `next/og` only at build time, to draw its own app icon from a committed file,
+  so no request could reach it - but every earlier 16.2/16.3 release is
+  affected, so update.
+
 ### Added
 
 - **A light theme.** The sun/moon button in the top bar, beside Refresh, picks
