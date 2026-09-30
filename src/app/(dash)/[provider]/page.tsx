@@ -13,7 +13,7 @@ import { ScoreCards } from '@/components/ScoreCards';
 import { ActivityHeatmap } from '@/components/ActivityHeatmap';
 import { EmptyState } from '@/components/EmptyState';
 import { InfoTip } from '@/components/InfoTip';
-import { MODEL_PRICES_SUB, WeekTrend } from '@/components/PageParts';
+import { MODEL_PRICES_SUB, WeekTrend, useHeatNote } from '@/components/PageParts';
 import { isEmptyReport, noteworthyWarnings } from '@/lib/report-state';
 import { DailyTokensByModelChart } from '@/components/DailyTokensByModelChart';
 import { DailySpendByModelChart } from '@/components/DailySpendByModelChart';
@@ -39,6 +39,7 @@ import {
 export default function OverviewPage() {
   const provider = useProvider();
   const { report, initialLoading, error, version, hiddenProjects } = useUsage();
+  const heatNote = useHeatNote();
   // One range per chart: a control inside a panel changes that panel only.
   // Above the early returns, since these are hooks.
   const [tokensRange, setTokensRange] = useState<DayRange>(DEFAULT_DAY_RANGE);
@@ -301,9 +302,7 @@ export default function OverviewPage() {
         <div className="panel-head">
           <div>
             <h2 className="panel-title">Daily activity</h2>
-            <p className="panel-sub">
-              Spend per day over the last 6 months. Darker means a more expensive day.
-            </p>
+            <p className="panel-sub">Spend per day over the last 6 months. {heatNote}</p>
           </div>
           <WeekTrend pct={trendPct} />
         </div>

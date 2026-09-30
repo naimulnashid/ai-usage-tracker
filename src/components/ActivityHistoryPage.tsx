@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { isEmptyReport } from '@/lib/report-state';
 import { fullHistoryStart } from '@/lib/heatmap';
 import { formatDateStamp } from '@/lib/format';
+import { useHeatNote } from './PageParts';
 
 /**
  * The heat map alone, over every recorded day - what a heat map's Expand link
@@ -23,6 +24,7 @@ import { formatDateStamp } from '@/lib/format';
 export function ActivityHistoryPage({ projectId }: { projectId?: string }) {
   const provider = useProvider();
   const { report, initialLoading, error } = useUsage();
+  const heatNote = useHeatNote();
 
   const backHref = projectId
     ? `${provider.basePath}/projects/${encodeURIComponent(projectId)}`
@@ -105,8 +107,8 @@ export function ActivityHistoryPage({ projectId }: { projectId?: string }) {
             <h1 className="panel-title">Daily activity{project ? ` — ${project.name}` : ''}</h1>
             <p className="panel-sub">
               {from
-                ? `Spend per day since ${formatDateStamp(from)}, six months to a row. Darker means a more expensive day.`
-                : 'Spend per day. Darker means a more expensive day.'}
+                ? `Spend per day since ${formatDateStamp(from)}, six months to a row. ${heatNote}`
+                : `Spend per day. ${heatNote}`}
             </p>
           </div>
         </div>

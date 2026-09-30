@@ -11,7 +11,7 @@ import { DailySpendChart } from '@/components/DailySpendChart';
 import { CostByModelChart } from '@/components/CostByModelChart';
 import { SCORE_CARDS_WITHOUT_WHEN, ScoreCards } from '@/components/ScoreCards';
 import { ActivityHeatmap } from '@/components/ActivityHeatmap';
-import { WeekTrend } from '@/components/PageParts';
+import { WeekTrend, useHeatNote } from '@/components/PageParts';
 import { DailyTokensByModelChart } from '@/components/DailyTokensByModelChart';
 import { DailySpendByModelChart } from '@/components/DailySpendByModelChart';
 import { DayRangeSelect } from '@/components/DayRangeSelect';
@@ -46,6 +46,7 @@ export default function ProjectDetailPage() {
   // the page. Decode only if it is still encoded, and never throw.
   const projectId = decodeParam(String(params?.id ?? ''));
   const { report, initialLoading, error, version } = useUsage();
+  const heatNote = useHeatNote();
   // The overview's two range pickers, for this project's copies of the charts.
   // All days, not the overview's 30: a project is often worked on in bursts
   // weeks apart, and a window would show most of them as empty.
@@ -326,9 +327,7 @@ export default function ProjectDetailPage() {
         <div className="panel-head">
           <div>
             <h2 className="panel-title">Daily activity</h2>
-            <p className="panel-sub">
-              Spend per day over the last 6 months. Darker means a more expensive day.
-            </p>
+            <p className="panel-sub">Spend per day over the last 6 months. {heatNote}</p>
           </div>
           <WeekTrend pct={trendPct} />
         </div>

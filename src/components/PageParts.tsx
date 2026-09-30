@@ -1,5 +1,7 @@
 'use client';
 
+import { useTheme } from './ThemeToggle';
+
 /*
  * Small pieces the overview and a project page share, so the two stay the same
  * page with different data - see CLAUDE.md, *Project pages mirror the overview*.
@@ -8,6 +10,16 @@
 /** The Model prices panel's subtitle, shared with the project page. */
 export const MODEL_PRICES_SUB =
   'USD per million tokens. Set a price for a model the rate card does not know yet — it is saved on this machine and wins over the card — or pick the colour a model is drawn in.';
+
+/**
+ * What the heat map's shade means, which depends on the theme: the dark ramp
+ * gets BRIGHTER as spend rises (light stands out on black), the light ramp
+ * DARKER. The sentence used to say "Darker" in both, true in neither until
+ * the light theme existed.
+ */
+export function useHeatNote(): string {
+  return `${useTheme() === 'light' ? 'Darker' : 'Brighter'} means a more expensive day.`;
+}
 
 /** The heat map's week-on-week figure, beside its title. */
 export function WeekTrend({ pct }: { pct: number | null }) {
