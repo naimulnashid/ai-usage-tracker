@@ -54,10 +54,13 @@ interface Shot {
   path: string;
   /** Extra settling time for a page with more charts to animate in. */
   settleMs?: number;
+  /** The theme to show. Dark, the dashboard's default, unless a shot says. */
+  theme?: 'dark' | 'light';
 }
 
 const SHOTS: Shot[] = [
   { name: 'overview-claude', path: '/claude' },
+  { name: 'overview-claude-light', path: '/claude', theme: 'light' },
   { name: 'overview-codex', path: '/codex' },
   { name: 'projects', path: '/claude/projects' },
   { name: 'project-detail', path: '/claude/projects/C--Users-you-Projects-Recipe-Box' },
@@ -186,6 +189,13 @@ async function main(): Promise<void> {
     });
 
     for (const shot of SHOTS) {
+      // The theme is a per-browser choice in localStorage, applied by an
+      // inline script before first paint. Setting it from a script that runs
+      // ahead of every page's own is what makes that first paint the right
+      // one - setting it after load would capture a theme switch mid-way.
+      const theme = (await cdp.send('Page.addScriptToEvaluateOnNewDocument', {
+        source: `try { localStorage.setItem('aiusage.theme', '${shot.theme ?? 'dark'}'); } catch (e) {}`,
+      })) as { identifier?: string };
       await cdp.send('Page.navigate', { url: new URL(shot.path, baseUrl).href });
 
       // Two separate waits. The data has to land, which can take a full parse;
@@ -265,6 +275,11 @@ async function main(): Promise<void> {
         deviceScaleFactor: SCALE,
         mobile: false,
       });
+      if (theme.identifier) {
+        await cdp.send('Page.removeScriptToEvaluateOnNewDocument', {
+          identifier: theme.identifier,
+        });
+      }
     }
 
     cdp.close();

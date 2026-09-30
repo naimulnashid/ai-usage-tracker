@@ -7,10 +7,15 @@ day.
 It works by reading the session transcripts both agents already write to your
 disk. There is no account, no database and no cloud service.
 
-![The whole Claude Code overview, top to bottom: total estimated spend, tokens and runtime; daily spend; the breakdown by model; activity cards; daily tokens and spend by model; and the six-month heat map](docs/screenshots/overview-claude.webp)
+![The whole Claude Code overview, top to bottom: total estimated spend, tokens and runtime; daily spend; cost by model; activity cards; the six-month heat map; daily spend by project; daily tokens and spend by model; token detail and model prices](docs/screenshots/overview-claude.webp)
 
 <details>
-<summary><b>Codex, the projects page, and one project in detail</b></summary>
+<summary><b>The light theme, Codex, the projects page, and one project in detail</b></summary>
+
+A light theme sits beside the dark one - the sun and moon button in the top bar
+picks Dark, Light, or your system's setting.
+
+![The same Claude Code overview in the light theme: white cards on a grey page](docs/screenshots/overview-claude-light.webp)
 
 Codex's headline says **API-equivalent spend**, not "total spend" — it is
 commonly used on a flat subscription, where these tokens were never billed
@@ -19,14 +24,15 @@ individually. The two figures answer different questions and are never added.
 ![The whole Codex overview, in its own accent, headed API-equivalent spend](docs/screenshots/overview-codex.webp)
 
 Projects open with a share-of-spend ring, because a ranked list looks the same
-whether the top project is 37% of your spend or 15%.
+whether the top project is 37% of your spend or 15%. Each project is drawn in
+its own colour - its logo's, or one you pick - and a slice opens it.
 
-![The projects page: a share-of-spend donut above the ranked list of projects, each with its options menu](docs/screenshots/projects.webp)
+![The projects page: a share-of-spend donut in per-project colours above the ranked list of projects, each with its options menu](docs/screenshots/projects.webp)
 
-Each project has its own page: daily spend, a breakdown by model, and every
-session ranked by cost.
+Each project has its own page: the overview's sections for that project alone,
+then its spend day by day and model by model.
 
-![A single project's page in full, from its own spend, tokens and runtime down to every session](docs/screenshots/project-detail.webp)
+![A single project's page in full: its own spend, tokens and runtime, cost by model, activity cards and heat map, the stacked daily charts, and its day-by-model table](docs/screenshots/project-detail.webp)
 
 </details>
 

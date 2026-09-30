@@ -2112,8 +2112,11 @@ screen. Three things about how, all found by doing it:
   file. That happened once the project page took the overview's sections and
   grew to 9,658px, which the cap scaled to exactly 16,384. The cap is 16,300
   now, leaving room for rounding, and an empty capture is an error.
-- **Full pages cost file size:** ~2.2 MB for the four, the project page alone
-  ~1 MB, against ~0.5 MB for four first screens.
+- **Full pages cost file size:** ~3 MB for the five (2026-10-01), the project
+  page alone ~0.9 MB, against ~0.5 MB for four first screens.
+- **The theme is set per shot** (`Shot.theme`, dark unless a shot says), by a
+  script injected before each page's own - so the first paint is already the
+  right theme. `overview-claude-light` is the one light shot.
 
 **Get the session from a throwaway server, not from your own browser.** The
 script takes a cookie so that it never handles a password, but copying a real
