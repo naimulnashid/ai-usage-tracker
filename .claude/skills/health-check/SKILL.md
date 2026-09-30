@@ -202,11 +202,24 @@ gh release list --limit 3
 | A breaking change to config files, `data/` formats or the API routes | Minor while on 0.x, with an upgrade note at the top of the entry |
 | Only `docs:`, `ci:`, `chore:`, tests | None |
 
-To cut one (ask first): set `version` in `package.json`; rename
-`## [Unreleased]` to `## [x.y.z] - YYYY-MM-DD`, open a fresh empty
-`## [Unreleased]` above it, and update the compare links at the bottom; commit
-`chore: release vx.y.z`; tag `vx.y.z`; push the commit and the tag; then
-`gh release create vx.y.z --title "vx.y.z" --notes-file <that section>`.
+To cut one (ask first):
+
+1. **Reconcile the CHANGELOG with the commits first.** List every `feat:` and
+   `fix:` since the tag (`git log --format=%s <tag>..HEAD | grep -E
+   '^(feat|fix)'`) and make sure each has an entry. The first run of this
+   checklist found five shipped features with none.
+2. `npm version x.y.z --no-git-tag-version` (updates the lockfile too).
+3. Add `## [x.y.z] - YYYY-MM-DD` directly under `## [Unreleased]`, so the
+   entries move into the release and Unreleased starts empty.
+4. Commit `chore: release vx.y.z`, then `git tag -a vx.y.z -m vx.y.z`, and push
+   the commit and the tag.
+5. `gh release create vx.y.z --title "vx.y.z — <what it is about>" --notes-file
+   <notes>`, where the notes open with anything a user must act on (a security
+   fix, a raised Node floor), then a few highlights, then that CHANGELOG
+   section.
+6. Rebuild and restart any local deployment: the version lives in
+   `package.json`, which the launchers' stale-build check watches.
+
 Screenshots (section 4) should be current before a release.
 
 ## 11. Repository hygiene
