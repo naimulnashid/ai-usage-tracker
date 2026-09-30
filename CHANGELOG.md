@@ -8,8 +8,8 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- **A light theme.** The theme button at the foot of the sidebar picks Dark
-  (still the default), Light, or System. Light is its own design rather than
+- **A light theme.** The sun/moon button in the top bar, beside Refresh, picks
+  Dark (still the default), Light, or System. Light is its own design rather than
   the dark one inverted: white cards on a grey page, separated by borders and
   soft shadows that deepen on hover, accents darkened until they carry text at
   WCAG AA on white, and a heat map that darkens as spend rises. Model colours
@@ -62,6 +62,10 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   contributor notes, where someone relying on one would never see it.
 
 ### Fixed
+
+- **Hover states and empty heat-map days are visible in the light theme.** A
+  hovered table row, the bar charts' hover column and an empty day's square
+  were all but invisible on white.
 
 - **The top bar fits a narrow window.** It was one row that needed about
   560px, so anything narrower was pushed sideways. Below 720px it is now two
@@ -116,6 +120,9 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   again. It now replaces the entry, as Sign out already did.
 
 ### Changed
+
+- **The heat map's Expand button is always shown.** It used to appear only
+  once some day was older than the six-month strip.
 
 - **Phones show the desktop dashboard, scaled to fit the screen,** the way a
   browser's "Desktop site" option does. Pinch to zoom in on the details. The

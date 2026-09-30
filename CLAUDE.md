@@ -632,6 +632,7 @@ scripts/report-console.ts            The two dump scripts' shared printing. Outp
 scripts/run-tests.mjs                CLI: `npm test`. Discovers tests/*.test.ts.
 scripts/make-demo-data.ts            CLI: `npm run demo:data`. Synthetic transcripts for both agents.
 tests/                               node:test suites; fixtures are written at run time.
+.claude/skills/health-check/         `/health-check`: the maintenance checklist to run after a batch of changes.
 scripts/*.ps1, *.vbs, *.bat          Windows background service and launchers.
 src/app/(dash)/[provider]/           The pages. One copy, two agents.
 src/components/ModelPricesTable.tsx  The Model prices table and its price/colour editor.

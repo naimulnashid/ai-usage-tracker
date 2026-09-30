@@ -51,10 +51,6 @@ export function isDayRange(value: string): value is DayRange {
   return ALL_RANGES.has(value);
 }
 
-export function dayRangeLabel(range: DayRange): string {
-  return range === 'all' ? 'All days' : `Last ${range} days`;
-}
-
 const DAY_MS = 86_400_000;
 
 /**
