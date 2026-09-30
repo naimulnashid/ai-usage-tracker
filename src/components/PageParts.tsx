@@ -19,7 +19,7 @@ export function WeekTrend({ pct }: { pct: number | null }) {
         style={{
           fontSize: 19,
           fontWeight: 640,
-          color: pct > 0 ? 'var(--warn)' : '#4ADE80',
+          color: pct > 0 ? 'var(--warn)' : 'var(--good)',
         }}
       >
         {pct > 0 ? '↑' : '↓'} {Math.abs(pct).toFixed(0)}%

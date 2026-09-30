@@ -1,6 +1,12 @@
 'use client';
 
-import { DAY_RANGES, isDayRange, lastActiveDate, type DayRange } from '@/lib/day-range';
+import {
+  DAY_RANGES,
+  isDayRange,
+  lastActiveDate,
+  type DayRange,
+  type DayRangeOption,
+} from '@/lib/day-range';
 import type { DailyEntry } from '@/lib/types';
 import { formatDateStamp } from '@/lib/format';
 
@@ -17,8 +23,11 @@ export function DayRangeSelect({
   value,
   onChange,
   label,
+  options = DAY_RANGES,
 }: {
   value: DayRange;
+  /** The choices offered. The per-model charts' set unless a chart has its own. */
+  options?: ReadonlyArray<DayRangeOption>;
   onChange: (range: DayRange) => void;
   /** Names the control for assistive tech - it has no visible label. */
   label: string;
@@ -33,7 +42,7 @@ export function DayRangeSelect({
         if (isDayRange(next)) onChange(next);
       }}
     >
-      {DAY_RANGES.map((range) => (
+      {options.map((range) => (
         <option key={range.value} value={range.value}>
           {range.label}
         </option>

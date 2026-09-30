@@ -19,7 +19,7 @@ import { useProvider } from '@/components/ProviderScope';
 
 const manifests = new Map<string, Promise<Record<string, string>>>();
 
-function loadManifest(providerId: string): Promise<Record<string, string>> {
+export function loadManifest(providerId: string): Promise<Record<string, string>> {
   let pending = manifests.get(providerId);
   if (!pending) {
     pending = fetch(`/api/project-logos/${providerId}`)

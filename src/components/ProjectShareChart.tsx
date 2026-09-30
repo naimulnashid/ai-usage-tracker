@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Cell,
   Pie,
@@ -12,7 +14,10 @@ import {
 import type { ProjectSummary } from '@/lib/types';
 import { formatTokens, formatUsd } from '@/lib/format';
 import { ProjectLogo } from '@/components/ProjectLogo';
+import { OTHER_PROJECTS_COLOR } from '@/lib/project-colors';
 import { ChartFigure } from './ChartFigure';
+import { useProjectColors } from './ProjectColors';
+import { useProvider } from './ProviderScope';
 
 interface Slice {
   id: string;
@@ -50,29 +55,19 @@ function remainderNote(slice: Slice): string {
 const MAX_SLICES = 9;
 
 /**
- * Projects have no intrinsic colour the way models do — a model's shade encodes
- * its price, and there is no equivalent fact about a project. So the ramp
- * encodes RANK: the largest project takes the agent's accent at full strength
- * and each one below it is mixed further back toward the panel, which makes the
- * ring read in the same order as the list underneath it.
+ * Each project is drawn in its own colour - the one you chose, else its logo's
+ * dominant colour, else a fallback (src/lib/project-colors.ts) - so a slice
+ * here and a band in Daily spend by project are the same project at a glance.
  *
- * `color-mix` against `var(--accent)` rather than literals, so the whole ring
- * re-themes with the agent — see the accent rule in globals.css.
- */
-function rampColor(index: number, count: number): string {
-  const t = count > 1 ? index / (count - 1) : 0;
-  const strength = Math.round(100 - t * 68); // 100% down to 32%
-  return `color-mix(in srgb, var(--accent) ${strength}%, var(--surface))`;
-}
-
-/**
- * "Others" is deliberately OUTSIDE the ramp, in a neutral grey.
+ * It used to be a single-hue ramp by RANK, because a project had no colour of
+ * its own to borrow. The ring still reads in rank order - it starts at twelve
+ * o'clock with the largest - but the colour now says WHICH project, which is
+ * what the legend beside it was having to do alone.
  *
- * The ramp means rank, and a remainder has no rank — its summed cost can even
- * exceed the slice above it, which would make a faint colour read as a lie. A
- * neutral says what it is: everything not ranked above.
+ * "Others" stays outside every palette, in a neutral grey: a remainder has no
+ * identity, and its summed cost can exceed the slice above it.
  */
-const OTHERS_FILL = 'color-mix(in srgb, var(--text-faint) 55%, var(--surface))';
+const OTHERS_FILL = OTHER_PROJECTS_COLOR;
 
 function ChartTooltip({ active, payload }: TooltipContentProps) {
   if (!active || !payload?.length) return null;
@@ -84,7 +79,7 @@ function ChartTooltip({ active, payload }: TooltipContentProps) {
         border: '1px solid var(--border-bright)',
         borderRadius: 10,
         padding: '12px 15px',
-        boxShadow: '0 12px 34px rgba(0,0,0,0.95)',
+        boxShadow: 'var(--shadow-pop)',
         fontSize: 14,
         minWidth: 180,
       }}
@@ -154,6 +149,10 @@ export function ProjectShareChart({
    * something the chart can reach.
    */
   const [active, setActive] = useState<string | null>(null);
+  const router = useRouter();
+  const provider = useProvider();
+  const { colorOf } = useProjectColors();
+  const hrefOf = (id: string) => `${provider.basePath}/projects/${encodeURIComponent(id)}`;
 
   const ranked = projects
     .filter((project) => project.combined.costUsd > 0)
@@ -178,13 +177,13 @@ export function ProjectShareChart({
   const shown = collapse ? listed.slice(0, MAX_SLICES) : listed;
   const rest = collapse ? [...listed.slice(MAX_SLICES), ...hidden] : [];
 
-  const data: Slice[] = shown.map((project, index) => ({
+  const data: Slice[] = shown.map((project) => ({
     id: project.id,
     name: project.name,
     cost: project.combined.costUsd,
     tokens: project.combined.totalTokens,
     share: (project.combined.costUsd / totalCost) * 100,
-    fill: rampColor(index, shown.length),
+    fill: colorOf(project.id),
     remainder: false,
     projects: 1,
     hidden: 0,
@@ -213,6 +212,15 @@ export function ProjectShareChart({
    */
   const onSliceEnter = (_entry: unknown, index: number) => setActive(data[index]?.id ?? null);
   const onSliceLeave = () => setActive(null);
+  /*
+   * A slice is a way into its project, like the card below it. "Others" is
+   * not one project, so it goes nowhere. The legend's links are the keyboard
+   * route to the same pages - SVG sectors are not focusable one by one.
+   */
+  const onSliceClick = (_entry: unknown, index: number) => {
+    const slice = data[index];
+    if (slice && !slice.remainder) router.push(hrefOf(slice.id));
+  };
 
   return (
     <ChartFigure
@@ -247,6 +255,7 @@ export function ProjectShareChart({
                 animationEasing="ease-out"
                 onMouseEnter={onSliceEnter}
                 onMouseLeave={onSliceLeave}
+                onClick={onSliceClick}
               >
                 {data.map((slice) => (
                   <Cell
@@ -260,6 +269,7 @@ export function ProjectShareChart({
                      * the .donut-ring rules in globals.css.
                      */
                     fillOpacity={active === null || active === slice.id ? 1 : 0.28}
+                    cursor={slice.remainder ? 'default' : 'pointer'}
                   />
                 ))}
               </Pie>
@@ -281,37 +291,54 @@ export function ProjectShareChart({
         </div>
 
         <ul className="donut-legend">
-          {data.map((slice) => (
-            <li
-              className={
-                'donut-legend-row' +
-                (active === slice.id ? ' is-active' : '') +
-                (active !== null && active !== slice.id ? ' is-dim' : '')
-              }
-              key={slice.id}
-            >
-              <span
-                className="donut-legend-swatch"
-                style={{ background: slice.fill }}
-                aria-hidden
-              />
-              {/* A monogram here would draw "O" and read as a project called
-                Others. The remainder gets a count instead - even a remainder
-                of one, which a hidden project can make. */}
-              {slice.remainder ? (
-                <span className="donut-legend-more num" aria-hidden>
-                  +{slice.projects}
+          {data.map((slice) => {
+            const content = (
+              <>
+                <span
+                  className="donut-legend-swatch"
+                  style={{ background: slice.fill }}
+                  aria-hidden
+                />
+                {/* A monogram here would draw "O" and read as a project called
+                  Others. The remainder gets a count instead - even a remainder
+                  of one, which a hidden project can make. */}
+                {slice.remainder ? (
+                  <span className="donut-legend-more num" aria-hidden>
+                    +{slice.projects}
+                  </span>
+                ) : (
+                  <ProjectLogo name={slice.name} size={22} />
+                )}
+                <span className="donut-legend-name" title={slice.name}>
+                  {slice.name}
                 </span>
-              ) : (
-                <ProjectLogo name={slice.name} size={22} />
-              )}
-              <span className="donut-legend-name" title={slice.name}>
-                {slice.name}
-              </span>
-              <span className="donut-legend-cost num">{formatUsd(slice.cost)}</span>
-              <span className="donut-legend-share num">{slice.share.toFixed(1)}%</span>
-            </li>
-          ))}
+                <span className="donut-legend-cost num">{formatUsd(slice.cost)}</span>
+                <span className="donut-legend-share num">{slice.share.toFixed(1)}%</span>
+              </>
+            );
+            return (
+              <li
+                className={
+                  'donut-legend-row' +
+                  (active === slice.id ? ' is-active' : '') +
+                  (active !== null && active !== slice.id ? ' is-dim' : '')
+                }
+                key={slice.id}
+                // Pointing at a row picks its slice out of the ring, as
+                // pointing at the slice picks out the row.
+                onMouseEnter={() => setActive(slice.id)}
+                onMouseLeave={onSliceLeave}
+              >
+                {slice.remainder ? (
+                  <div className="donut-legend-entry">{content}</div>
+                ) : (
+                  <Link className="donut-legend-entry" href={hrefOf(slice.id)}>
+                    {content}
+                  </Link>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </div>
     </ChartFigure>

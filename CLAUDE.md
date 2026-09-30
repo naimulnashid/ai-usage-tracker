@@ -124,7 +124,8 @@ quarter of a 1024px page spent on two links. Two details:
 - Next.js (App Router) + TypeScript (`strict`)
 - API route reads the JSONL files directly with Node `fs` — no DB, no cache layer
 - Recharts **v3** for charts, plain tables for detail
-- True-black OLED dark theme, one accent per agent, Geist fonts (self-hosted by
+- Two themes - true-black OLED dark (the default) and light - one accent per
+  agent in each, Geist fonts (self-hosted by
   the `geist` package, so no font requests leave the machine)
 
 ### Recharts v3 gotchas
@@ -613,6 +614,12 @@ src/lib/day-range.ts                 The stacked charts' date windows. Client-sa
 src/lib/heatmap.ts                   Where each heat-map day goes, for both layouts. Client-safe.
 src/lib/auth.ts                      Password gate: session cookie signing. Web Crypto only.
 src/lib/rail.ts                      Sidebar state + the before-paint init script.
+src/lib/theme.ts                     Light/dark choice + its before-paint init script.
+src/lib/project-colors.ts            Project chart colours: logo extraction, fitting, fallbacks. Client-safe.
+src/lib/project-colors-store.ts      Colours chosen for projects. One file per agent, in data/.
+src/components/ThemeToggle.tsx       The theme menu at the rail's foot, and useTheme().
+src/components/ProjectColors.tsx     useProjectColors(): reads logos and hands out colours.
+src/components/DailySpendByProjectChart.tsx  Daily spend stacked by project.
 src/proxy.ts                         The single auth gate in front of every route.
 scripts/dump-usage.ts                CLI: `npm run parse`.       -> out/usage-report.json
 scripts/dump-codex-usage.ts          CLI: `npm run parse:codex`. -> out/codex-usage-report.json
@@ -1270,6 +1277,79 @@ and it closed itself mid-save. And a hide that removes the focused card moves
 focus to the next card's link (or the Show-all button), in an effect that only
 acts if focus really did fall to `<body>`.
 
+### Two themes, and what each one has to swap
+
+`data-theme` on <html> is `dark` or `light`, set before first paint by
+`THEME_INIT_SCRIPT` (`src/lib/theme.ts`) from a per-browser choice - Dark
+(the default), Light or System - for the same reason the rail's state is: from
+React it would paint a frame of the wrong theme on every load. The menu is at
+the FOOT of the rail (`ThemeToggle`): it is a setting, and the top bar's
+narrow-window layout is measured to the half pixel. Its popover is
+`position: fixed`, because the rail clips its overflow.
+
+- **Every colour is a token with a value per theme.** The light values live in
+  `:root[data-theme='light']` and `[data-theme='light'] [data-provider='codex']`
+  - two attributes, so it out-ranks the dark Codex block on the same element.
+  That includes what used to be literals: shadows (`--shadow-card`,
+  `--shadow-card-hover`, `--shadow-panel-hover`, `--shadow-pop`,
+  `--shadow-btn`), the top bar's glass, row dividers, the chart cursor, the
+  project cards' bar track, `--good`, and `--color-scheme` for native controls.
+  **Grep for `rgba(` and `#` in a component before adding one** - a literal is
+  now wrong in one of the two themes by construction.
+- **Light is not dark inverted.** White cards on a grey page, separated by a
+  border AND a shadow (a black shadow on black is invisible, which is why the
+  dark theme leans on borders). Panels deepen their shadow on hover without
+  moving; link cards also rise 2px. Accents are darkened to carry text at AA on
+  white (#BA4D2A, #0C7F63). The heat map DARKENS as spend rises, where the dark
+  theme's brightens - each towards "more" against its own ground.
+- **Model shades are data, so they cannot be tokens.** A chosen shade is stored
+  as a hex from `ACCENT_PALETTES`. `LIGHT_PALETTES` holds a light twin for every
+  palette index, and `useModelColor` swaps via `themedColor` using `useTheme`
+  (a `useSyncExternalStore` on the attribute). Stored values never change.
+- **`tests/contrast.test.ts` checks both themes**: text on all four backdrops,
+  both accents and their hover shades, heat maps, both palettes.
+- `<html suppressHydrationWarning>` is for the two init scripts' attributes
+  only. It also silenced the `data-rail` mismatch the dev overlay used to show.
+
+### Project colours
+
+Anything stacked or sliced BY PROJECT - the donut and Daily spend by project -
+draws each project in its own colour. `src/lib/project-colors.ts` holds the
+rules, `ProjectColors.tsx` the hook:
+
+1. **Chosen**, from the ⋯ menu's colour editor (picker + hex field), stored in
+   `data/project-colors.json` / `codex-project-colors.json` exactly like the
+   hidden projects (`/api/project-colors/<agent>`, same guards). Used as typed.
+2. **The logo's dominant colour**, read in the browser: drawn to a 64px canvas
+   (logos are same-origin, so it stays readable) and binned. **The background
+   is the colours filling the outer BAND, a few pixels deep** - reading only the
+   outermost ring called an app-icon tile's 1px grey border the background and
+   let the black fill win, so two real logos came out grey. Coloured pixels win
+   over grey ones; a plain glyph on a coloured tile returns the tile.
+3. **A fallback** from `FALLBACK_COLORS`, handed out in the report's order.
+
+(2) and (3) are fitted to luminance 0.12-0.29, which clears 3:1 on both themes'
+panels, so one value serves both. (1) is not - the user's call, like a model's
+chosen shade. The hook assigns over the WHOLE report's project list, so every
+chart gives a project the same colour.
+
+### Daily spend by project
+
+On the overview after the heat map. Stacked AREAS on a `monotone` curve -
+smooth between dates at the owner's request (linear read as too pointy), and
+monotone rather than a plain spline because it never overshoots, so idle days
+stay flat at zero - largest at the bottom, top
+eight in the window plus Other; hidden projects always go to Other, as in the
+donut. Its range picker is 30 / 90 / all (`PROJECT_DAY_RANGES`) - projects
+change over months where models change over weeks. The legend is centred chips
+of swatch, logo and name only, by the owner's choice: the figures are in the
+tooltip and the table fallback. Each chip links to its project.
+
+`skeleton.dailyByProject` measured 2026-09-30, collapsed rail: Claude Code
+611 / 544 (nine chips in three lines / two), Codex 526 / 502 (two chips; its
+subtitle wraps at 997). The chips wrap, so this follows how many projects you
+have worked on lately.
+
 ### The projects page opens with a share-of-spend donut
 
 `ProjectShareChart` — a ring with its legend beside it, above the ranked list.
@@ -1290,16 +1370,15 @@ exactly the same whether the top project is 61% of spend or 15%.
 
   The donut's centre label counts `ranked`, not the slices. "across 10
   projects" under a total covering twelve is the obvious way to get this wrong.
-- **Slice colour encodes RANK, not identity.** A model's shade means its price
-  (see above); a project has no equivalent fact, so the ramp is positional —
-  the largest project takes the accent at full strength and each one below is
-  mixed further back toward the panel. `color-mix(in srgb, var(--accent) N%,
-  var(--surface))`, so it re-themes with the agent like everything else, and
-  verified to resolve in an SVG `fill` attribute rather than being assumed.
+- **Slice colour is the project's own colour** (see *Project colours* below),
+  the same one it has in Daily spend by project. It used to be a single-hue
+  ramp by RANK, when a project had no colour of its own; the owner asked for
+  identity instead (2026-09-30). The ring still starts at twelve o'clock with
+  the largest, so rank is still read from position.
 
-  **"Others" sits outside that ramp, in a neutral grey**, because the ramp
-  means rank and a remainder has no rank — its summed cost can exceed the slice
-  above it, which would make a fainter colour read as a lie. Its legend row
+  **"Others" sits outside every palette, in a neutral grey**
+  (`OTHER_PROJECTS_COLOR`), because a remainder has no identity — and its
+  summed cost can exceed the slice beside it. Its legend row
   carries a `+N` count where a logo would go: a monogram there would draw "O"
   and read as a project called Others.
 - **The legend is CSS multi-column, and the flow is the point.** A grid fills
@@ -1307,6 +1386,9 @@ exactly the same whether the top project is 61% of spend or 15%.
   fill top to bottom, so the left column is the top half of the ranking in
   order — the same order as the list below, which is what the panel's own
   subtitle promises.
+- **A slice or a legend row opens its project.** The legend rows are links
+  (the keyboard route - SVG sectors are not focusable one by one) and the
+  slices navigate on click; "Others" does neither.
 - **Hovering a slice fades every other slice AND its legend row.** The pairing
   is the point — a ring of ten slivers is hard to map onto a two-column legend,
   and dimming both ends of the link does it without a connector line.
@@ -1438,6 +1520,14 @@ edited. To update one, replace the file with a newer official download. Rules:
   mark that recolours with UI state stops doing its one job — saying which agent
   this is when the rail is collapsed to icons. The active row is shown by its
   pill.
+
+  **One exception, in the light theme:** OpenAI's white Blossom would be
+  invisible on the light rail, so it is drawn with `filter: brightness(0)` -
+  every opaque pixel to pure black, which is the vendor's own black variant of
+  the same single-colour mark rather than a colour of ours. The file itself is
+  untouched. The cleaner fix is to commit OpenAI's official black SVG beside
+  the white one and swap files per theme; do that if the filter is ever
+  questioned.
 - **A missing file falls back to the agent's initials** in the same 24px box
   (`.rail-mark-fallback`), so a fork that removes the marks still has a usable
   rail. The check also runs after mount, because an image that fails before

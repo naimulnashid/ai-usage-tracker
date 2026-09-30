@@ -43,7 +43,7 @@ function ChartTooltip({
         border: '1px solid var(--border-bright)',
         borderRadius: 10,
         padding: '12px 15px',
-        boxShadow: '0 12px 34px rgba(0,0,0,0.95)',
+        boxShadow: 'var(--shadow-pop)',
         fontSize: 14,
       }}
     >
@@ -151,7 +151,7 @@ export function CostByModelChart({
             />
             <Tooltip
               content={(props) => <ChartTooltip {...props} colorOf={colorOf} />}
-              cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+              cursor={{ fill: 'var(--chart-cursor)' }}
             />
             <Bar dataKey="cost" radius={[0, 6, 6, 0]} animationDuration={850} barSize={30}>
               {data.map((row) => (

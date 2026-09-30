@@ -180,7 +180,14 @@ describe('DayRangeSelect', () => {
 
 describe('ProjectMenu', () => {
   const html = render(
-    <ProjectMenu projectName="My App" hidden={false} onToggle={async () => {}} />,
+    <ProjectMenu
+      projectName="My App"
+      hidden={false}
+      onToggle={async () => {}}
+      color="#3B82F6"
+      colorSource="logo"
+      onSaveColor={async () => {}}
+    />,
   );
 
   it('is a button that says which project it is for', () => {

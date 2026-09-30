@@ -13,6 +13,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { InfoTip } from '@/components/InfoTip';
 import { isEmptyReport } from '@/lib/report-state';
 import { ProjectShareChart } from '@/components/ProjectShareChart';
+import { useProjectColors } from '@/components/ProjectColors';
 import { displayModel, formatCount, formatDuration, formatTokens, formatUsd } from '@/lib/format';
 import type { ProjectSummary } from '@/lib/types';
 
@@ -22,7 +23,16 @@ const SHOW_ALL = '__show-all__';
 export default function ProjectsPage() {
   const provider = useProvider();
   const colorOf = useModelColor();
-  const { report, initialLoading, error, version, hiddenProjects, setProjectHidden } = useUsage();
+  const {
+    report,
+    initialLoading,
+    error,
+    version,
+    hiddenProjects,
+    setProjectHidden,
+    saveProjectColor,
+  } = useUsage();
+  const projectColors = useProjectColors();
 
   // Hooks, so above every early return below.
   const [showAll, setShowAll] = useState(false);
@@ -159,8 +169,9 @@ export default function ProjectsPage() {
           <div>
             <h2 className="panel-title">Share of spend</h2>
             <p className="panel-sub">
-              The largest projects as slices of the total, shaded by rank — so the ring reads in the
-              same order as the list below. Anything past the top nine is summed into Others.
+              The largest projects as slices of the total, each in its own colour — its logo&apos;s,
+              or one you pick from its ⋯ menu. Anything past the top nine is summed into Others.
+              Click a slice or a name to open the project.
             </p>
           </div>
         </div>
@@ -265,7 +276,7 @@ export default function ProjectsPage() {
                   height: 7,
                   borderRadius: 999,
                   overflow: 'hidden',
-                  background: '#141418',
+                  background: 'var(--track)',
                   margin: '16px 0 13px',
                 }}
               >
@@ -315,6 +326,9 @@ export default function ProjectsPage() {
               projectName={project.name}
               hidden={isHidden}
               onToggle={() => toggleHidden(project, !isHidden)}
+              color={projectColors.colorOf(project.id)}
+              colorSource={projectColors.sourceOf(project.id)}
+              onSaveColor={(color) => saveProjectColor(project.id, color)}
             />
           </div>
         );

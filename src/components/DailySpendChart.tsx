@@ -53,7 +53,7 @@ function ChartTooltip({ active, payload }: TooltipContentProps) {
         border: `1px solid ${point.spike ? WARN_COLOR : 'var(--border-bright)'}`,
         borderRadius: 10,
         padding: '12px 15px',
-        boxShadow: '0 12px 34px rgba(0,0,0,0.95)',
+        boxShadow: 'var(--shadow-pop)',
         fontSize: 14,
       }}
     >
@@ -152,7 +152,7 @@ export function DailySpendChart({
               fill="url(#spendFill)"
               animationDuration={900}
               animationEasing="ease-out"
-              activeDot={{ r: 5, fill: COMBINED_COLOR, stroke: '#000', strokeWidth: 2 }}
+              activeDot={{ r: 5, fill: COMBINED_COLOR, stroke: 'var(--surface)', strokeWidth: 2 }}
               dot={(props) => {
                 const { cx, cy, index } = props as { cx: number; cy: number; index: number };
                 if (!data[index]?.spike) {
@@ -165,7 +165,7 @@ export function DailySpendChart({
                     cy={cy}
                     r={4.5}
                     fill={WARN_COLOR}
-                    stroke="#000"
+                    stroke="var(--surface)"
                     strokeWidth={2}
                   />
                 );

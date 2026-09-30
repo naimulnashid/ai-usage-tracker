@@ -12,8 +12,9 @@ import {
 } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ModelRate, UsageReport } from '@/lib/types';
-import { modelColor } from '@/lib/model-colors';
+import { modelColor, themedColor } from '@/lib/model-colors';
 import { useProvider } from './ProviderScope';
+import { useTheme } from './ThemeToggle';
 
 interface UsageState {
   report: (UsageReport & { parseMs?: number }) | null;
@@ -46,6 +47,14 @@ interface UsageState {
     model: string,
     change: { rate?: ModelRate | null; color?: string | null },
   ) => Promise<void>;
+  /**
+   * Colours chosen for projects, by id - a view preference like the model
+   * colours. What a project is actually drawn in also depends on its logo;
+   * see `useProjectColors`.
+   */
+  projectColors: Record<string, string>;
+  /** Set (`#RRGGBB`) or clear (`null`) one project's colour. Rejects with a readable message. */
+  saveProjectColor: (id: string, color: string | null) => Promise<void>;
 }
 
 const UsageContext = createContext<UsageState | null>(null);
@@ -56,6 +65,7 @@ type LoadResult =
       report: UsageReport & { parseMs?: number };
       hidden: string[];
       colors: Record<string, string>;
+      projectColors: Record<string, string>;
     }
   | { kind: 'failed'; message: string }
   | { kind: 'signed-out' };
@@ -98,6 +108,17 @@ async function fetchColors(providerId: string): Promise<Record<string, string>> 
   }
 }
 
+/** The chosen project colours. Fails soft to none: logos and fallbacks are fine. */
+async function fetchProjectColors(providerId: string): Promise<Record<string, string>> {
+  try {
+    const response = await fetch(`/api/project-colors/${providerId}`, { cache: 'no-store' });
+    if (!response.ok) return {};
+    return colorMap((await response.json())?.colors);
+  } catch {
+    return {};
+  }
+}
+
 /**
  * One request for one agent's report. Touches no React state, so the component
  * can apply the result from a callback - which is what makes it plain to React
@@ -111,6 +132,7 @@ async function fetchColors(providerId: string): Promise<Record<string, string>> 
 async function fetchReport(providerId: string): Promise<LoadResult> {
   const hidden = fetchHidden(providerId);
   const colors = fetchColors(providerId);
+  const projectColors = fetchProjectColors(providerId);
   try {
     // cache: 'no-store' matters - a manual Refresh must actually re-read disk.
     const response = await fetch(`/api/usage/${providerId}`, { cache: 'no-store' });
@@ -127,6 +149,7 @@ async function fetchReport(providerId: string): Promise<LoadResult> {
       report: payload as UsageReport & { parseMs?: number },
       hidden: await hidden,
       colors: await colors,
+      projectColors: await projectColors,
     };
   } catch (err) {
     return { kind: 'failed', message: err instanceof Error ? err.message : String(err) };
@@ -156,6 +179,7 @@ export function UsageProvider({ children }: { children: ReactNode }) {
   const [version, setVersion] = useState(0);
   const [hiddenProjects, setHiddenProjects] = useState<string[]>([]);
   const [modelColors, setModelColors] = useState<Record<string, string>>({});
+  const [projectColors, setProjectColors] = useState<Record<string, string>>({});
 
   /*
    * Counts saves to the hidden list. A load that started before a save would
@@ -165,6 +189,8 @@ export function UsageProvider({ children }: { children: ReactNode }) {
   const hiddenEdits = useRef(0);
   /** The same guard, for colour saves. */
   const colorEdits = useRef(0);
+  /** And again, for project colour saves. */
+  const projectColorEdits = useRef(0);
 
   // A session that expired while the tab sat open should send the user to the
   // login screen, not surface a bare "Request failed (401)".
@@ -208,6 +234,7 @@ export function UsageProvider({ children }: { children: ReactNode }) {
       inFlight.current = ticket;
       const edits = hiddenEdits.current;
       const colorEditsAtStart = colorEdits.current;
+      const projectColorEditsAtStart = projectColorEdits.current;
 
       void fetchReport(providerId).then((result) => {
         if (result.kind === 'signed-out') {
@@ -220,6 +247,9 @@ export function UsageProvider({ children }: { children: ReactNode }) {
           setReport(result.report);
           if (edits === hiddenEdits.current) setHiddenProjects(result.hidden);
           if (colorEditsAtStart === colorEdits.current) setModelColors(result.colors);
+          if (projectColorEditsAtStart === projectColorEdits.current) {
+            setProjectColors(result.projectColors);
+          }
           setLastRefreshed(new Date().toISOString());
           setVersion((v) => v + 1);
         } else {
@@ -300,6 +330,28 @@ export function UsageProvider({ children }: { children: ReactNode }) {
     [load, provider.id, toLogin],
   );
 
+  /* Not optimistic, like the other two preferences. No parse follows. */
+  const saveProjectColor = useCallback(
+    async (id: string, color: string | null) => {
+      projectColorEdits.current += 1;
+      const response = await fetch(`/api/project-colors/${provider.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, color }),
+      });
+      if (response.status === 401) {
+        toLogin();
+        throw new Error('Your session has expired.');
+      }
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(payload?.detail || payload?.error || `Request failed (${response.status})`);
+      }
+      setProjectColors(colorMap(payload?.colors));
+    },
+    [provider.id, toLogin],
+  );
+
   /*
    * The first load. There is nothing to clear first: see the key note above.
    *
@@ -323,6 +375,8 @@ export function UsageProvider({ children }: { children: ReactNode }) {
       setProjectHidden,
       modelColors,
       saveModelSetting,
+      projectColors,
+      saveProjectColor,
     }),
     [
       report,
@@ -336,6 +390,8 @@ export function UsageProvider({ children }: { children: ReactNode }) {
       setProjectHidden,
       modelColors,
       saveModelSetting,
+      projectColors,
+      saveProjectColor,
     ],
   );
 
@@ -349,11 +405,16 @@ export function useUsage(): UsageState {
 }
 
 /**
- * `modelColor` with the user's chosen shades applied. Tolerates having no
- * provider above it - a component rendered on its own (a test, say) gets the
- * default shades rather than an exception.
+ * `modelColor` with the user's chosen shades applied, drawn for the theme on
+ * screen (see `themedColor`). Tolerates having no provider above it - a
+ * component rendered on its own (a test, say) gets the default shades rather
+ * than an exception.
  */
 export function useModelColor(): (model: string) => string {
   const colors = useContext(UsageContext)?.modelColors;
-  return useCallback((model: string) => modelColor(model, colors), [colors]);
+  const theme = useTheme();
+  return useCallback(
+    (model: string) => themedColor(modelColor(model, colors), theme),
+    [colors, theme],
+  );
 }

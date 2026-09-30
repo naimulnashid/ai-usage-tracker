@@ -3,9 +3,10 @@
 import { Fragment, useState } from 'react';
 import type { ModelRate, ModelRateInfo, UsageCell } from '@/lib/types';
 import { displayModel } from '@/lib/format';
-import { ACCENT_PALETTES, byPriceDesc, modelColor } from '@/lib/model-colors';
+import { ACCENT_PALETTES, byPriceDesc, modelColor, themedColor } from '@/lib/model-colors';
 import { useProvider } from './ProviderScope';
 import { useModelColor, useUsage } from './UsageProvider';
+import { useTheme } from './ThemeToggle';
 
 /**
  * What each model is priced at, and the one place a price or a colour is set.
@@ -171,6 +172,7 @@ function RateEditor({
 }) {
   const provider = useProvider();
   const { saveModelSetting, modelColors } = useUsage();
+  const theme = useTheme();
   const fields: Field[] = provider.hasCacheWrites
     ? ['input', 'cacheWrite5m', 'cacheWrite1h', 'cacheRead', 'output']
     : ['input', 'cacheRead', 'output'];
@@ -311,9 +313,10 @@ function RateEditor({
                 key={shade}
                 type="button"
                 className="palette-swatch"
-                style={{ background: shade }}
+                // Stored as the dark shade; drawn as the theme's twin of it.
+                style={{ background: themedColor(shade, theme) }}
                 aria-pressed={selected}
-                aria-label={`Shade ${index + 1} of ${palette.length}${index === 0 ? ', deepest' : index === palette.length - 1 ? ', lightest' : ''}`}
+                aria-label={`Shade ${index + 1} of ${palette.length}${index === 0 ? ', deepest' : index === palette.length - 1 ? ', palest' : ''}`}
                 disabled={busy}
                 onClick={() => void run(() => saveModelSetting(model, { color: shade }))}
               />

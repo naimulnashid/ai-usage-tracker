@@ -155,6 +155,13 @@ export interface SkeletonMetrics {
   dailySpendByModel: number;
   heatmap: number;
   /**
+   * Daily spend by project, at its default range (the last 30 days). Its legend
+   * is a row of chips that wraps, one chip per project with a band in those
+   * days, so this moves with how many projects you have been working on lately
+   * and with the length of their names.
+   */
+  dailyByProject: number;
+  /**
    * The Model prices table: a header and a row per model the report has ever
    * seen, so like the token table it grows with the model count. Measured with
    * every editor closed, which is how the page loads.
@@ -261,6 +268,9 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
       dailyTokens: 612, // 624 / 600
       dailySpendByModel: 612, // 624 / 600 - same as its tokens twin here
       heatmap: 457, // 402 / 512
+      // Measured 2026-09-30 at the 30-day default: nine chips, three lines of
+      // them at 997 and two at 1680.
+      dailyByProject: 578, // 611 / 544
       modelPrices: 478, // 490 / 466 - five models, 2026-09-29
       projectDonut: 458, // 522 / 393 - ten legend rows, one column at 997px
       // Re-measured 2026-09-29, when this page took the overview's sections,
@@ -321,6 +331,7 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
       dailyTokens: 565, // 577 / 553 (603 at 997 with the rail expanded)
       dailySpendByModel: 565, // 577 / 553
       heatmap: 457, // 402 / 512 (353 at 997 with the rail expanded)
+      dailyByProject: 514, // 526 / 502 - two chips, one line; the subtitle wraps at 997
       modelPrices: 304, // 316 / 292 - two models
       projectDonut: 405, // 417 / 393 - two projects, so the ring governs
       // Derived from the overview's measured panels - see SkeletonMetrics.detail.

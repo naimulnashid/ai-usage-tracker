@@ -8,6 +8,25 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **A light theme.** The theme button at the foot of the sidebar picks Dark
+  (still the default), Light, or System. Light is its own design rather than
+  the dark one inverted: white cards on a grey page, separated by borders and
+  soft shadows that deepen on hover, accents darkened until they carry text at
+  WCAG AA on white, and a heat map that darkens as spend rises. Model colours
+  have light-theme twins, so a chosen shade still reads on white. The choice is
+  applied before the page paints, so there is no flash of the other theme.
+- **Daily spend by project**, on the overview after the heat map: spend stacked
+  by project, over the last 30 days (the default), the last 90, or every day on
+  record. The top eight projects in the window get a band; the rest, and any you
+  have hidden, are summed into Other. Each legend chip opens its project.
+- **Every project has a colour of its own**: one you pick from its **⋯** menu on
+  the Projects page (colour picker or hex code), else its logo's dominant
+  colour with the logo's background left out, else one from a fixed palette.
+  Picked colours are saved under `data/`.
+- **The share-of-spend donut uses those colours, and opens projects.** Clicking
+  a slice or a legend row goes to that project's page. The donut used to shade
+  slices by rank.
+
 - **The two stacked charts have a date range.** "Daily tokens by model" and
   "Daily spend by model" — on the overview and on every project page — can
   show the last 30 days (the default), the last 60, or every day on record.

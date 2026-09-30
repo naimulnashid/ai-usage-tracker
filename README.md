@@ -61,6 +61,7 @@ output, the archive or any file it writes.
 | `data/history.json`, `data/codex-history.json` | Daily totals: tokens, cost, runtime, project names and paths | Both agents delete old transcripts; this keeps past days from vanishing ([details](#the-local-archive)) |
 | `data/hidden-projects.json`, `data/codex-hidden-projects.json` | The ids of projects you have hidden from the Projects page | So a project hidden on one device stays hidden on the others ([details](#hiding-a-project)) |
 | `data/model-settings.json`, `data/codex-model-settings.json` | Prices and colours you set in the Model prices table | So a new model can be priced before the rate card knows it ([details](#pricing)) |
+| `data/project-colors.json`, `data/codex-project-colors.json` | Colours you picked for projects from their **⋯** menu | So a project's chart colour follows you from device to device ([details](#project-colours)) |
 | `out/*.json` | Full report, only when you run `npm run parse` / `parse:codex` | Inspecting numbers without the UI |
 | `logs/dashboard.log` | Launcher output | Only when using the Windows background service |
 
@@ -87,15 +88,21 @@ refuses every request rather than opening up.
   on record once there is more history than that; daily tokens and daily
   spend stacked by model, over the last 30 days, the last 60 or every day on
   record; then token detail by model and the price of each model, where a
-  price and a colour can be set.
+  price and a colour can be set. Between the heat map and the model charts,
+  daily spend stacked by project, over the last 30 days, the last 90 or every
+  day on record.
 - **Projects:** a share-of-spend donut (top nine projects plus "Others") and a
-  ranked list of every project with a per-model share bar. Any project can be
-  hidden from the list with its **⋯** menu.
+  ranked list of every project with a per-model share bar. Click a slice or a
+  legend name to open that project. Any project can be hidden from the list,
+  or given its own colour, with its **⋯** menu.
 - **Project detail:** the overview's sections in the same order for one
   project (without the third row of activity cards and the price table), its
   stacked charts opening on every day, then a day-by-model table.
 - **Refresh:** re-reads every transcript and recomputes. There is no background
   polling.
+- **Light and dark themes:** the theme button at the foot of the sidebar
+  switches between Dark (the default), Light and System. The choice is kept per
+  browser.
 
 Model bands are shaded by price: the darker the band, the more expensive the
 model.
@@ -232,6 +239,20 @@ are gitignored.
 
 In dev a new image shows on the next page load. A production server lists
 `public/` at startup, so restart it (no rebuild needed).
+
+### Project colours
+
+The charts that split spend by project (the Projects page's donut and the
+overview's Daily spend by project) draw each project in its own colour:
+
+1. the colour you pick from the project's **⋯** menu on the Projects page
+   (a colour picker, or type a hex code like `#3B82F6`), else
+2. the dominant colour of its logo, with the logo's background left out, else
+3. a colour from a fixed palette.
+
+Colours from a logo or the palette are lightened or darkened just enough to
+stand out on both the dark and the light theme. A colour you pick is used
+exactly as you picked it. **Reset** in the same menu goes back to the logo's.
 
 ---
 

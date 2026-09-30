@@ -10,7 +10,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it } from 'node:test';
 
-import { ACCENT_PALETTES, MODEL_SHADES } from '../src/lib/model-colors';
+import {
+  ACCENT_PALETTES,
+  LIGHT_PALETTES,
+  MODEL_SHADES,
+  themedColor,
+} from '../src/lib/model-colors';
 
 const css = fs.readFileSync(path.join(process.cwd(), 'src/app/globals.css'), 'utf8');
 
@@ -161,6 +166,76 @@ describe('the shades a user can pick', () => {
     const all = Object.values(ACCENT_PALETTES).flat();
     for (const [model, shade] of Object.entries(MODEL_SHADES)) {
       assert.ok(all.includes(shade.color), `${model}'s ${shade.color} is not a palette choice`);
+    }
+  });
+});
+
+/*
+ * The light theme gets the same scrutiny. Its tokens live in their own blocks,
+ * and a light theme that looked fine on a bright monitor is exactly the kind
+ * that fails 4.5:1 on a dim one.
+ */
+const light = tokens(":root[data-theme='light'] {");
+const lightCodex = tokens("[data-theme='light'] [data-provider='codex'] {");
+
+describe('the light theme: text contrast (WCAG AA, 4.5:1)', () => {
+  for (const name of ['--bg', '--surface', '--surface-hover', '--tooltip-bg'] as const) {
+    it(`--text-faint and --text-muted on ${name}`, () => {
+      for (const text of ['--text-faint', '--text-muted'] as const) {
+        const ratio = contrast(light[text], light[name]);
+        assert.ok(ratio >= 4.5, `${text} is ${ratio.toFixed(2)}:1 on ${name}`);
+      }
+    });
+  }
+
+  it('both accents, and their hover shades, carry text on the page and the panel', () => {
+    for (const block of [light, lightCodex]) {
+      for (const accent of ['--accent', '--accent-bright'] as const) {
+        assert.ok(contrast(block[accent], light['--surface']) >= 4.5);
+        assert.ok(contrast(block[accent], light['--bg']) >= 4.5);
+      }
+    }
+  });
+
+  it('warnings and good news are readable', () => {
+    assert.ok(contrast(light['--warn'], light['--surface']) >= 4.5);
+    assert.ok(contrast(light['--good'], light['--surface']) >= 4.5);
+  });
+});
+
+describe('the light theme: non-text contrast (3:1)', () => {
+  for (const [theme, block] of [
+    ['Claude Code', light],
+    ['Codex', lightCodex],
+  ] as const) {
+    it(`${theme}'s heat map steps stand out from white, and DARKEN as usage rises`, () => {
+      const steps = [1, 2, 3, 4, 5].map((n) => block[`--hm-${n}`]);
+      for (const [i, value] of steps.entries()) {
+        assert.ok(value, `${theme} is missing --hm-${i + 1}`);
+        assert.ok(contrast(value, light['--surface']) >= 3, `--hm-${i + 1} ${value}`);
+        if (i > 0) assert.ok(luminance(value) < luminance(steps[i - 1]), `--hm-${i + 1}`);
+      }
+    });
+  }
+
+  it('every light palette shade stands out from white, deepest first', () => {
+    for (const [agent, palette] of Object.entries(LIGHT_PALETTES)) {
+      for (const [i, shade] of palette.entries()) {
+        const ratio = contrast(shade, light['--surface']);
+        assert.ok(ratio >= 3, `${agent} ${shade} is ${ratio.toFixed(2)}:1 on white`);
+        if (i > 0) assert.ok(luminance(shade) > luminance(palette[i - 1]));
+      }
+    }
+  });
+
+  it('pairs every dark shade with a light twin, index for index', () => {
+    for (const agent of Object.keys(ACCENT_PALETTES) as Array<keyof typeof ACCENT_PALETTES>) {
+      assert.equal(LIGHT_PALETTES[agent].length, ACCENT_PALETTES[agent].length);
+    }
+    for (const [model, shade] of Object.entries(MODEL_SHADES)) {
+      const twin = themedColor(shade.color, 'light');
+      assert.notEqual(twin, shade.color, `${model} has no light twin`);
+      assert.ok(contrast(twin, light['--surface']) >= 3);
     }
   });
 });

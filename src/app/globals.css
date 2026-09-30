@@ -1,6 +1,15 @@
 /* ---------------------------------------------------------------------------
-   True-black OLED theme. Deliberately single-mode: this is a local tool that
-   commits to one high-contrast dark look rather than following the system.
+   Two themes: true-black OLED dark (the default, and what this dashboard has
+   always been) and a light one. The theme is `data-theme` on <html>, set before
+   first paint by THEME_INIT_SCRIPT (src/lib/theme.ts), and every colour below
+   is a custom property with a value per theme - so one attribute repaints the
+   whole page, charts included.
+
+   The light theme is its own design, not the dark one inverted: white cards on
+   a cool grey page, separated by a border AND a shadow (a black-on-black shadow
+   is invisible, which is why the dark theme leans on borders alone), shadows
+   that deepen on hover, and accents darkened until they carry text at AA on
+   white. See the `:root[data-theme='light']` block.
    ------------------------------------------------------------------------ */
 
 :root {
@@ -23,6 +32,25 @@
      stop carrying their own copies of these two values. */
   --tooltip-bg: #131317;
   --tooltip-border: #2e2e37;
+
+  /* Everything else a theme has to swap. Named for what they do, so a rule
+     never has to know which theme it is in. */
+  --color-scheme: dark;
+  --topbar-bg: rgba(0, 0, 0, 0.82);
+  --row-divider: var(--row-divider);
+  --track: #141418;
+  --chart-cursor: rgba(255, 255, 255, 0.04);
+  --on-accent: #10100f;
+  --good: #4ade80;
+  --warn-border: rgba(248, 113, 113, 0.34);
+  /* A black-on-black shadow is invisible, so the dark theme's shadows are deep
+     and only really read at the card's edge; hover lifts a card by moving it,
+     not by darkening the shadow. The light theme below is the opposite. */
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 10px 34px rgba(0, 0, 0, 0.9);
+  --shadow-card-hover: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 16px 42px rgba(0, 0, 0, 0.95);
+  --shadow-panel-hover: var(--shadow-card);
+  --shadow-pop: 0 12px 34px rgba(0, 0, 0, 0.95);
+  --shadow-btn: 0 6px 22px rgba(0, 0, 0, 0.85);
 
   /* The accent. One per agent, used for every primary action, active state,
      link, focus ring, and the combined-spend headline.
@@ -91,6 +119,97 @@
   --hm-5: #13c197; /* 8.57:1 */
 }
 
+/* ---------------------------------------------------------------------------
+   Light theme.
+
+   Chrome: a cool grey page (--bg) with white cards (--surface) on it, so every
+   section is its own object - border for the edge, a soft two-layer shadow for
+   the lift. Text runs near-black, then two greys that both clear 4.5:1 on
+   every backdrop they sit on (tests/contrast.test.ts measures it).
+
+   Accents are the agents' own hues, darkened: terracotta #d97757 is 3.1:1 on
+   white, fine for a band but not for the text and links the accent carries,
+   so the light accent is the dark palette's #BA4D2A (5.0:1). Hover goes DARKER
+   here, where the dark theme goes brighter - the direction that reads as
+   "more" against each ground.
+
+   The heat map runs the other way too: light to dark as spend rises, every
+   step above 3:1 on white. "Darker means a more expensive day" is literally
+   true in this theme.
+   ------------------------------------------------------------------------ */
+:root[data-theme='light'] {
+  --bg: #f4f5f8;
+  --surface: #ffffff;
+  --surface-hover: #f3f4f7;
+  --border: #e3e5ea;
+  --border-bright: #cdd1d9;
+
+  --text: #111318;
+  --text-muted: #3f4451;
+  /* 5.2:1 on --surface-hover, its worst backdrop. */
+  --text-faint: #5f6472;
+
+  --tooltip-bg: #ffffff;
+  --tooltip-border: #d6d9e0;
+
+  --accent: #ba4d2a;
+  --accent-bright: #a14224;
+  --accent-dim: rgba(186, 77, 42, 0.08);
+  --accent-glow: rgba(186, 77, 42, 0.18);
+  --accent-border: rgba(186, 77, 42, 0.3);
+  --accent-border-strong: rgba(186, 77, 42, 0.45);
+  --accent-fill: rgba(186, 77, 42, 0.14);
+
+  --hm-0: #ebedf1;
+  --hm-1: #d97554; /* 3.17:1 on white */
+  --hm-2: #cf552e; /* 4.21:1 */
+  --hm-3: #af4827; /* 5.56:1 */
+  --hm-4: #933c21; /* 7.22:1 */
+  --hm-5: #75301a; /* 9.57:1 */
+
+  --warn: #c62828;
+  --warn-dim: rgba(198, 40, 40, 0.07);
+  --warn-border: rgba(198, 40, 40, 0.32);
+  --good: #15803d;
+
+  --color-scheme: light;
+  --topbar-bg: rgba(244, 245, 248, 0.86);
+  --row-divider: #eceef2;
+  --track: #eceef2;
+  --chart-cursor: rgba(17, 19, 24, 0.05);
+  --on-accent: #ffffff;
+  /* Resting: a hairline of shadow under the border, enough to lift a white
+     card off a pale page. Hover: a wider, softer one - the standard
+     "raised" state. Panels (charts, tables) deepen a little on hover without
+     moving; cards that are links (projects, score cards) also rise 2px. */
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.05), 0 1px 3px rgba(16, 24, 40, 0.06);
+  --shadow-card-hover:
+    0 12px 28px -6px rgba(16, 24, 40, 0.16), 0 4px 10px -4px rgba(16, 24, 40, 0.08);
+  --shadow-panel-hover:
+    0 6px 18px -6px rgba(16, 24, 40, 0.12), 0 2px 6px -2px rgba(16, 24, 40, 0.06);
+  --shadow-pop: 0 16px 36px -8px rgba(16, 24, 40, 0.22), 0 4px 12px -4px rgba(16, 24, 40, 0.1);
+  --shadow-btn: 0 6px 16px -4px rgba(16, 24, 40, 0.16);
+}
+
+/* Codex in the light theme. Must out-rank the dark Codex block above, which
+   sits on the same element: two attributes beat one. */
+[data-theme='light'] [data-provider='codex'] {
+  --accent: #0c7f63;
+  --accent-bright: #0a6b53;
+  --accent-dim: rgba(12, 127, 99, 0.08);
+  --accent-glow: rgba(12, 127, 99, 0.18);
+  --accent-border: rgba(12, 127, 99, 0.3);
+  --accent-border-strong: rgba(12, 127, 99, 0.45);
+  --accent-fill: rgba(12, 127, 99, 0.14);
+
+  --hm-0: #ebeff0;
+  --hm-1: #10a37f; /* 3.20:1 on white */
+  --hm-2: #0e8d6d; /* 4.16:1 */
+  --hm-3: #0c765c; /* 5.58:1 */
+  --hm-4: #0a624d; /* 7.32:1 */
+  --hm-5: #084f3e; /* 9.55:1 */
+}
+
 * {
   box-sizing: border-box;
 }
@@ -142,7 +261,7 @@ a:hover {
 
 ::selection {
   background: var(--accent);
-  color: #10100f;
+  color: var(--on-accent);
 }
 
 /* --------------------------------------------------------------------------
@@ -179,7 +298,7 @@ a:hover {
   align-items: center;
   gap: 28px;
   padding: 20px 32px;
-  background: rgba(0, 0, 0, 0.82);
+  background: var(--topbar-bg);
   backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--border);
 }
@@ -534,6 +653,16 @@ img.rail-mark[data-agent='codex'] {
   margin: -10px;
 }
 
+/* OpenAI's mark ships in white and in black, and this repo carries the white
+   file (see CLAUDE.md, *The sidebar's agent marks*). On the light rail white is
+   invisible, so the light theme renders it black - `brightness(0)` maps every
+   opaque pixel to pure black, which is the vendor's own black variant of the
+   same single-colour mark, not a colour of ours. The file is untouched; if the
+   official black SVG is ever committed beside it, swap the file here instead. */
+[data-theme='light'] img.rail-mark[data-agent='codex'] {
+  filter: brightness(0);
+}
+
 /* Initials in the mark's slot when its file is missing - same box, so the rail
    does not shift between the two states. */
 .rail-mark-fallback {
@@ -550,6 +679,104 @@ img.rail-mark[data-agent='codex'] {
 .rail-label {
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Settings, pinned to the foot of the rail and apart from the agents. */
+.rail-foot {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.theme-menu {
+  position: relative;
+}
+
+/* A rail item that is a button: the same box as the agent links. */
+.rail-theme {
+  width: 100%;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rail-theme[aria-expanded='true'] {
+  color: var(--text);
+  background: var(--surface-hover);
+  border-color: var(--border-bright);
+}
+
+/* The icon's box matches .rail-mark's 24px, so a collapsed rail keeps every
+   icon on one centre line. */
+.rail-icon {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+/* Both icons are in the markup; the theme picks one, so the button is right on
+   first paint without waiting for React. The icon names the CURRENT theme. */
+.theme-icon-sun {
+  display: none;
+}
+[data-theme='light'] .theme-icon-sun {
+  display: block;
+}
+[data-theme='light'] .theme-icon-moon {
+  display: none;
+}
+
+/* Fixed, not absolute: the rail clips its overflow so labels vanish cleanly as
+   it collapses, and an absolutely placed menu would be cut off with them. The
+   rail has no transform, so `fixed` is relative to the viewport. */
+.theme-popover {
+  position: fixed;
+  left: calc(var(--rail-w) + 8px);
+  bottom: 14px;
+  z-index: 60;
+  width: 170px;
+  padding: 6px;
+  background: var(--tooltip-bg);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-pop);
+  animation: menuIn 160ms var(--ease) both;
+}
+
+.theme-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 550;
+  text-align: left;
+  color: var(--text);
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 150ms var(--ease);
+}
+
+.theme-option:hover,
+.theme-option:focus-visible {
+  background: var(--surface-hover);
+}
+
+.theme-option:focus-visible {
+  outline-offset: -2px;
+}
+
+.theme-check {
+  width: 14px;
+  color: var(--accent);
+  font-weight: 700;
 }
 
 /* Collapsed: icons only. Labels are removed from layout rather than hidden, so
@@ -576,9 +803,7 @@ img.rail-mark[data-agent='codex'] {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.04) inset,
-    0 10px 34px rgba(0, 0, 0, 0.9);
+  box-shadow: var(--shadow-card);
   transition:
     border-color 200ms var(--ease),
     transform 200ms var(--ease),
@@ -588,9 +813,16 @@ img.rail-mark[data-agent='codex'] {
 .card-hover:hover {
   border-color: var(--border-bright);
   transform: translateY(-2px);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.06) inset,
-    0 16px 42px rgba(0, 0, 0, 0.95);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* Panels are not links, so they do not move - but in the light theme they
+   still answer the pointer with a deeper shadow, which is what tells one
+   section from the next at a glance. A no-op in the dark theme, where the
+   value is the resting shadow. */
+.panel:hover,
+.headline-card:hover {
+  box-shadow: var(--shadow-panel-hover);
 }
 
 .section-title {
@@ -661,6 +893,11 @@ img.rail-mark[data-agent='codex'] {
   letter-spacing: -0.035em;
   color: var(--accent);
   text-shadow: 0 0 60px var(--accent-glow);
+}
+
+/* A glow is light on dark; on white it is a smudge behind the figure. */
+:root[data-theme='light'] .headline-value {
+  text-shadow: none;
 }
 
 .headline-meta {
@@ -1026,7 +1263,7 @@ img.rail-mark[data-agent='codex'] {
   align-items: center;
   gap: 18px;
   padding: 10px 4px;
-  border-bottom: 1px solid rgba(30, 30, 36, 0.6);
+  border-bottom: 1px solid var(--row-divider);
   transition: background 160ms var(--ease);
 }
 
@@ -1124,6 +1361,68 @@ img.rail-mark[data-agent='codex'] {
   .model-legend-compact .model-legend-name {
     grid-column: 1 / -1;
   }
+}
+
+/* --------------------------------------------------------------------------
+   Daily spend by project: its legend is a row of chips
+   ------------------------------------------------------------------------ */
+
+/* Chips rather than the model charts' table-like legend: nine projects with
+   long names would make nine rows, and this panel is about the chart. They
+   wrap, so the legend is one line on a wide shell and grows a line at a time
+   below that - which is why the panel's skeleton height is a mid-range. */
+.project-legend {
+  display: flex;
+  flex-wrap: wrap;
+  /* Centred under the chart, each wrapped line too. */
+  justify-content: center;
+  gap: 8px 10px;
+  margin: 18px 0 0;
+  padding: 16px 0 0;
+  list-style: none;
+  border-top: 1px solid var(--border);
+}
+
+.project-legend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 5px 11px 5px 9px;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  transition:
+    background 160ms var(--ease),
+    border-color 160ms var(--ease),
+    box-shadow 160ms var(--ease),
+    transform 160ms var(--ease);
+}
+
+a.project-legend-chip:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+  border-color: var(--border-bright);
+  box-shadow: var(--shadow-btn);
+  transform: translateY(-1px);
+}
+
+.project-legend-name {
+  font-weight: 560;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-legend-more {
+  width: 18px;
+  font-size: 11.5px;
+  font-weight: 620;
+  color: var(--text-faint);
+  text-align: center;
 }
 
 /* --------------------------------------------------------------------------
@@ -1228,15 +1527,35 @@ img.rail-mark[data-agent='codex'] {
 .donut-legend-row {
   /* Never split a row across a column break. */
   break-inside: avoid;
+  border-bottom: 1px solid var(--row-divider);
+  transition:
+    background 160ms var(--ease),
+    opacity 170ms var(--ease);
+}
+
+/* The row's content: a link to the project, or a plain box for "Others",
+   which is not one project. The grid lives here so both look the same. */
+.donut-legend-entry {
   display: grid;
   grid-template-columns: 10px 22px minmax(0, 1fr) auto 52px;
   align-items: center;
   gap: 11px;
   padding: 6px 8px 6px 2px;
-  border-bottom: 1px solid rgba(30, 30, 36, 0.6);
-  transition:
-    background 160ms var(--ease),
-    opacity 170ms var(--ease);
+  color: inherit;
+  border-radius: 6px;
+}
+
+a.donut-legend-entry:hover {
+  color: inherit;
+}
+
+a.donut-legend-entry:hover .donut-legend-name {
+  color: var(--accent);
+}
+
+/* Slices that open a project say so under the pointer. */
+.donut-ring .recharts-pie-sector {
+  outline: none;
 }
 
 .donut-legend-row:last-child {
@@ -1315,7 +1634,7 @@ img.rail-mark[data-agent='codex'] {
   justify-content: center;
   border-radius: 9px;
   overflow: hidden;
-  background: var(--surface-hover, #17171c);
+  background: var(--surface-hover);
   border: 1px solid var(--border);
 }
 
@@ -1463,7 +1782,7 @@ img.rail-mark[data-agent='codex'] {
   background: var(--tooltip-bg);
   border: 1px solid var(--border-bright);
   border-radius: var(--radius-sm);
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.95);
+  box-shadow: var(--shadow-pop);
   animation: menuIn 160ms var(--ease) both;
 }
 
@@ -1516,6 +1835,74 @@ img.rail-mark[data-agent='codex'] {
   font-size: 12.5px;
   font-weight: 400;
   color: var(--text-faint);
+}
+
+.card-menu-item-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* The colour editor takes the menu's place, in the same box. */
+.color-editor {
+  width: 280px;
+  padding: 12px 12px 10px;
+}
+
+.color-editor-heading {
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.color-editor-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.color-editor-picker {
+  flex: none;
+  width: 44px;
+  height: 36px;
+  padding: 3px;
+  background: var(--surface);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.color-editor-hex {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 7px 10px;
+  font-family: inherit;
+  font-size: 15px;
+  text-transform: uppercase;
+  color: var(--text);
+  color-scheme: var(--color-scheme);
+  background: var(--surface);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-sm);
+}
+
+.color-editor-hex[aria-invalid='true'] {
+  border-color: var(--warn);
+}
+
+.color-editor-note {
+  display: block;
+  margin: 8px 0 0;
+}
+
+.color-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .card-menu-error {
@@ -1596,8 +1983,8 @@ img.rail-mark[data-agent='codex'] {
 .range-select {
   flex: none;
   appearance: none;
-  /* The option list is drawn by the browser; this asks for its dark one. */
-  color-scheme: dark;
+  /* The option list is drawn by the browser; this asks for the theme's one. */
+  color-scheme: var(--color-scheme);
   padding: 6px 34px 6px 12px;
   font-family: inherit;
   font-size: 14px;
@@ -1694,7 +2081,7 @@ table.data td:first-child {
 table.data td {
   text-align: right;
   padding: 13px 14px;
-  border-bottom: 1px solid rgba(30, 30, 36, 0.6);
+  border-bottom: 1px solid var(--row-divider);
   white-space: nowrap;
 }
 
@@ -1753,7 +2140,7 @@ table.data tfoot td {
   background: var(--surface-hover);
   border-color: var(--accent);
   transform: translateY(-1px);
-  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.85);
+  box-shadow: var(--shadow-btn);
 }
 
 .btn:active:not(:disabled) {
@@ -1813,7 +2200,7 @@ table.data tfoot td {
 }
 
 .notice-warn {
-  border-color: rgba(248, 113, 113, 0.34);
+  border-color: var(--warn-border);
   background: var(--warn-dim);
 }
 .notice-warn .notice-icon {
@@ -1835,7 +2222,7 @@ table.data tfoot td {
   letter-spacing: 0.05em;
   color: var(--warn);
   background: var(--warn-dim);
-  border: 1px solid rgba(248, 113, 113, 0.3);
+  border: 1px solid var(--warn-border);
 }
 
 /* --------------------------------------------------------------------------
@@ -1905,7 +2292,7 @@ table.data tbody tr.rate-editor-row:hover {
   font-size: 15px;
   font-variant-numeric: tabular-nums;
   color: var(--text);
-  color-scheme: dark;
+  color-scheme: var(--color-scheme);
   background: var(--surface);
   border: 1px solid var(--border-bright);
   border-radius: var(--radius-sm);
@@ -2050,7 +2437,7 @@ table.data tbody tr.rate-editor-row:hover {
      hovered it. Measured at 1540px of scroll width before, 8px after. */
   white-space: normal;
   pointer-events: none;
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.95);
+  box-shadow: var(--shadow-pop);
   z-index: 100;
 }
 

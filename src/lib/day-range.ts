@@ -21,22 +21,38 @@
  */
 import type { DailyEntry, UsageCell } from './types';
 
-export type DayRange = '30' | '60' | 'all';
+export type DayRange = '30' | '60' | '90' | 'all';
 
-export const DAY_RANGES: ReadonlyArray<{ value: DayRange; label: string }> = [
+export type DayRangeOption = { value: DayRange; label: string };
+
+/** The per-model charts' choices. */
+export const DAY_RANGES: ReadonlyArray<DayRangeOption> = [
   { value: '30', label: 'Last 30 days' },
   { value: '60', label: 'Last 60 days' },
   { value: 'all', label: 'All days' },
 ];
 
+/**
+ * Daily spend by project's choices. A longer middle step than the model
+ * charts: projects come and go over months where models change over weeks,
+ * and a quarter is the span that shows one project handing over to the next.
+ */
+export const PROJECT_DAY_RANGES: ReadonlyArray<DayRangeOption> = [
+  { value: '30', label: 'Last 30 days' },
+  { value: '90', label: 'Last 90 days' },
+  { value: 'all', label: 'All days' },
+];
+
+const ALL_RANGES: ReadonlySet<string> = new Set(['30', '60', '90', 'all']);
+
 export const DEFAULT_DAY_RANGE: DayRange = '30';
 
 export function isDayRange(value: string): value is DayRange {
-  return DAY_RANGES.some((range) => range.value === value);
+  return ALL_RANGES.has(value);
 }
 
 export function dayRangeLabel(range: DayRange): string {
-  return DAY_RANGES.find((option) => option.value === range)?.label ?? range;
+  return range === 'all' ? 'All days' : `Last ${range} days`;
 }
 
 const DAY_MS = 86_400_000;

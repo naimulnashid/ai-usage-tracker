@@ -125,6 +125,69 @@ export const ACCENT_PALETTES: Record<ProviderId, readonly string[]> = {
   ],
 };
 
+/**
+ * The same palettes for the light theme, index for index.
+ *
+ * A model's shade is stored as a hex from `ACCENT_PALETTES` (it is data - it
+ * goes in `data/model-settings.json`), so it cannot simply be a CSS variable
+ * that the theme redefines. Instead each dark shade has a light twin at the
+ * same index, and `themedColor` swaps one for the other at render time. The
+ * stored value never changes with the theme.
+ *
+ * The dark ramp gets LIGHTER toward the cheap end, because light is what stands
+ * out on near-black. On white that is backwards - the palest shades would fade
+ * into the panel - so each light ramp runs from a deep tone to the agent's own
+ * accent, every step above 3:1 against white (tests/contrast.test.ts). Darker
+ * still means dearer, in both themes.
+ */
+export const LIGHT_PALETTES: Record<ProviderId, readonly string[]> = {
+  claude: [
+    '#712E19',
+    '#79321B',
+    '#82361D',
+    '#8C3A1F',
+    '#963E21',
+    '#A14224',
+    '#AD4727',
+    '#B94C29',
+    '#C6512C',
+    '#D25A33',
+    '#D56845',
+    '#D97657',
+  ],
+  codex: [
+    '#074B3B',
+    '#085340',
+    '#095B47',
+    '#0A624D',
+    '#0B6C54',
+    '#0C755C',
+    '#0D8164',
+    '#0E8C6D',
+    '#0F9876',
+    '#10A580',
+  ],
+};
+
+/** Dark shade (upper case) -> its light twin. Built once; the palettes are disjoint. */
+const LIGHT_TWIN = new Map<string, string>();
+for (const id of Object.keys(ACCENT_PALETTES) as ProviderId[]) {
+  ACCENT_PALETTES[id].forEach((shade, index) => {
+    LIGHT_TWIN.set(shade.toUpperCase(), LIGHT_PALETTES[id][index]);
+  });
+}
+
+/**
+ * A model colour as it should be drawn in `theme`. Anything that is not a
+ * palette shade - the synthetic and unknown tones, a CSS variable - is
+ * returned as it is; both of those clear 3:1 on either ground already.
+ */
+export function themedColor(color: string, theme: 'dark' | 'light'): string {
+  if (theme === 'dark') return color;
+  if (color === SYNTHETIC) return SYNTHETIC_LIGHT;
+  return LIGHT_TWIN.get(color.toUpperCase()) ?? color;
+}
+
 /** True when `color` is one of the agent's palette shades (any case). */
 export function isPaletteColor(provider: ProviderId, color: string): boolean {
   const wanted = color.toUpperCase();
@@ -150,8 +213,13 @@ export function modelDisplayName(model: string): string | null {
 
 /** No API call, no cost — deliberately outside the accent family. 3.04:1. */
 const SYNTHETIC = '#5D5D68';
+/** Its light-theme twin: 3.19:1 on white. */
+const SYNTHETIC_LIGHT = '#8C909B';
 
-/** Unrecognised models: mid-tone, visibly desaturated so they read as "unknown". */
+/**
+ * Unrecognised models: mid-tone, visibly desaturated so they read as "unknown".
+ * 5.1:1 on the dark panel and 3.9:1 on white, so one value serves both themes.
+ */
 const UNKNOWN = '#9C7A6C';
 
 /**

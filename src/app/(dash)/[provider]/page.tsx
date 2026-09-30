@@ -18,8 +18,15 @@ import { isEmptyReport, noteworthyWarnings } from '@/lib/report-state';
 import { DailyTokensByModelChart } from '@/components/DailyTokensByModelChart';
 import { DailySpendByModelChart } from '@/components/DailySpendByModelChart';
 import { DayRangeSelect } from '@/components/DayRangeSelect';
+import { DailySpendByProjectChart } from '@/components/DailySpendByProjectChart';
 import { ParseWarnings, RUNTIME_TOOLTIP, UnpricedNotice } from '@/components/Notices';
-import { DEFAULT_DAY_RANGE, reportToday, weekOverWeek, type DayRange } from '@/lib/day-range';
+import {
+  DEFAULT_DAY_RANGE,
+  PROJECT_DAY_RANGES,
+  reportToday,
+  weekOverWeek,
+  type DayRange,
+} from '@/lib/day-range';
 import {
   formatCount,
   formatDateShort,
@@ -31,11 +38,12 @@ import {
 
 export default function OverviewPage() {
   const provider = useProvider();
-  const { report, initialLoading, error, version } = useUsage();
+  const { report, initialLoading, error, version, hiddenProjects } = useUsage();
   // One range per chart: a control inside a panel changes that panel only.
   // Above the early returns, since these are hooks.
   const [tokensRange, setTokensRange] = useState<DayRange>(DEFAULT_DAY_RANGE);
   const [spendRange, setSpendRange] = useState<DayRange>(DEFAULT_DAY_RANGE);
+  const [projectRange, setProjectRange] = useState<DayRange>(DEFAULT_DAY_RANGE);
 
   if (initialLoading) {
     /*
@@ -92,8 +100,10 @@ export default function OverviewPage() {
           </div>
         </div>
 
-        {/* The heat map, the two stacked charts, then the two model tables. */}
+        {/* The heat map, spend by project, the two stacked model charts, then
+            the two model tables. */}
         <div className="skeleton" style={{ height: sk.heatmap, marginBottom: 22 }} />
+        <div className="skeleton" style={{ height: sk.dailyByProject, marginBottom: 22 }} />
         <div className="skeleton" style={{ height: sk.dailyTokens, marginBottom: 22 }} />
         <div className="skeleton" style={{ height: sk.dailySpendByModel, marginBottom: 22 }} />
         <div className="skeleton" style={{ height: sk.tokenTable, marginBottom: 22 }} />
@@ -303,6 +313,33 @@ export default function OverviewPage() {
           offsetHours={report.settings.localUtcOffsetHours}
           weekStartsOn={report.settings.weekStartsOn}
           expandHref={`${provider.basePath}/activity`}
+        />
+      </section>
+
+      {/* ---- Where the money went, project by project, day by day -------- */}
+      <section className="card panel rise" style={{ animationDelay: '65ms' }}>
+        <div className="panel-head">
+          <div className="panel-head-main">
+            <h2 className="panel-title">Daily spend by project</h2>
+            <p className="panel-sub">
+              Each project in its own colour, largest at the bottom. The top eight over the days
+              shown get a band; the rest are summed into Other.
+            </p>
+          </div>
+          <DayRangeSelect
+            value={projectRange}
+            onChange={setProjectRange}
+            options={PROJECT_DAY_RANGES}
+            label="Days shown in Daily spend by project"
+          />
+        </div>
+        <DailySpendByProjectChart
+          daily={daily}
+          projects={report.projects}
+          hiddenIds={new Set(hiddenProjects)}
+          range={projectRange}
+          today={today}
+          replayKey={version}
         />
       </section>
 
