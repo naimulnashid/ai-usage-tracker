@@ -106,18 +106,16 @@ const MoonIcon = () => (
 );
 
 /**
- * The theme menu at the foot of the rail: Dark, Light, or follow the system.
+ * The theme menu in the top bar, beside Refresh: Dark, Light, or follow the
+ * system. An icon button, as the owner asked (2026-09-30) - it started at the
+ * foot of the rail, where it was one more thing to find.
  *
- * In the rail rather than the top bar because it is a setting, and the foot of
- * the rail is where a setting reads as one - the top bar is "which page", and
- * its narrow-window layout is measured to the half pixel (see CLAUDE.md).
+ * The icon names the theme on screen: a sun in the light theme, a moon in the
+ * dark one. Both are rendered and CSS shows the right one, so the button is
+ * right on first paint; only the ticked item waits for the menu to open.
  *
- * The menu is `position: fixed` beside the rail, because the rail clips its
- * own overflow (`overflow: hidden`, so labels vanish cleanly as it collapses)
- * and a popover inside it would be cut off at 70px.
- *
- * Both icons are rendered and CSS shows the right one, so the button is right
- * on first paint; only the ticked item waits for the effect below.
+ * The menu hangs below the button, right-aligned. The top bar clips nothing,
+ * so unlike the rail it needs no fixed positioning.
  */
 export function ThemeToggle() {
   const [choice, setChoice] = useState<ThemeChoice>('dark');
@@ -165,7 +163,7 @@ export function ThemeToggle() {
       <button
         ref={buttonRef}
         type="button"
-        className="rail-item rail-theme"
+        className="btn theme-btn"
         onClick={() => {
           // Read as the menu opens, not while rendering: the server cannot
           // know it, and reading storage in render would hand the server one
@@ -176,12 +174,10 @@ export function ThemeToggle() {
         aria-haspopup="menu"
         aria-expanded={open}
         title={`Theme: ${label.split(' ')[0]}`}
+        aria-label={`Theme: ${label.split(' ')[0]}`}
       >
-        <span className="rail-icon" aria-hidden>
-          <SunIcon />
-          <MoonIcon />
-        </span>
-        <span className="rail-label">Theme</span>
+        <SunIcon />
+        <MoonIcon />
       </button>
       {open && (
         <div className="theme-popover" role="menu" aria-label="Theme">

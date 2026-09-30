@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from 'react';
 import { PROVIDERS, PROVIDER_IDS, type ProviderId } from '@/lib/providers';
 import { initialsOf } from '@/lib/project-logos';
 import { useProviderScope } from './ProviderScope';
-import { ThemeToggle } from './ThemeToggle';
 
 /**
  * Each agent's brand mark, as a file in public/agent-marks/.
@@ -128,11 +127,6 @@ export function Sidebar() {
             </Link>
           );
         })}
-      </div>
-
-      {/* Settings sit at the foot of the rail, apart from the agents. */}
-      <div className="rail-foot">
-        <ThemeToggle />
       </div>
     </aside>
   );

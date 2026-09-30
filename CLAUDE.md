@@ -297,6 +297,11 @@ status line hidden. Three things about it that are not obvious:
   four rather than running off the edge.
 - **The tabs' side padding drops to 11px.** At 15px the tabs plus Sign out
   measured 261.5px in 262 - half a pixel to spare.
+- **The theme button rides on the first row, beside Refresh**, and the title
+  there has a ZERO flex-basis. A wrapping flex line wraps items before it
+  shrinks them, so with the title at its full width the new button pushed
+  Refresh onto a third row at 360px (bar 145px). From zero the title takes
+  what is left and ellipsises: 109px again at 360-700px, 0px of overflow.
 - **Focus order no longer matches on a phone.** The markup is still the
   desktop order (title, tabs, Sign out, Refresh), so Tab reaches Refresh last
   although it is drawn top right. Reordering the markup would move the same
@@ -1282,10 +1287,11 @@ acts if focus really did fall to `<body>`.
 `data-theme` on <html> is `dark` or `light`, set before first paint by
 `THEME_INIT_SCRIPT` (`src/lib/theme.ts`) from a per-browser choice - Dark
 (the default), Light or System - for the same reason the rail's state is: from
-React it would paint a frame of the wrong theme on every load. The menu is at
-the FOOT of the rail (`ThemeToggle`): it is a setting, and the top bar's
-narrow-window layout is measured to the half pixel. Its popover is
-`position: fixed`, because the rail clips its overflow.
+React it would paint a frame of the wrong theme on every load. The menu is an
+icon button in the TOP BAR, between Sign out and Refresh (`ThemeToggle`), at
+the owner's request; it began at the foot of the rail. The icon names the theme
+on screen (sun / moon), both drawn and CSS picking one so it is right on first
+paint. Adding it to the bar changed the narrow layout - see *Below 720px*.
 
 - **Every colour is a token with a value per theme.** The light values live in
   `:root[data-theme='light']` and `[data-theme='light'] [data-provider='codex']`

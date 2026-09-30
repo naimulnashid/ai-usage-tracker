@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useUsage } from './UsageProvider';
 import { useProvider } from './ProviderScope';
 import { formatClockTime } from '@/lib/format';
+import { ThemeToggle } from './ThemeToggle';
 
 /**
  * Page navigation, status, and the two actions.
@@ -67,6 +68,7 @@ export function TopBar() {
           >
             Sign out
           </button>
+          <ThemeToggle />
           <button
             type="button"
             className="btn btn-primary"

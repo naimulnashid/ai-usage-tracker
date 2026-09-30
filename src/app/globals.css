@@ -182,7 +182,9 @@
   --topbar-bg: rgba(244, 245, 248, 0.86);
   --row-divider: #eceef2;
   --track: #eceef2;
-  --chart-cursor: rgba(17, 19, 24, 0.05);
+  /* The bar charts' hover column. 0.05 was barely there on white; 0.09 reads
+     like a hovered table row (#eaeaea on white). */
+  --chart-cursor: rgba(17, 19, 24, 0.09);
   --on-accent: #ffffff;
   /* Resting: a hairline of shadow under the border, enough to lift a white
      card off a pale page. Hover: a wider, softer one - the standard
@@ -437,9 +439,13 @@ a:hover {
   .refresh-meta {
     display: none;
   }
+  /* A zero basis, not auto: a wrapping flex line wraps its items BEFORE it
+     shrinks them, so with the theme button beside Refresh the title's full
+     width pushed Refresh onto a third row at 360px. From zero the title only
+     takes what is left, and ellipsises. */
   .topbar-heading {
     order: 1;
-    flex: 1 1 auto;
+    flex: 1 1 0;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -447,6 +453,15 @@ a:hover {
   .topbar-spacer .btn {
     order: 2;
     padding: 8px 15px;
+  }
+  /* The theme menu rides on the first row beside Refresh. Its wrapper is the
+     flex item here, so it needs the order itself; without one it would sort
+     ahead of the title. */
+  .theme-menu {
+    order: 2;
+  }
+  .topbar-spacer .btn.theme-btn {
+    padding: 8px;
   }
   /* The forced break: a full-width item between the rows. */
   .topbar-inner::after {
@@ -687,40 +702,24 @@ img.rail-mark[data-agent='codex'] {
   text-overflow: ellipsis;
 }
 
-/* Settings, pinned to the foot of the rail and apart from the agents. */
-.rail-foot {
-  margin-top: auto;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
-}
-
+/* The theme menu, in the top bar beside Refresh. */
 .theme-menu {
   position: relative;
-}
-
-/* A rail item that is a button: the same box as the agent links. */
-.rail-theme {
-  width: 100%;
-  background: none;
-  font-family: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.rail-theme[aria-expanded='true'] {
-  color: var(--text);
-  background: var(--surface-hover);
-  border-color: var(--border-bright);
-}
-
-/* The icon's box matches .rail-mark's 24px, so a collapsed rail keeps every
-   icon on one centre line. */
-.rail-icon {
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
+  display: flex;
   flex-shrink: 0;
+}
+
+/* An icon button in the `.btn` style, as tall as Refresh beside it: the
+   19px icon plus 10.5px each side matches the text button's 10px + line box.
+   Two classes, because `.btn` comes later in this file and would win. */
+.btn.theme-btn {
+  padding: 10.5px;
+  color: var(--text-muted);
+}
+
+.btn.theme-btn:hover:not(:disabled),
+.btn.theme-btn[aria-expanded='true'] {
+  color: var(--text);
 }
 
 /* Both icons are in the markup; the theme picks one, so the button is right on
@@ -735,13 +734,11 @@ img.rail-mark[data-agent='codex'] {
   display: none;
 }
 
-/* Fixed, not absolute: the rail clips its overflow so labels vanish cleanly as
-   it collapses, and an absolutely placed menu would be cut off with them. The
-   rail has no transform, so `fixed` is relative to the viewport. */
+/* Below the button, right-aligned so it never runs off the page's edge. */
 .theme-popover {
-  position: fixed;
-  left: calc(var(--rail-w) + 8px);
-  bottom: 14px;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
   z-index: 60;
   width: 170px;
   padding: 6px;
@@ -1387,6 +1384,14 @@ img.rail-mark[data-agent='codex'] {
   padding: 16px 0 0;
   list-style: none;
   border-top: 1px solid var(--border);
+}
+
+/* The item, not only the chip, must be allowed to shrink: a chip holding a
+   long project name was wider than the panel at 320px and scrolled the page
+   12px sideways. Now the name ellipsises instead. */
+.project-legend > li {
+  max-width: 100%;
+  min-width: 0;
 }
 
 .project-legend-chip {
