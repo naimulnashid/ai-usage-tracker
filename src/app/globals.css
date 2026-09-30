@@ -140,7 +140,10 @@
 :root[data-theme='light'] {
   --bg: #f4f5f8;
   --surface: #ffffff;
-  --surface-hover: #f3f4f7;
+  /* Row and menu hover on a white card. It was #f3f4f7 - 1.07:1 against white,
+     which is to say invisible - so a hovered table row showed no change at all.
+     1.20:1 now, and --text-faint still clears 4.5:1 on it (4.95:1). */
+  --surface-hover: #e8ebf0;
   --border: #e3e5ea;
   --border-bright: #cdd1d9;
 
@@ -160,7 +163,10 @@
   --accent-border-strong: rgba(186, 77, 42, 0.45);
   --accent-fill: rgba(186, 77, 42, 0.14);
 
-  --hm-0: #ebedf1;
+  /* An empty day. #ebedf1 (1.18:1) all but vanished into the white panel, so
+     the grid had no visible shape on quiet months. 1.36:1: plainly a square,
+     still plainly "nothing" beside the 3:1 steps. */
+  --hm-0: #d9dde4;
   --hm-1: #d97554; /* 3.17:1 on white */
   --hm-2: #cf552e; /* 4.21:1 */
   --hm-3: #af4827; /* 5.56:1 */
@@ -202,7 +208,7 @@
   --accent-border-strong: rgba(12, 127, 99, 0.45);
   --accent-fill: rgba(12, 127, 99, 0.14);
 
-  --hm-0: #ebeff0;
+  --hm-0: #d7dee0;
   --hm-1: #10a37f; /* 3.20:1 on white */
   --hm-2: #0e8d6d; /* 4.16:1 */
   --hm-3: #0c765c; /* 5.58:1 */

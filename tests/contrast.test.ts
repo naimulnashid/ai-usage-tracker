@@ -203,6 +203,21 @@ describe('the light theme: text contrast (WCAG AA, 4.5:1)', () => {
   });
 });
 
+describe('the light theme: things that must be SEEN on white', () => {
+  // Both were near-invisible once: a hover shade of 1.07:1 and empty heat-map
+  // squares of 1.18:1. Not a WCAG floor - they are not information - but a
+  // hover state nobody can see is no hover state.
+  it('a hovered row is visibly shaded', () => {
+    assert.ok(contrast(light['--surface-hover'], light['--surface']) >= 1.15);
+  });
+
+  it('an empty heat-map square is visible, for both agents', () => {
+    for (const block of [light, lightCodex]) {
+      assert.ok(contrast(block['--hm-0'], light['--surface']) >= 1.3);
+    }
+  });
+});
+
 describe('the light theme: non-text contrast (3:1)', () => {
   for (const [theme, block] of [
     ['Claude Code', light],
