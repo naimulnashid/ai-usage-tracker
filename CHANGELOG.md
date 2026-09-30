@@ -6,6 +6,8 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-10-01
+
 ### Security
 
 - **Next.js 16.3.8**, which fixes a critical advisory (GHSA-vcvr-r3jv-pc5j:
@@ -35,6 +37,18 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   a slice or a legend row goes to that project's page. The donut used to shade
   slices by rank.
 
+- **Set a model's price and colour from the dashboard.** A Model prices table,
+  the last panel on the overview, lists every model with its rate and where
+  the rate came from. A model the rate card does not know yet can be given a
+  price there; it is saved under `data/`, wins over the card, and reaches every
+  figure on the page, archived days included. The same editor picks the
+  model's colour from its agent's shades.
+- **Install it as an app.** Edge and Chrome offer to install the dashboard as a
+  window of its own, with a Start menu entry and taskbar shortcuts for each
+  agent. Only from `localhost`: installing needs a secure context.
+- **Every day on record, as a heat map.** The overview's Expand button opens
+  the whole history, six months to a row, for the agent or for one project.
+- **Claude Opus 5.5 is priced** on the rate card.
 - **The two stacked charts have a date range.** "Daily tokens by model" and
   "Daily spend by model" — on the overview and on every project page — can
   show the last 30 days (the default), the last 60, or every day on record.
@@ -129,6 +143,10 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **A project's page is the overview for that project**: the same sections in
+  the same order under the same names, then its day-by-model table. It leaves
+  out the third row of activity cards, the price table and the sessions table,
+  and its stacked charts open on every day rather than the last 30.
 - **The heat map's Expand button is always shown.** It used to appear only
   once some day was older than the six-month strip.
 

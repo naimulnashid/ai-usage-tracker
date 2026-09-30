@@ -1,6 +1,6 @@
 {
   "name": "ai-usage-dashboard",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "private": true,
   "description": "Local dashboard for Claude Code and Codex token usage, estimated cost, and runtime.",
   "license": "MIT",
