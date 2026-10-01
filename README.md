@@ -1,5 +1,9 @@
 # AI Usage Dashboard
 
+[![CI](https://github.com/naimulnashid/ai-usage-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/naimulnashid/ai-usage-tracker/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/naimulnashid/ai-usage-tracker)](https://github.com/naimulnashid/ai-usage-tracker/releases/latest)
+[![MIT license](https://img.shields.io/github/license/naimulnashid/ai-usage-tracker)](LICENSE)
+
 A local web dashboard for **Claude Code** and **Codex** usage: token consumption,
 estimated cost and approximate runtime, broken down by model, by project and by
 day.
