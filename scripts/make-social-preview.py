@@ -6,7 +6,7 @@ GitHub wants 1280x640 (2:1) and under 1MB, and renders it small in a timeline,
 so this is a headline and three words of detail rather than a screenshot. It is
 generated rather than exported from a design tool so it can be regenerated when
 the wording changes, and so it never contains a pixel of real usage data - the
-privacy rules at the top of CLAUDE.md apply to an image as much as to a commit.
+privacy rules at the top of CONTRIBUTING.md apply to an image as much as to a commit.
 
 Type is Geist, taken from the `geist` package this app already depends on, so
 the card and the dashboard are set in the same face. Colours are the tokens

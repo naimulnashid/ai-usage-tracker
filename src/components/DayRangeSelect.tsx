@@ -16,7 +16,7 @@ import { formatDateStamp } from '@/lib/format';
  * A native `<select>`, deliberately. Its list is drawn by the browser, so it
  * cannot be clipped by a panel, raise a scrollbar or sit under the next card -
  * every one of which a hand-built popover in this layout has done at least
- * once (see the overflow notes in CLAUDE.md). It is also the one dropdown a
+ * once. It is also the one dropdown a
  * phone already knows how to present.
  */
 export function DayRangeSelect({

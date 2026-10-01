@@ -4,7 +4,7 @@ import { useTheme } from './ThemeToggle';
 
 /*
  * Small pieces the overview and a project page share, so the two stay the same
- * page with different data - see CLAUDE.md, *Project pages mirror the overview*.
+ * page with different data: project pages mirror the overview.
  */
 
 /** The Model prices panel's subtitle, shared with the project page. */

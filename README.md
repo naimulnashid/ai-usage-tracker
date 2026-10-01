@@ -627,9 +627,9 @@ src/app/             Next.js App Router pages and API routes, one set of pages f
 src/components/      Charts, tables and cards
 ```
 
-[`CLAUDE.md`](CLAUDE.md) documents the data model in depth: every quirk of
-both log formats the parsers handle, and the UI conventions that keep the
-two agents apart. Read it before changing a parser.
+[How the numbers are derived](#how-the-numbers-are-derived) covers both log
+formats, and the tests in `tests/` pin down every quirk the parsers handle.
+Read both before changing a parser.
 
 ---
 

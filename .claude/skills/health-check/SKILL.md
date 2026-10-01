@@ -17,7 +17,7 @@ settings. Machine-specific steps - a private mirror, a local service, sibling
 repos - live in `CLAUDE.local.md` under *Health check: this machine*; run those
 too when that file exists.
 
-Re-read the privacy rules at the top of `CLAUDE.md` before writing anything:
+Re-read the privacy rules at the top of `CONTRIBUTING.md` before writing anything:
 the report may quote file names and commit subjects, never real project names,
 paths or spend.
 
@@ -37,9 +37,9 @@ stashes. Watch for:
 - **Scratch leftovers** - a temporary `.claude/launch.json` entry, files in
   `out/`, `demo-data/` or `screenshots/` that should stay untracked (they are
   gitignored; confirm with `git check-ignore -v <path>`).
-- **The block `next dev` writes into `CLAUDE.md`** (*This is NOT the Next.js
-  you know*). It is regenerated, so commit it with your work rather than
-  reverting it.
+- **The block `next dev` writes into the local design notes** (*This is NOT
+  the Next.js you know*). It is regenerated; those notes are not in this
+  repository, so it never shows in a diff here.
 - Every mirror named in `CLAUDE.local.md` is in step with `origin`.
 
 ## 2. Quality gates, locally and in CI
@@ -68,8 +68,8 @@ git log --oneline $(git describe --tags --abbrev=0)..HEAD
 - **README.md**: the *What it shows* list, the configuration and file tables
   (anything new written to `data/`?), and the screenshot alt texts still match
   the pages.
-- **CLAUDE.md**: each change that altered a documented rule, measurement or
-  trap has its section updated. Grep for the old wording of anything you
+- **The design notes** (local, not in this repository): each change that
+  altered a documented rule, measurement or trap has its section updated. Grep for the old wording of anything you
   renamed or moved.
 - **SECURITY.md / CONTRIBUTING.md**: still true.
 
@@ -88,7 +88,7 @@ Regenerate with the recipe in the README (*Trying it without your own data*):
 `DASHBOARD_PASSWORD` and `SESSION_SECRET`, a cookie minted with
 `issueSession()`, then `npm run demo:shots`. **Never from real data**, and never
 with a copied real session cookie - see *The README screenshots are full
-pages* in `CLAUDE.md`. Look at every image before committing it, and update
+pages* in the design notes. Look at every image before committing it, and update
 the alt texts to what the images now show.
 
 ## 5. Loading skeletons
@@ -106,7 +106,7 @@ Shape changes are: a section added, removed or moved; a legend or table
 gaining or losing rows; subtitle copy that could wrap differently; a control
 added to a panel head or legend row. For each, re-measure both agents at 997px
 and 1680px with the iframe recipe in *Loading skeletons mirror the real
-sections* (`CLAUDE.md`), store the mid-range, and record the two measurements
+sections* (the design notes), store the mid-range, and record the two measurements
 in the comment beside it. A page-order change also means reordering the
 skeleton JSX.
 

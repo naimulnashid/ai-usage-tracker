@@ -6,7 +6,7 @@
  *
  * Why this exists: every screenshot of this dashboard is otherwise a screenshot
  * of somebody's real projects, paths and spend. The privacy rules at the top of
- * CLAUDE.md make that uncommittable, which has meant no screenshots at all.
+ * CONTRIBUTING.md make that uncommittable, which has meant no screenshots at all.
  * This produces a tree that looks like real usage and contains nothing.
  *
  * It is not a mock. The output goes through the real parsers, so the numbers on

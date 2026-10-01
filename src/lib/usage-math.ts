@@ -2,8 +2,8 @@
  * The arithmetic both parsers do, in one copy.
  *
  * `parser.ts` and `codex-parser.ts` share nothing about how they READ a
- * transcript — the two formats have nothing in common, and the traps
- * documented in CLAUDE.md are entirely different. What they do share is what
+ * transcript — the two formats have nothing in common, and their traps are
+ * entirely different. What they do share is what
  * happens after a line has been understood: tokens go into a cell, cells go
  * into a per-model bucket, buckets come out as a sorted daily array. That was
  * written twice, and a fix to one copy would have missed the other.

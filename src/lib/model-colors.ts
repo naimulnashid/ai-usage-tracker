@@ -51,7 +51,7 @@ interface ModelShade {
  *
  * Each ramp is one hue (its agent's accent), varying only in lightness. The
  * ratios in the comments are against `--surface`; re-check them with the
- * formula in CLAUDE.md if you touch a value.
+ * WCAG contrast formula if you touch a value.
  */
 export const MODEL_SHADES: Record<string, ModelShade> = {
   // $50 output — deepest

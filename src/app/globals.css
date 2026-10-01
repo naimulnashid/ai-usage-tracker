@@ -393,7 +393,7 @@ a:hover {
 /* Narrow windows: two rows instead of one.
 
    Built for phones, which now get the desktop layout instead (the viewport
-   export in the `(dash)` layout; see CLAUDE.md). This still serves a desktop
+   export in the `(dash)` layout). This still serves a desktop
    window this narrow, and it is what phones get back if that export goes.
 
    The single row needs ~560px however much the status line gives way - the
@@ -663,7 +663,7 @@ a:hover {
    **This does not modify either asset.** The files stay byte-identical to the
    vendors' downloads, the aspect ratio is untouched, and the clear space each
    one specifies scales with it. Choosing a display size is not redrawing,
-   recolouring or cropping - which remain forbidden, see CLAUDE.md. Re-measure
+   recolouring or cropping - which remain forbidden. Re-measure
    if a vendor republishes its mark with different padding.
 
    `img` in the selector on purpose: the missing-file fallback is a `<span>`
@@ -675,7 +675,7 @@ img.rail-mark[data-agent='codex'] {
 }
 
 /* OpenAI's mark ships in white and in black, and this repo carries the white
-   file (see CLAUDE.md, *The sidebar's agent marks*). On the light rail white is
+   file. On the light rail white is
    invisible, so the light theme renders it black - `brightness(0)` maps every
    opaque pixel to pure black, which is the vendor's own black variant of the
    same single-colour mark, not a colour of ours. The file is untouched; if the

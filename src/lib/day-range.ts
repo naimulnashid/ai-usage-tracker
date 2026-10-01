@@ -115,8 +115,8 @@ export function lastActiveDate(daily: DailyEntry[]): string | null {
  * This is what a legend beside those days has to describe. With a window
  * applied, the agent's all-time totals would sit next to thirty columns and
  * claim shares of a total the chart is not showing - the same mismatch as a
- * cost beside a token share (see "A legend's figures must share the share's
- * denominator" in CLAUDE.md), one level up.
+ * cost beside a token share (a legend's figures must share the share's
+ * denominator), one level up.
  */
 export function sumDays(days: DailyEntry[]): {
   perModel: Record<string, UsageCell>;

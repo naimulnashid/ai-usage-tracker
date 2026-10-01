@@ -3,7 +3,7 @@
  *
  * These are static config, so a unit test can only check that the declarations
  * are still there and still say what they were reasoned about saying. What they
- * DO was verified against `next start` and is recorded in CLAUDE.md; this is
+ * DO was verified against `next start` when they were written; this is
  * the guard that stops a directive being dropped or loosened in passing.
  */
 import assert from 'node:assert/strict';

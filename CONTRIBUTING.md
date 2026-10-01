@@ -54,9 +54,10 @@ Line endings are LF, enforced by `.gitattributes`.
 
 ## Two things that are easy to get wrong here
 
-**Read [`CLAUDE.md`](CLAUDE.md) before changing a parser or a chart.** It is the
-architecture document, and it exists because most of the traps in this codebase
-are invisible in the code. The two biggest: Claude Code writes the same message
+**Read [How the numbers are derived](README.md#how-the-numbers-are-derived) and
+the parser tests before changing a parser or a chart.** Most of the traps in
+this codebase are invisible in the code, and the tests are where they are
+pinned down. The two biggest: Claude Code writes the same message
 many times, so counting every line overstates usage by about 89%, and Codex
 reports cumulative totals, so summing per-turn figures double-counts. Both are
 handled, both are documented, and both look like bugs if you do not know.
@@ -75,9 +76,9 @@ expect today's date and whichever project you are working in to move.
 **If you change a panel's copy or shape, re-measure its loading skeleton.** The
 skeletons reproduce each page at measured heights so nothing jumps when data
 lands, and the measurements live in `ProviderMeta.skeleton`. Adding one
-sentence to a subtitle has already invalidated one of them — see *Loading
-skeletons* in `CLAUDE.md` for how to measure, including the iframe trick that
-makes a width exact.
+sentence to a subtitle has already invalidated one of them: measure the page at
+both reference widths (997px and 1680px) in an iframe, which makes a width
+exact, and store the mid-range.
 
 ## Reporting a bug
 

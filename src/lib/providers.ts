@@ -42,7 +42,7 @@ export interface ProviderMeta {
    * rather than "Total estimated spend".
    *
    * There is deliberately NO standing banner explaining it. The full
-   * explanation lives in README.md and CLAUDE.md, on the same reasoning as the
+   * explanation lives in README.md, on the same reasoning as the
    * output-token residue - a permanent notice about a known, documented
    * framing trains the reader to ignore notices, which costs more than the
    * ambiguity does.

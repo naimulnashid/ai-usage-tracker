@@ -20,8 +20,7 @@ import { PROVIDER_IDS, getProvider } from '@/lib/providers';
 /**
  * Phones get the desktop layout: laid out 1024px wide and fitted to the
  * screen, like the browser's own "Desktop site" option. Chosen over the
- * responsive layout after trying both on a phone - see "Phones get the desktop
- * layout, on purpose" in CLAUDE.md, including what it costs.
+ * responsive layout after trying both on a phone, knowing what it costs.
  *
  * `initialScale: undefined` is what makes it FIT. Next merges this over its
  * default `initial-scale=1`, which would otherwise show the left third of the

@@ -3,7 +3,7 @@
  *
  * Every fixture here is written at run time into a temp directory and deleted
  * again. Nothing derived from a real transcript is ever committed - see the
- * privacy rules in CLAUDE.md - and `*.jsonl` is gitignored anyway, so a
+ * privacy rules in CONTRIBUTING.md - and `*.jsonl` is gitignored anyway, so a
  * committed fixture would silently not be a file the test suite could rely on.
  */
 import fs from 'node:fs';

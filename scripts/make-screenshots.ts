@@ -200,7 +200,7 @@ async function main(): Promise<void> {
 
       // Two separate waits. The data has to land, which can take a full parse;
       // the entry animations then have to settle, or every card is caught
-      // mid-fade (see CLAUDE.md on `.rise`). They are separate because a
+      // mid-fade (the `.rise` animation). They are separate because a
       // looping animation would make "all finished" never come true, and that
       // should cost a blurry card rather than the whole run.
       let loaded = false;

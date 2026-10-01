@@ -222,7 +222,7 @@ function HeatmapFigure({
  *
  * Cells use native `title` tooltips deliberately. A styled absolutely
  * positioned tooltip inside this grid would contribute layout width to the
- * scroll container even while hidden — the phantom-scrollbar bug in CLAUDE.md.
+ * scroll container even while hidden — a phantom scrollbar.
  */
 function HeatmapGrid({
   strip,

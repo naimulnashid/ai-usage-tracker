@@ -81,7 +81,7 @@ Two consequences shape what counts as a vulnerability here:
 
 ### Known, deliberate, and not vulnerabilities
 
-Each of these is a documented decision with its reasoning in `CLAUDE.md`. A
+Each of these is a deliberate decision, made with its trade-off weighed. A
 report that one of them exists will be closed with a pointer here — but a report
 that the reasoning is *wrong*, or that one is exploitable in a way the reasoning
 did not anticipate, is very much wanted.
@@ -120,5 +120,5 @@ did not anticipate, is very much wanted.
   in particular. The one critical finding in this project's own pre-release
   audit was an upstream Next.js advisory, not this code.
 - Nothing derived from a transcript should ever be committed. `*.jsonl`,
-  `*.sqlite`, `data/` and `out/` are gitignored as a backstop, and the reasoning
-  is at the top of `CLAUDE.md`.
+  `*.sqlite`, `data/` and `out/` are gitignored as a backstop, and the rule
+  is at the top of `CONTRIBUTING.md`.

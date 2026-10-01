@@ -13,8 +13,8 @@
  *     repeated readings and file reconciliation on the other;
  *   - a per-project suffix, and the scale of the daily bar.
  *
- * **This output is a regression baseline**, not decoration. CLAUDE.md tells you
- * to watch these numbers after a parser change, so a refactor here has to keep
+ * **This output is a regression baseline**, not decoration. CONTRIBUTING.md tells
+ * you to watch these numbers after a parser change, so a refactor here has to keep
  * the printed characters identical - which was verified by diffing the output
  * of both scripts before and after this module existed.
  */

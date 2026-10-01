@@ -260,8 +260,7 @@ export interface SessionRecord {
  * Headline activity stats, mirroring what the Claude Code app surfaces.
  *
  * These are deliberately comparable to that app so the two can be sanity
- * checked against each other - see CLAUDE.md for where they agree and where
- * they intentionally differ.
+ * checked against each other; where they differ, it is intentional.
  */
 export interface ActivityStats {
   /** All transcript files, including subagent transcripts. */

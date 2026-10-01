@@ -9,7 +9,7 @@ contact_links:
       private until there is a fix. SECURITY.md lists what is in scope, and
       which things that look like findings are deliberate.
   - name: How the numbers are derived
-    url: https://github.com/naimulnashid/ai-usage-tracker/blob/main/CLAUDE.md
+    url: https://github.com/naimulnashid/ai-usage-tracker#how-the-numbers-are-derived
     about: >
       Before reporting a figure as wrong: both agents' logs have traps that
       make correct numbers look wrong (and wrong ones look right). They are

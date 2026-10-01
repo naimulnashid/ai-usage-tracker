@@ -9,7 +9,7 @@ import { APP_ICON_SIZES } from '@/lib/app-icon';
  * The manifest needs PNGs: an SVG icon is not reliably turned into a Windows
  * shortcut icon. Drawing them from the favicon at build time, rather than
  * committing two PNGs, keeps one mark with one source - the reasoning that
- * keeps a `favicon.ico` out of this repo (see CLAUDE.md) applies to these too.
+ * keeps a `favicon.ico` out of this repo applies to these too.
  *
  * Prerendered at build (`dynamicParams = false`), so the file is read once
  * there and never at request time, and any size not listed 404s.

@@ -38,7 +38,7 @@ const CONTENT_SECURITY_POLICY = [
   // `'self'`, not `'none'`. Clickjacking needs a CROSS-origin frame, and this
   // refuses every one of those, which is the whole of the threat. `'none'`
   // additionally forbids the app framing itself — and that breaks the iframe
-  // harness CLAUDE.md documents for measuring the loading skeletons at an exact
+  // harness used for measuring the loading skeletons at an exact
   // viewport width, which was found the moment it was tried. Buying nothing at
   // the cost of a working technique is a bad trade.
   "frame-ancestors 'self'",
