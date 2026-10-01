@@ -6,6 +6,12 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- **Dependency updates are made upstream, not in this repo.** Dependabot now
+  runs on the maintainer's private copy, where dependency and security fixes are
+  applied first and then published here as ordinary commits, so this repo no
+  longer carries a `.github/dependabot.yml`.
+
 ## [0.13.0] - 2026-10-01
 
 ### Security

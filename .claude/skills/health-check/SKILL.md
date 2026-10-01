@@ -123,11 +123,17 @@ For each PR, decide with this order of priority:
 |---|---|---|
 | Fixes a security advisory in a shipped (non-dev) dependency | **Yes, now** | Land it before anything else, then consider a patch release (section 10). |
 | Dependabot patch/minor, CI green | Yes, cheap | Land it. Read the release notes for anything touching this app's features first. |
-| Dependabot major | Only if read | Read the migration guide; land in its own commit with the code changes it needs, or close it with a comment saying why and when to revisit. Majors are grouped separately by `.github/dependabot.yml` so they get this attention. |
-| `next` and `eslint-config-next` | Together | They must stay on the same major - `dependabot.yml` groups them. |
+| Dependabot major | Only if read | Read the migration guide; land in its own commit with the code changes it needs, or close it with a comment saying why and when to revisit. Majors are grouped separately by the update config so they get this attention. |
+| `next` and `eslint-config-next` | Together | They must stay on the same major - the update config groups them. |
 | Superseded (a newer PR or a manual bump covers it) | No | Close with a comment naming what superseded it. |
 | From a contributor | Review | Check it against `CONTRIBUTING.md` and the privacy rules; never land anything carrying real transcripts, paths or figures. |
 | Stale for weeks with failing checks | Usually no | `@dependabot rebase` once; if it still fails, find out why before spending more on it. |
+
+**Dependency PRs do not open here.** Since 2026-10-01 Dependabot runs on the
+maintainer's private copy, where dependency and security fixes are applied
+first and then published here as ordinary commits; this repo has no
+`.github/dependabot.yml`. A Dependabot PR on this repo would duplicate that
+work - close it and apply the bump upstream.
 
 **How to land one** is the maintainer's call and may be recorded in
 `CLAUDE.local.md` (for example, keeping every commit on `main` authored by the
@@ -146,10 +152,13 @@ git ls-files | grep -iE '(^|/)\.env|\.pem$|\.key$|\.sqlite$|\.jsonl$|^data/|^out
 - A **critical or high advisory in a shipped dependency** is the top item in
   the report. Say whether this app actually uses the affected code path, but
   fix it either way.
-- The `dependabot/alerts` call returns 403 when alerts are **disabled** - report
-  that as a finding: Dependabot alerts, secret scanning and push protection are
-  free for public repos and should be on (Settings -> Code security). Changing
-  them is the owner's decision.
+- **Dependabot alerts are OFF on this public repo by design**, so the
+  `dependabot/alerts` call returns 403 here: alerts are read on the
+  maintainer's private copy, where the fixes are made. Ask the owner for its
+  count rather than reporting the 403 as a finding.
+- **Secret scanning, push protection and private vulnerability reporting
+  should be ON** here (Settings -> Code security); report any that is off.
+  Changing them is the owner's decision.
 - The `git ls-files` line must print nothing: no env files, keys, archives,
   transcripts or reports tracked.
 - **Privacy sweep** of what is tracked: `git grep -nE 'C:\\\\Users\\\\[A-Za-z]+'`
@@ -181,9 +190,9 @@ node .claude/skills/health-check/unused-exports.mjs
 npm outdated
 ```
 
-- Patch/minor lag is fine if Dependabot has a PR open for it.
-- **Held majors** are listed, with the reason, in the `ignore:` block of
-  `.github/dependabot.yml`, and `npm outdated` will keep showing them - that is
+- Patch/minor lag is fine if Dependabot has a PR open for it on the private copy.
+- **Held majors** are listed, with the reason, in the `ignore:` block of the
+  private copy's `.github/dependabot.yml` (a local-only file in this checkout), and `npm outdated` will keep showing them - that is
   expected, not a finding. Only report one when its reason has lifted. For
   ESLint 10 and TypeScript 7, the test is the plugins `eslint-config-next`
   bundles, not its own open-ended peer ranges:
@@ -199,7 +208,7 @@ npm outdated
 - `next` and `eslint-config-next` share a major.
 - The Node versions in `.github/workflows/ci.yml`, `.nvmrc` and `engines` are
   still supported releases (check the Node release schedule). When they move,
-  move `@types/node`'s major with them - `dependabot.yml` deliberately does not.
+  move `@types/node`'s major with them - the update config deliberately does not.
 
 ## 10. Is a release due?
 
