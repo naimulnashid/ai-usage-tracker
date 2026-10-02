@@ -123,51 +123,18 @@ try {
         exit 1
     }
 
-    if (-not (Test-Path 'node_modules')) {
-        Write-Log 'Installing dependencies...'
-        & $npm install *>&1 | Write-LogOutput
+    # Dependencies, and a build to serve. The rule lives in ensure-build.ps1,
+    # shared with start-ai-usage-dashboard.bat so the two launchers can never
+    # disagree. It never builds at logon except when there is no complete
+    # build: building here once delayed every boot by ~15s and made a broken
+    # build a *startup* failure. A stale build is reported, not rebuilt, as a
+    # WARNING line in this log - grep for it if a change you made is not showing.
+    & (Join-Path $PSScriptRoot 'ensure-build.ps1') *>&1 | Write-LogOutput
+    if ($LASTEXITCODE -ne 0) {
+        Write-Log "ERROR: no build to serve (ensure-build exited $LASTEXITCODE). Dashboard not started."
+        exit 1
     }
-
-    # Never build at logon. Building here delayed every boot by ~15s and, worse,
-    # made a broken build a *startup* failure - the dashboard simply never
-    # appeared and the only trace was a line in this log. Building is now a
-    # thing you do after changing code (`npm run build`), which is where a
-    # failure is visible and fixable.
-    #
-    # The one exception is having no build at all, which is not a stale-code
-    # risk but a can't-start-at-all one: `npm start` against a missing `.next`
-    # exits immediately. So build when, and only when, BUILD_ID is absent.
-    #
-    # Staleness is still detected - it just warns instead of acting. That
-    # matters because serving the previous build silently would once have meant
-    # serving a version of this app from before the password gate existed. The
-    # warning in dashboard.log is how you find out you forgot to rebuild.
-    $buildId = Join-Path $root '.next\BUILD_ID'
-
-    if (-not (Test-Path $buildId)) {
-        Write-Log 'No production build found - building once (about 15s)...'
-        & $npm run build *>&1 | Write-LogOutput
-        if ($LASTEXITCODE -ne 0) {
-            Write-Log "ERROR: build failed with exit code $LASTEXITCODE. Dashboard not started."
-            exit 1
-        }
-    }
-    else {
-        $builtAt = (Get-Item $buildId).LastWriteTime
-        $sources = @()
-        foreach ($dir in 'src', 'config') {
-            if (Test-Path $dir) {
-                $sources += Get-ChildItem -Path $dir -Recurse -File -ErrorAction SilentlyContinue
-            }
-        }
-        foreach ($file in 'package.json', 'next.config.mjs') {
-            if (Test-Path $file) { $sources += Get-Item $file }
-        }
-        $newest = ($sources | Measure-Object -Property LastWriteTime -Maximum).Maximum
-        if ($null -ne $newest -and $newest -gt $builtAt) {
-            Write-Log "WARNING: source is newer than the build ($($newest.ToString('yyyy-MM-dd HH:mm:ss')) vs $($builtAt.ToString('yyyy-MM-dd HH:mm:ss'))). Serving the OLD build - run 'npm run build' and restart to pick up the changes."
-        }
-    }
+    Set-Location $root
 
     $script = if ($Lan) { 'start:lan' } else { 'start' }
     $scope = if ($Lan) { 'every network interface' } else { 'this machine only' }
