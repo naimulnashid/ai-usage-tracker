@@ -277,7 +277,10 @@ npm run start:lan
 
 The server then prints a `Network:` address to open from a phone or laptop on
 the same network. Windows asks to allow `node.exe` through the firewall the
-first time.
+first time, and that prompt usually ends with Node.js allowed on **Public**
+networks too, so a laptop on cafe or hotel Wi-Fi would offer the login form to
+everyone there. Mark your home network **Private**, then run `npm run firewall`
+once from an Administrator shell: it blocks port 7842 on Public networks only.
 
 A phone shows the full desktop dashboard scaled to fit its screen, rather than a
 rearranged phone layout; pinch to zoom in on the details.

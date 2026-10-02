@@ -6,6 +6,14 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- **`npm run firewall`** (`scripts/firewall-private-only.ps1`, run once from an
+  Administrator shell) blocks the dashboard's port, 7842, on **Public** networks.
+  Windows' first prompt for Node.js usually allows Public networks too, so with
+  network access on, a laptop on cafe or hotel Wi-Fi offered the login form -
+  over plain HTTP - to everyone there. It refuses while you are on a network
+  marked Public, so a home network still filed as Public is not cut off.
+
 ### Changed
 - **The logon task rebuilds a stale build.** When any source file is newer
   than the build, the background service now rebuilds before it starts (about

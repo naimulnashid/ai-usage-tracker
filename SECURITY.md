@@ -57,7 +57,9 @@ Two consequences shape what counts as a vulnerability here:
   those without a session is serious.
 - **Reachability is your choice.** It binds `127.0.0.1` by default. LAN access
   is opt-in and, once on, it is plain HTTP on a trusted home network behind a
-  shared password. That is the documented model, not an oversight.
+  shared password. That is the documented model, not an oversight. On
+  Windows, `npm run firewall` (Administrator) blocks the port on **Public**
+  networks; see `scripts/firewall-private-only.ps1`.
 
 ### In scope
 

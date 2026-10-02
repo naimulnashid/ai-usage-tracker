@@ -10,6 +10,7 @@
     "build": "next build",
     "start": "next start -H 127.0.0.1 -p 7842",
     "start:lan": "next start -H 0.0.0.0 -p 7842",
+    "firewall": "powershell -ExecutionPolicy Bypass -File scripts/firewall-private-only.ps1",
     "typecheck": "tsc --noEmit",
     "parse": "tsx scripts/dump-usage.ts",
     "parse:codex": "tsx scripts/dump-codex-usage.ts",
