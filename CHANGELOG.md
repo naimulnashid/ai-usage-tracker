@@ -15,6 +15,12 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   marked Public, so a home network still filed as Public is not cut off.
 
 ### Changed
+- **The dashboard restarts itself after a crash.** The logon task's launcher
+  exits as soon as the server is running, so Task Scheduler never saw a crash
+  and the dashboard stayed down until the next logon. `dashboard-service.ps1`
+  now restarts a server that exits unasked, 60 s apart and at most 3 times in
+  10 minutes; `stop-dashboard.bat` marks its stop as wanted first. The task
+  also retries 3 times, a minute apart, when it fails to start.
 - **The logon task rebuilds a stale build.** When any source file is newer
   than the build, the background service now rebuilds before it starts (about
   15 seconds, on the first logon after a change only) instead of serving the
