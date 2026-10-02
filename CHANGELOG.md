@@ -8,10 +8,10 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 - **The dashboard launchers match the other dashboards'.** The start `.bat`
-  opens your browser on any answer from the server, not only a 200: with the
-  password gate on, a cold request could get a 401 and the browser never
-  opened. It probes `127.0.0.1` without following redirects, since `localhost`
-  costs about 2 s to fall back from `::1` - as long as the probe's timeout.
+  opens your browser once the server's port is listening, instead of waiting
+  for a 200 over HTTP. A password-gated server need not give a cold request a
+  200, and a probe of `localhost` costs about 2 s to fall back from `::1` -
+  the probe's whole timeout - so the browser could fail to open at all.
   `stop-dashboard.bat` explains itself, and `scripts/dashboard-stop.ps1`
   takes `-WhatIf`.
 - **Both dashboard launchers share one build rule,** in
