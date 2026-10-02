@@ -23,6 +23,15 @@ cd /d "%~dp0"
 
 set "PORT=7842"
 set "URL=http://localhost:%PORT%"
+REM The readiness probe goes to 127.0.0.1, not localhost. Windows resolves
+REM localhost to ::1 first, and against a server listening on 127.0.0.1 only
+REM that costs about 2 s before it falls back - as long as the probe's whole
+REM timeout, so a probe of localhost can fail every time against a server that
+REM is up. The browser still opens localhost, where its sign-in cookie lives.
+REM It does not follow redirects either: any answer means the server is up, a
+REM redirect included, and the login redirect names localhost - following it
+REM walked straight back into the same 2 s, every time.
+set "PROBE=http://127.0.0.1:%PORT%"
 set "START_SCRIPT=start"
 if "%DASHBOARD_LAN%"=="1" set "START_SCRIPT=start:lan"
 
@@ -36,13 +45,17 @@ if errorlevel 1 (
 )
 
 REM --- Is the dashboard already running? ------------------------------------
+REM Beyond the obvious "the logon task already started it", `npm run dev` binds
+REM 7842 as well - and a `next build` underneath a live server replaces chunks
+REM it holds open. Exiting here means this window can never do that to one.
 netstat -ano | findstr /r /c:"LISTENING" | findstr /c:":%PORT% " >nul 2>&1
 if not errorlevel 1 (
     echo The dashboard is already running on port %PORT%.
     echo.
     echo NOTE: this window did not start it - something else is already serving
-    echo that port, most likely the "Start AI Usage Dashboard" logon task. Nothing to
-    echo do; opening the browser.
+    echo that port. Most likely the "Start AI Usage Dashboard" logon task, or an
+    echo "npm run dev" you left running. Nothing to do; opening the browser.
+    echo Run stop-dashboard.bat first if you want this window to serve it instead.
     start "" "%URL%"
     echo.
     pause
@@ -76,8 +89,15 @@ if errorlevel 1 (
 REM --- Open the browser once the server responds -----------------------------
 REM Launched first, in the background, so it can poll while the server boots.
 REM Opening the URL immediately would just show a connection error.
+REM
+REM A 200 is not required, and used not to be enough: with DASHBOARD_PASSWORD
+REM set, a cold browser can get a 401 rather than a page, and Invoke-WebRequest
+REM throws on that as readily as on a refused connection - so waiting for a 200
+REM could time out against a server that was up all along. Any HTTP answer at
+REM all means the server is up; the catch tells "not listening yet" from
+REM "listening and saying no".
 start "" /min powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-  "for ($i = 0; $i -lt 60; $i++) { try { $r = Invoke-WebRequest '%URL%' -UseBasicParsing -TimeoutSec 2; if ($r.StatusCode -eq 200) { Start-Process '%URL%'; break } } catch { Start-Sleep -Seconds 1 } }"
+  "for ($i = 0; $i -lt 90; $i++) { try { Invoke-WebRequest '%PROBE%' -UseBasicParsing -TimeoutSec 2 -MaximumRedirection 0 | Out-Null; Start-Process '%URL%'; break } catch { if ($_.Exception.Response) { Start-Process '%URL%'; break }; Start-Sleep -Seconds 1 } }"
 
 echo.
 echo Starting the dashboard on %URL%

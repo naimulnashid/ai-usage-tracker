@@ -7,6 +7,13 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Changed
+- **The dashboard launchers match the other dashboards'.** The start `.bat`
+  opens your browser on any answer from the server, not only a 200: with the
+  password gate on, a cold request could get a 401 and the browser never
+  opened. It probes `127.0.0.1` without following redirects, since `localhost`
+  costs about 2 s to fall back from `::1` - as long as the probe's timeout.
+  `stop-dashboard.bat` explains itself, and `scripts/dashboard-stop.ps1`
+  takes `-WhatIf`.
 - **Both dashboard launchers share one build rule,** in
   `scripts/ensure-build.ps1`. The logon task and `start-ai-usage-dashboard.bat`
   each carried their own copy; now they call the same script, and still only
