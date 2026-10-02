@@ -337,10 +337,11 @@ switching between `-Lan` and localhost-only is just a re-run.
 `-ExecutionPolicy Bypass` applies to that one command only, and is needed where
 PowerShell's default policy blocks local scripts. It changes no system setting.
 
-**The launcher doesn't rebuild.** It builds only when there is no build at all.
-After changing code, run `npm run build` and restart. If source files are newer
-than the build, it still starts, and writes a `WARNING` to `logs\dashboard.log`.
-That warning is the first place to look when a change doesn't show up.
+**The launcher rebuilds when the code has changed.** At logon it builds if
+there is no build, or if any source file is newer than the build: about 15
+seconds, on the first logon after a change only. If that build fails, the
+dashboard doesn't start, and `logs\dashboard.log` says why. After changing code
+you can also run `npm run build` and restart, rather than wait for a logon.
 
 **Prefer a visible window?** Double-click `start-ai-usage-dashboard.bat`. It
 installs dependencies and builds if needed, starts the server, and opens your
@@ -602,8 +603,8 @@ expected. The warning names the directory it tried. Set `CLAUDE_CONFIG_DIR` or
 shown, or restart the server to clear it.
 
 **A code change doesn't show up.** You're probably running a production build.
-Run `npm run build` and restart; the background service logs a `WARNING` when
-the build is stale.
+Run `npm run build` and restart. The background service rebuilds a stale build
+when it next starts; the double-click launcher warns about one instead.
 
 **`Cannot find module './NNN.js'`.** The `.next` folder is inconsistent, usually
 after switching between `npm run dev` and `npm run build`. Delete `.next` and

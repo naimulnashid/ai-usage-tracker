@@ -64,7 +64,8 @@ REM     nothing to open. This used to rebuild on every single launch, which
 REM     cost ~15s each time and turned a broken build into a start-up failure.
 REM   - WARNS when the source is newer than the build, rather than serving the
 REM     old one silently - for this app that would once have meant serving a
-REM     version from before the password gate existed.
+REM     version from before the password gate existed. (The logon task
+REM     rebuilds instead: it has no window to warn in.)
 REM
 REM Set FORCE_BUILD=1 before running this to rebuild anyway.
 set "FORCE="

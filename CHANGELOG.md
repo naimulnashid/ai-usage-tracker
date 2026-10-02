@@ -7,6 +7,12 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Changed
+- **The logon task rebuilds a stale build.** When any source file is newer
+  than the build, the background service now rebuilds before it starts (about
+  15 seconds, on the first logon after a change only) instead of serving the
+  old build with a warning in `logs/dashboard.log`. A build that fails leaves
+  the dashboard down, and the log says why. The double-click launcher still
+  only warns.
 - **The dashboard launchers match the other dashboards'.** The start `.bat`
   opens your browser once the server's port is listening, instead of waiting
   for a 200 over HTTP. A password-gated server need not give a cold request a

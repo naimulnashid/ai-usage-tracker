@@ -123,13 +123,14 @@ try {
         exit 1
     }
 
-    # Dependencies, and a build to serve. The rule lives in ensure-build.ps1,
+    # Dependencies, and a current build. The rule lives in ensure-build.ps1,
     # shared with start-ai-usage-dashboard.bat so the two launchers can never
-    # disagree. It never builds at logon except when there is no complete
-    # build: building here once delayed every boot by ~15s and made a broken
-    # build a *startup* failure. A stale build is reported, not rebuilt, as a
-    # WARNING line in this log - grep for it if a change you made is not showing.
-    & (Join-Path $PSScriptRoot 'ensure-build.ps1') *>&1 | Write-LogOutput
+    # disagree. -RebuildStale is this launcher's half of it: the .bat only
+    # warns, but this has no window to warn in, and a WARNING here was a line
+    # nobody reads at logon. It rebuilds only when the source is newer than
+    # the build, so the ~15s lands on the first logon after a change. A build
+    # that fails leaves no dashboard, and this log says why.
+    & (Join-Path $PSScriptRoot 'ensure-build.ps1') -RebuildStale *>&1 | Write-LogOutput
     if ($LASTEXITCODE -ne 0) {
         Write-Log "ERROR: no build to serve (ensure-build exited $LASTEXITCODE). Dashboard not started."
         exit 1
