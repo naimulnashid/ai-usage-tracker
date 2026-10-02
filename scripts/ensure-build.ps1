@@ -20,8 +20,9 @@
     behind with nothing behind it -- and `next start` would then come up and
     fail every route.
 
-    "Stale" means anything under src\ or config\, or package.json or
-    next.config.mjs, is newer than BUILD_ID. Serving the previous build
+    "Stale" means anything under src\ or config\, or package.json,
+    next.config.mjs or tsconfig.json, is newer than BUILD_ID - the same list
+    as the other local dashboards' launchers. Serving the previous build
     silently is what the warning exists to catch: it would once have meant
     serving a version from before the password gate existed.
 
@@ -94,7 +95,7 @@ else {
             $sources += Get-ChildItem -Path $dir -Recurse -File -ErrorAction SilentlyContinue
         }
     }
-    foreach ($file in 'package.json', 'next.config.mjs') {
+    foreach ($file in 'package.json', 'next.config.mjs', 'tsconfig.json') {
         if (Test-Path $file) { $sources += Get-Item $file }
     }
     $newest = ($sources | Measure-Object -Property LastWriteTime -Maximum).Maximum

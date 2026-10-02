@@ -19,6 +19,7 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   each carried their own copy; now they call the same script, and still only
   build when there is no build. A build now also needs `.next/server`, not just
   `.next/BUILD_ID`, so a half-deleted `.next` is rebuilt instead of served.
+  A change to `tsconfig.json` now counts as newer source too.
 - **Dependency updates are made upstream, not in this repo.** Dependabot now
   runs on the maintainer's private copy, where dependency and security fixes are
   applied first and then published here as ordinary commits, so this repo no
