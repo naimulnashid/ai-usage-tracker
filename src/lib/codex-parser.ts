@@ -59,9 +59,14 @@
  * `token_count` events carry no model. The model comes from the most recent
  * `turn_context`, which Codex writes only when the context changes — a
  * handful of `turn_context` lines against hundreds of `token_count` lines in a
- * typical file. So the model has to be tracked as running state. Verified that
- * no `token_count` ever precedes the first `turn_context` in the reference
- * data.
+ * typical file. So the model has to be tracked as running state.
+ *
+ * One exception: a compacted auto-review thread opens `session_meta ->
+ * compacted -> token_count`, before any `turn_context`, and that first reading
+ * carries the running total of earlier context windows the file no longer
+ * holds - millions of tokens. Readings counted before a file names any model
+ * therefore take its first model once one appears; only a file that never
+ * names one leaves them under `(unknown)`, which is reported as unpriced.
  */
 
 import fs from 'node:fs';
@@ -347,6 +352,15 @@ async function readFileRecords(
   let currentCwd: string | null = null;
   let previous: RawTotals = ZERO_TOTALS;
   let havePrevious = false;
+  // Readings counted before the file named any model: always the first
+  // `unattributed` events, since a model once known stays known.
+  let unattributed = 0;
+
+  const setModel = (model: string) => {
+    currentModel = model;
+    for (let i = 0; i < unattributed; i += 1) events[i].model = model;
+    unattributed = 0;
+  };
 
   let stream: fs.ReadStream;
   try {
@@ -435,9 +449,9 @@ async function readFileRecords(
           subagentKind ??= typeof kind === 'string' ? kind : 'subagent';
         }
         // Some schema versions carried the model here rather than on turn_context.
-        if (typeof payload.model === 'string' && payload.model) currentModel = payload.model;
+        if (typeof payload.model === 'string' && payload.model) setModel(payload.model);
       } else if (type === 'turn_context') {
-        if (typeof payload.model === 'string' && payload.model) currentModel = payload.model;
+        if (typeof payload.model === 'string' && payload.model) setModel(payload.model);
         if (typeof payload.cwd === 'string' && payload.cwd) {
           currentCwd = payload.cwd;
           cwd ??= payload.cwd;
@@ -478,6 +492,7 @@ async function readFileRecords(
         const derivedTotal = tokens.input + tokens.cacheRead + tokens.output + tokens.cacheWrite5m;
         if (lastUsage && reportedTotal !== derivedTotal) reconciled = false;
 
+        if (currentModel === null) unattributed += 1;
         events.push({
           timestampMs,
           model: currentModel ?? '(unknown)',

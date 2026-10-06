@@ -149,6 +149,44 @@ describe('Codex parser', () => {
     assert.ok(!report.global.perModel['(unknown)'], 'nothing falls into (unknown)');
   });
 
+  it("Trap 5: gives readings before the first turn_context the file's first model", async () => {
+    // A compacted guardian thread: its first reading carries the running total
+    // of windows the file no longer holds, before any turn_context.
+    const home = tempDir();
+    const carried = {
+      ts: '2026-08-01T10:00:10Z',
+      input: 1_000_000,
+      cached: 0,
+      output: 0,
+      lastTotal: 100,
+    };
+    thread(home, rolloutName(GUARDIAN), [
+      sessionMeta('2026-08-01T10:00:00Z', CWD, { thread_source: 'subagent' }),
+      { type: 'compacted', timestamp: '2026-08-01T10:00:05Z', payload: {} },
+      tokenCount(carried),
+      turnContext('2026-08-01T10:00:20Z', 'codex-auto-review'),
+      tokenCount({ ts: '2026-08-01T10:00:30Z', input: 1_000_100, cached: 0, output: 10 }, carried),
+    ]);
+
+    const report = await parse(home);
+    assert.ok(!report.global.perModel['(unknown)'], 'nothing falls into (unknown)');
+    assert.deepEqual(report.diagnostics.unpricedModels, []);
+    assert.equal(report.global.perModel['codex-auto-review'].messages, 2);
+    assert.equal(report.global.perModel['codex-auto-review'].totalTokens, 1_000_110);
+  });
+
+  it('Trap 5: keeps (unknown) for a file that never names a model', async () => {
+    const home = tempDir();
+    thread(home, rolloutName(THREAD), [
+      sessionMeta('2026-08-01T10:00:00Z', CWD),
+      tokenCount({ ts: '2026-08-01T10:00:10Z', input: 100, cached: 0, output: 10 }),
+    ]);
+
+    const report = await parse(home);
+    assert.equal(report.global.perModel['(unknown)'].messages, 1);
+    assert.ok(report.diagnostics.unpricedModels.includes('(unknown)'));
+  });
+
   it('treats a mid-file counter reset as a new baseline, not negative usage', async () => {
     const home = tempDir();
     const before = { ts: '2026-08-01T10:00:10Z', input: 1000, cached: 0, output: 100 };

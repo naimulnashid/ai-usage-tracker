@@ -45,6 +45,15 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   applied first and then published here as ordinary commits, so this repo no
   longer carries a `.github/dependabot.yml`.
 
+### Fixed
+- **Codex no longer reports an unpriced `(unknown)` model.** A long-running
+  auto-review thread that Codex has compacted opens with a token reading before
+  it names its model, and that reading carries the running total of the
+  thread's earlier context windows. Those tokens were counted under
+  `(unknown)` and left out of the cost. Readings that come before a file names
+  a model now go to the first model it names, here `codex-auto-review`. A file
+  that never names one still shows `(unknown)`, marked as unpriced.
+
 ## [0.13.0] - 2026-10-01
 
 ### Security
