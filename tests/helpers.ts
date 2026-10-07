@@ -104,6 +104,8 @@ export interface TokenCountOptions {
   reasoning?: number;
   /** What Codex claims this turn cost on its own; defaults to the real delta. */
   lastTotal?: number;
+  /** This turn's own prompt size. Left out of the line when not given. */
+  lastInput?: number;
 }
 
 export function tokenCount(
@@ -125,7 +127,10 @@ export function tokenCount(
           reasoning_output_tokens: options.reasoning ?? 0,
           total_tokens: options.input + options.output,
         },
-        last_token_usage: { total_tokens: options.lastTotal ?? derived },
+        last_token_usage: {
+          total_tokens: options.lastTotal ?? derived,
+          ...(options.lastInput !== undefined && { input_tokens: options.lastInput }),
+        },
       },
     },
   };

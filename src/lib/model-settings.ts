@@ -185,9 +185,17 @@ export function withCustomRates(
 ): PricingConfig {
   const models = Object.keys(custom);
   if (!models.length) return card;
+  // A custom rate replaces the per-token prices only. The long-context tier is
+  // how the vendor bills a long prompt, which the editor does not set, so it
+  // stays as the card has it - including a tier reached through an alias.
+  const overrides: Record<string, ModelRate> = {};
+  for (const model of models) {
+    const longContext = getRate(card, model)?.longContext;
+    overrides[model] = longContext ? { ...custom[model], longContext } : custom[model];
+  }
   return {
     ...card,
-    models: { ...card.models, ...custom },
+    models: { ...card.models, ...overrides },
     customModels: [...new Set([...(card.customModels ?? []), ...models])].sort(),
   };
 }

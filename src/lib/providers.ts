@@ -301,9 +301,10 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
     projectsFile: 'config/codex-projects.json',
     costLabel: 'API-equivalent spend',
 
-    // Codex reports a `cache_write_input_tokens` field but it has been 0 on
-    // every event in this corpus, and OpenAI's rate card has no cache-write
-    // line, so the column would be a stripe of zeroes.
+    // OpenAI does bill cache writes on its newer models, and the rate card
+    // carries them - but Codex has logged `cache_write_input_tokens` as 0 on
+    // every event seen, so the column would be a stripe of zeroes. Hidden for
+    // that reason, not for want of a rate: turn it on if writes ever appear.
     hasCacheWrites: false,
     hasReasoningTokens: true,
     cacheReadLabel: 'Cached input',
@@ -332,7 +333,7 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
       dailySpendByModel: 565, // 577 / 553
       heatmap: 467, // 412 / 523 with Expand always shown (2026-09-30)
       dailyByProject: 514, // 526 / 502 - two chips, one line; the subtitle wraps at 997
-      modelPrices: 304, // 316 / 292 - two models
+      modelPrices: 394, // 406 / 382 - three models and a long-context note, 2026-10-07
       projectDonut: 405, // 417 / 393 - two projects, so the ring governs
       // Derived from the overview's measured panels - see SkeletonMetrics.detail.
       // Measured across both Codex projects at both widths.

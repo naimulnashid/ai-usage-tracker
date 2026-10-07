@@ -109,6 +109,24 @@ describe('custom rates over the rate card', () => {
     assert.equal(card.models['brand-new'], undefined);
   });
 
+  it("keeps the card's long-context tier under a custom rate", () => {
+    const tier = { aboveInputTokens: 272_000, inputMultiplier: 2, outputMultiplier: 1.5 };
+    const tiered = testPricing({ aliases: { 'review-bot': 'cheap-model' } });
+    tiered.models['cheap-model'].longContext = tier;
+    const pricing = withCustomRates(tiered, {
+      'cheap-model': RATE,
+      'review-bot': RATE,
+      'brand-new': RATE,
+    });
+    assert.deepEqual(getRate(pricing, 'cheap-model'), { ...RATE, longContext: tier });
+    assert.deepEqual(
+      getRate(pricing, 'review-bot'),
+      { ...RATE, longContext: tier },
+      'through the alias',
+    );
+    assert.deepEqual(getRate(pricing, 'brand-new'), RATE, 'no tier to keep');
+  });
+
   it('says where each rate came from, and whether a reset leaves one behind', () => {
     const rates = describeRates(card, { 'brand-new': RATE, 'test-model': RATE }, [
       'brand-new',

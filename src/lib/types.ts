@@ -19,6 +19,23 @@ export interface ModelRate {
   cacheWrite1h: number;
   cacheRead: number;
   output: number;
+  /**
+   * A dearer tier for requests with a long prompt, as OpenAI charges its newer
+   * models: a request whose prompt (cached part included) is over
+   * `aboveInputTokens` is priced at `inputMultiplier` x the input AND cache
+   * rates and `outputMultiplier` x the output rate, for the whole request.
+   *
+   * A property of the rate card, not of a price: a custom rate set from the
+   * dashboard keeps the card's tier (`withCustomRates`). Only the Codex parser
+   * classifies requests against it; see `TokenCounts.longContext`.
+   */
+  longContext?: LongContextRule;
+}
+
+export interface LongContextRule {
+  aboveInputTokens: number;
+  inputMultiplier: number;
+  outputMultiplier: number;
 }
 
 export interface PricingConfig {
@@ -72,20 +89,24 @@ export interface Settings {
   suspiciousContextTokens: number;
 }
 
-/**
- * The five priced token buckets. Cache writes are split by TTL.
- *
- * Codex maps onto the same five: its `cached_input_tokens` becomes `cacheRead`,
- * `input` carries only the uncached remainder (OpenAI's `input_tokens` is the
- * total *including* cached, so the two would otherwise double count), and the
- * cache-write buckets stay zero.
- */
-export interface TokenCounts {
+/** The five priced token buckets on their own. Cache writes are split by TTL. */
+export interface PricedTokens {
   input: number;
   output: number;
   cacheRead: number;
   cacheWrite5m: number;
   cacheWrite1h: number;
+}
+
+/**
+ * The five priced token buckets, plus what rides along with them.
+ *
+ * Codex maps onto the same five: its `cached_input_tokens` becomes `cacheRead`,
+ * `input` carries only the uncached remainder (OpenAI's `input_tokens` is the
+ * total *including* cached, so the two would otherwise double count), and its
+ * one cache-write figure goes in `cacheWrite5m` - OpenAI has no TTL split.
+ */
+export interface TokenCounts extends PricedTokens {
   /**
    * Reasoning tokens, reported by Codex only.
    *
@@ -94,6 +115,17 @@ export interface TokenCounts {
    * and from cost, which would otherwise count them twice.
    */
   reasoning?: number;
+  /**
+   * The part of the five buckets above that came from LONG-CONTEXT requests -
+   * prompts over the model's `ModelRate.longContext` threshold. Codex only.
+   *
+   * NOT extra tokens: a subset, like `reasoning`, already counted in the
+   * buckets. It exists so `costOf` can charge the tier's surcharge on it, and
+   * it is kept on every cell, the archive's included, so a stored day can be
+   * priced again (`repriceBucket`) without losing the surcharge. Absent when
+   * nothing was long-context.
+   */
+  longContext?: PricedTokens;
 }
 
 /** A cell of aggregated usage: tokens + derived cost + runtime. */
@@ -206,6 +238,11 @@ export interface ParseDiagnostics {
    * treated as a fresh baseline rather than negative usage.
    */
   counterResets?: number;
+  /**
+   * Codex only: billed turns whose prompt was over their model's long-context
+   * threshold, and so carry the tier's surcharge (`ModelRate.longContext`).
+   */
+  longContextRequests?: number;
   /**
    * Lines whose `timestamp` parsed but landed outside any plausible window
    * (before 2000, or more than a year ahead). They still count towards tokens

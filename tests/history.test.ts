@@ -201,6 +201,50 @@ describe('history archive', () => {
     assert.equal(merged.days['2026-08-01'].combined.costUsd, 0);
   });
 
+  it('keeps the long-context subset, so a re-priced day keeps its surcharge', async () => {
+    const long = {
+      input: 1_000_000,
+      output: 1_000_000,
+      cacheRead: 0,
+      cacheWrite5m: 0,
+      cacheWrite1h: 0,
+    };
+    const cell = {
+      ...long,
+      longContext: long,
+      messages: 1,
+      runtimeSeconds: 0,
+      totalTokens: 2_000_000,
+      costUsd: 0,
+      unpriced: false,
+    };
+    // Through JSON and back, the way the archive file is read.
+    const stored = JSON.parse(
+      JSON.stringify({
+        '2026-08-01': { combined: cell, perModel: { 'test-model': cell }, projects: {} },
+      }),
+    );
+    const history = { ...emptyHistory(), days: sanitizeDays(stored, 'history.json') };
+    assert.deepEqual(history.days['2026-08-01'].perModel['test-model'].longContext, long);
+
+    const pricing = testPricing();
+    pricing.models['test-model'].longContext = {
+      aboveInputTokens: 272_000,
+      inputMultiplier: 2,
+      outputMultiplier: 1.5,
+    };
+    const later = await reportFor([{ date: '2026-08-02', output: 1 }]);
+    const restored = applyHistoryToReport(later, history, pricing);
+    const archived = restored.global.daily.find((d) => d.date === '2026-08-01')!;
+    // 1M in @ $10 x 2 + 1M out @ $50 x 1.5.
+    assert.equal(archived.perModel['test-model'].costUsd, 20 + 75);
+    assert.deepEqual(
+      restored.global.perModel['test-model'].longContext,
+      long,
+      'summed, not dropped',
+    );
+  });
+
   it('refreshes a project’s day-derived activity from the archive', async () => {
     const full = await reportFor([
       { date: '2026-08-01', output: 1 },

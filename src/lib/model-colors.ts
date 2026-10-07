@@ -76,8 +76,8 @@ export const MODEL_SHADES: Record<string, ModelShade> = {
 
   /* ---- Codex: shades of the ChatGPT teal-green -------------------------- */
 
-  // $30 output — deepest
-  'gpt-5.6-sol': { color: '#0B6D55', outputPrice: 30 }, // 3.14:1
+  // $20 output — deepest
+  'gpt-5.6-sol': { color: '#0B6D55', outputPrice: 20 }, // 3.14:1
 
   // $14 output — GPT-5.3-Codex. `codex-auto-review` is the same model wearing
   // a job title (see config/codex-pricing.json aliases); it gets its own,
@@ -85,6 +85,9 @@ export const MODEL_SHADES: Record<string, ModelShade> = {
   // separate band rather than merging into deliberate usage.
   'gpt-5.3-codex': { color: '#10A37F', outputPrice: 14 }, // 6.19:1
   'codex-auto-review': { color: '#13C69A', outputPrice: 14 }, // 9.02:1
+
+  // $10 output — lightest
+  'gpt-6.1-sol': { color: '#3FD2AC', outputPrice: 10 }, // 10.39:1
 };
 
 /**
@@ -202,6 +205,7 @@ export function isPaletteColor(provider: ProviderId, color: string): boolean {
  * transcripts and in the rate card.
  */
 const DISPLAY_NAMES: Record<string, string> = {
+  'gpt-6.1-sol': 'GPT-6.1 Sol',
   'gpt-5.6-sol': 'GPT-5.6 Sol',
   'gpt-5.3-codex': 'GPT-5.3 Codex',
   'codex-auto-review': 'auto-review (5.3 Codex)',

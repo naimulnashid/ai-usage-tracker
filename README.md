@@ -562,6 +562,17 @@ Codex's card also has an `aliases` map, which is how `codex-auto-review` is pric
 as GPT-5.3 Codex while keeping its own band. Each card has a `lastVerified` date.
 Check vendors' current pricing if it is old.
 
+Two things on Codex's card that Claude Code's does not need:
+
+- **Long-context pricing.** OpenAI bills a request whose prompt is over 272K
+  tokens at 2x the input and cache rates and 1.5x output, on the models whose
+  `longContext` entry says so. Each request is checked against it on its own,
+  from the prompt size Codex logs for it, and a note under the Model prices
+  table states the tier.
+- **Cache writes.** OpenAI charges for them on its newer models, and the card
+  has their rates, but Codex has logged none so far, so its tables leave that
+  column out.
+
 ---
 
 ## Caveats

@@ -2354,6 +2354,12 @@ table.data tbody tr.rate-editor-row:hover {
   outline-offset: 2px;
 }
 
+.rate-tier-note {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--text-faint);
+}
+
 .rate-editor-note {
   margin: 10px 0 0;
   max-width: 330px;

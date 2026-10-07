@@ -33,7 +33,7 @@ import { computeStreaks, localDate, refreshActivity, SYNTHETIC_MODEL } from './p
 import { costOf, getRate } from './pricing';
 import type { ProviderId } from './providers';
 import type { DailyEntry, PricingConfig, ProjectSummary, UsageCell, UsageReport } from './types';
-import { UNKNOWN_DATE } from './usage-math';
+import { addLongContext, UNKNOWN_DATE } from './usage-math';
 
 const HISTORY_VERSION = 1;
 
@@ -136,6 +136,15 @@ function normalizeCell(value: unknown): UsageCell | null {
     cacheWrite5m: num(value.cacheWrite5m),
     cacheWrite1h: num(value.cacheWrite1h),
     reasoning: num(value.reasoning),
+    ...(isObject(value.longContext) && {
+      longContext: {
+        input: num(value.longContext.input),
+        output: num(value.longContext.output),
+        cacheRead: num(value.longContext.cacheRead),
+        cacheWrite5m: num(value.longContext.cacheWrite5m),
+        cacheWrite1h: num(value.longContext.cacheWrite1h),
+      },
+    }),
     messages: num(value.messages),
     runtimeSeconds: num(value.runtimeSeconds),
     totalTokens: num(value.totalTokens),
@@ -316,6 +325,7 @@ function addInto(target: UsageCell, source: UsageCell): void {
   // Claude Code never reports one. `?? 0` keeps those from poisoning the sum
   // with NaN.
   target.reasoning = (target.reasoning ?? 0) + (source.reasoning ?? 0);
+  addLongContext(target, source);
   target.messages += source.messages;
   target.runtimeSeconds += source.runtimeSeconds;
   target.totalTokens += source.totalTokens;

@@ -16,7 +16,7 @@
  * would claim it was measured and found to be none. Hence `usageMath()` takes
  * a flag rather than always tracking the field.
  */
-import type { DailyEntry, TokenCounts, UsageCell } from './types';
+import type { DailyEntry, PricedTokens, TokenCounts, UsageCell } from './types';
 
 /** The bucket for usage whose line carried no usable timestamp. */
 export const UNKNOWN_DATE = '(unknown date)';
@@ -38,6 +38,30 @@ export function localHour(timestampMs: number, offsetHours: number): number | nu
   const shifted = timestampMs + offsetHours * 3_600_000;
   if (!Number.isFinite(shifted) || Math.abs(shifted) > 8.64e15) return null;
   return new Date(shifted).getUTCHours();
+}
+
+/**
+ * Adds `from`'s long-context subset into `into`'s, creating it on first use.
+ *
+ * Shared by every place that sums cells - here, the archive and the stacked
+ * charts' windows - because a sum that dropped it would leave the cost right
+ * and the next re-pricing of that sum wrong. See `TokenCounts.longContext`.
+ */
+export function addLongContext(into: TokenCounts, from: TokenCounts): void {
+  const source = from.longContext;
+  if (!source) return;
+  const target: PricedTokens = (into.longContext ??= {
+    input: 0,
+    output: 0,
+    cacheRead: 0,
+    cacheWrite5m: 0,
+    cacheWrite1h: 0,
+  });
+  target.input += source.input;
+  target.output += source.output;
+  target.cacheRead += source.cacheRead;
+  target.cacheWrite5m += source.cacheWrite5m;
+  target.cacheWrite1h += source.cacheWrite1h;
 }
 
 export interface UsageMath {
@@ -83,6 +107,7 @@ export function usageMath({ tracksReasoning = false } = {}): UsageMath {
       // summed into totalTokens. See Codex Trap 3.
       cell.reasoning = (cell.reasoning ?? 0) + (tokens.reasoning ?? 0);
     }
+    addLongContext(cell, tokens);
     cell.messages += 1;
     cell.totalTokens +=
       tokens.input + tokens.output + tokens.cacheRead + tokens.cacheWrite5m + tokens.cacheWrite1h;

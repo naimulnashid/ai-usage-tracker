@@ -1,6 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { ModelRate, PricingConfig, Settings, TokenCounts, WeekStart } from './types';
+import type {
+  ModelRate,
+  PricedTokens,
+  PricingConfig,
+  Settings,
+  TokenCounts,
+  WeekStart,
+} from './types';
 
 const CONFIG_DIR = path.join(process.cwd(), 'config');
 
@@ -171,15 +178,32 @@ export function getRate(pricing: PricingConfig, model: string): ModelRate | null
  *
  * `reasoning` is deliberately absent: those tokens are already inside `output`
  * and adding them here would bill them twice.
+ *
+ * `longContext` is a subset of the buckets too, so it is not priced again in
+ * full: it adds only the tier's surcharge, the multiplier less one. With no
+ * tier on the rate it adds nothing, so dropping a model's tier from the card
+ * prices its long requests at the standard rate rather than at zero.
  */
 export function costOf(tokens: TokenCounts, rate: ModelRate | null): number {
   if (!rate) return 0;
+  let cost = priced(tokens, rate);
+  const rule = rate.longContext;
+  const long = tokens.longContext;
+  if (rule && long) {
+    const output = long.output * rate.output;
+    cost += (rule.inputMultiplier - 1) * (priced(long, rate) - output);
+    cost += (rule.outputMultiplier - 1) * output;
+  }
+  return cost / 1_000_000;
+}
+
+/** The five buckets times their rates, in USD x 1e6. */
+function priced(tokens: PricedTokens, rate: ModelRate): number {
   return (
-    (tokens.input * rate.input +
-      tokens.cacheWrite5m * rate.cacheWrite5m +
-      tokens.cacheWrite1h * rate.cacheWrite1h +
-      tokens.cacheRead * rate.cacheRead +
-      tokens.output * rate.output) /
-    1_000_000
+    tokens.input * rate.input +
+    tokens.cacheWrite5m * rate.cacheWrite5m +
+    tokens.cacheWrite1h * rate.cacheWrite1h +
+    tokens.cacheRead * rate.cacheRead +
+    tokens.output * rate.output
   );
 }

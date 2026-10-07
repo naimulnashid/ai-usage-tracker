@@ -187,6 +187,64 @@ describe('Codex parser', () => {
     assert.ok(report.diagnostics.unpricedModels.includes('(unknown)'));
   });
 
+  it('prices a long prompt at the long-context tier, decided per request', async () => {
+    const home = tempDir();
+    const tiered = testPricing();
+    tiered.models['test-model'].longContext = {
+      aboveInputTokens: 1_000_000,
+      inputMultiplier: 2,
+      outputMultiplier: 1.5,
+    };
+    // At the threshold, then a 2M-token prompt (half of it cached) over it.
+    const first = { ts: '2026-08-01T10:00:00Z', input: 1_000_000, cached: 0, output: 1_000_000 };
+    const second = {
+      ts: '2026-08-01T10:01:00Z',
+      input: 3_000_000,
+      cached: 1_000_000,
+      output: 2_000_000,
+    };
+    thread(home, rolloutName(THREAD), [
+      sessionMeta('2026-08-01T10:00:00Z', CWD),
+      turnContext('2026-08-01T10:00:00Z', 'test-model'),
+      tokenCount(first),
+      tokenCount(second, first),
+    ]);
+    // A compacted file's first reading carries a running total no prompt held:
+    // tiered on the request's own prompt, it is not long-context.
+    thread(home, rolloutName(GUARDIAN), [
+      sessionMeta('2026-08-01T11:00:00Z', CWD),
+      turnContext('2026-08-01T11:00:00Z', 'test-model'),
+      tokenCount({
+        ts: '2026-08-01T11:00:10Z',
+        input: 5_000_000,
+        cached: 0,
+        output: 0,
+        lastInput: 80_000,
+        lastTotal: 80_000,
+      }),
+    ]);
+
+    const report = await buildCodexUsageReport({
+      codexHome: home,
+      pricing: tiered,
+      settings: testSettings(),
+    });
+    const cell = report.global.combined;
+    assert.equal(report.diagnostics.longContextRequests, 1);
+    assert.deepEqual(cell.longContext, {
+      input: 1_000_000,
+      output: 1_000_000,
+      cacheRead: 1_000_000,
+      cacheWrite5m: 0,
+      cacheWrite1h: 0,
+    });
+    // Standard: 1M @ $10 + 1M out @ $50 = 60, and the carried 5M @ $10 = 50.
+    // Long: (1M @ $10 + 1M cached @ $1) x 2 + 1M out @ $50 x 1.5 = 97.
+    assert.equal(Number(cell.costUsd.toFixed(2)), 60 + 97 + 50);
+    // A subset, so the token totals do not move.
+    assert.equal(cell.totalTokens, 10_000_000);
+  });
+
   it('treats a mid-file counter reset as a new baseline, not negative usage', async () => {
     const home = tempDir();
     const before = { ts: '2026-08-01T10:00:10Z', input: 1000, cached: 0, output: 100 };

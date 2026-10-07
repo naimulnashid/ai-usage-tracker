@@ -35,7 +35,7 @@ import {
   writeReport,
 } from './report-console';
 
-/** Codex reports cached input and reasoning, and never a cache write. */
+/** Codex reports cached input and reasoning. Its cache writes have been 0 on every event seen. */
 function modelRow(label: string, cell: UsageCell): string {
   return (
     pad(label, 24) +
@@ -82,6 +82,7 @@ async function main() {
   console.log(`  billed turns counted     : ${d.uniqueMessages.toLocaleString()}`);
   console.log(`  repeated readings skipped: ${d.duplicateLinesSkipped.toLocaleString()}`);
   console.log(`  counter resets           : ${(d.counterResets ?? 0).toLocaleString()}`);
+  console.log(`  long-context turns       : ${(d.longContextRequests ?? 0).toLocaleString()}`);
   console.log(
     `  files reconciled         : ${d.reconciledFiles ?? 0} ok / ${d.reconcileFailures ?? 0} mismatched`,
   );

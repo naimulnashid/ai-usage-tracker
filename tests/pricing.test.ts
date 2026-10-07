@@ -39,6 +39,26 @@ describe('pricing', () => {
     assert.equal(Number(withReasoning.toFixed(2)), 50);
   });
 
+  it('adds only the long-context surcharge on the long subset, and only with a tier', () => {
+    const rate = getRate(pricing, 'test-model')!;
+    const long = {
+      input: 1_000_000,
+      output: 1_000_000,
+      cacheRead: 1_000_000,
+      cacheWrite5m: 1_000_000,
+      cacheWrite1h: 0,
+    };
+    const tokens = { ...long, cacheWrite1h: 0, longContext: long };
+    // 10 + 50 + 1 + 12.50 at the standard rates.
+    assert.equal(Number(costOf(tokens, rate).toFixed(2)), 73.5);
+    const tiered = {
+      ...rate,
+      longContext: { aboveInputTokens: 0, inputMultiplier: 2, outputMultiplier: 1.5 },
+    };
+    // Input, cache read and cache write doubled; output x1.5: 47 + 75.
+    assert.equal(Number(costOf(tokens, tiered).toFixed(2)), 122);
+  });
+
   it('follows one alias hop, and returns null for an unknown model', () => {
     assert.equal(getRate(pricing, 'codex-auto-review')?.input, 1);
     assert.equal(getRate(pricing, 'brand-new-model'), null);

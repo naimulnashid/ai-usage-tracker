@@ -191,7 +191,7 @@ export function ScoreCards({
         : 'prompt served from cache',
       tip: provider.hasCacheWrites
         ? 'Cache reads plus cache writes. Reads are billed at roughly a tenth of the input rate and writes at a premium, but the sheer volume of reads makes this the largest driver of total cost.'
-        : 'Prompt tokens served from cache, billed at a tenth of the input rate. Codex resends the whole conversation every turn, so this is nearly all of the prompt — and, despite the discount, where most of the cost sits.',
+        : 'Prompt tokens served from cache, billed at a tenth of the input rate or less. Codex resends the whole conversation every turn, so this is nearly all of the prompt — and, despite the discount, where most of the cost sits.',
     },
     {
       // Live transcripts only, for the same reason as Longest chat above.

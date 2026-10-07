@@ -1,7 +1,7 @@
 'use client';
 
 import { Fragment, useState } from 'react';
-import type { ModelRate, ModelRateInfo, UsageCell } from '@/lib/types';
+import type { LongContextRule, ModelRate, ModelRateInfo, UsageCell } from '@/lib/types';
 import { displayModel } from '@/lib/format';
 import { ACCENT_PALETTES, byPriceDesc, modelColor, themedColor } from '@/lib/model-colors';
 import { useProvider } from './ProviderScope';
@@ -54,73 +54,95 @@ export function ModelPricesTable({
   const price = (value: number | undefined) =>
     value === undefined ? '—' : `$${formatRate(value)}`;
 
+  // Models sharing a long-context rule are named in one sentence under it.
+  const tiers = new Map<string, { rule: LongContextRule; models: string[] }>();
+  for (const { model, info } of rows) {
+    const rule = info.rate?.longContext;
+    if (!rule) continue;
+    const key = JSON.stringify(rule);
+    const tier = tiers.get(key) ?? { rule, models: [] };
+    tier.models.push(displayModel(model));
+    tiers.set(key, tier);
+  }
+
   return (
-    <div className="table-scroll">
-      <table className="data">
-        <thead>
-          <tr>
-            <th>Model</th>
-            <th>Input</th>
-            {provider.hasCacheWrites && <th>Write 5m</th>}
-            {provider.hasCacheWrites && <th>Write 1h</th>}
-            <th>{provider.cacheReadLabel}</th>
-            <th>Output</th>
-            <th>Source</th>
-            <th>
-              <span className="sr-only">Edit</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(({ model, info }) => {
-            const rate = info.rate ?? undefined;
-            const open = editing === model;
-            return (
-              <Fragment key={model}>
-                <tr>
-                  <td>
-                    <span className="cell-model">
-                      <span
-                        className="model-swatch"
-                        style={{ background: colorOf(model) }}
-                        aria-hidden
-                      />
-                      {displayModel(model)}
-                      {info.source === 'none' && <span className="unpriced-pill">UNPRICED</span>}
-                    </span>
-                  </td>
-                  <td className="num">{price(rate?.input)}</td>
-                  {provider.hasCacheWrites && <td className="num">{price(rate?.cacheWrite5m)}</td>}
-                  {provider.hasCacheWrites && <td className="num">{price(rate?.cacheWrite1h)}</td>}
-                  <td className="num">{price(rate?.cacheRead)}</td>
-                  <td className="num">{price(rate?.output)}</td>
-                  <td className="rate-source">{sourceLabel(info)}</td>
-                  <td>
-                    <button
-                      type="button"
-                      className="btn btn-small"
-                      aria-expanded={open}
-                      aria-controls={`rate-editor-${slug(model)}`}
-                      onClick={() => setEditing(open ? null : model)}
-                    >
-                      {open ? 'Close' : info.source === 'none' ? 'Set price' : 'Edit'}
-                      <span className="sr-only"> {displayModel(model)}</span>
-                    </button>
-                  </td>
-                </tr>
-                {open && (
-                  <tr className="rate-editor-row">
-                    <td colSpan={columns} id={`rate-editor-${slug(model)}`}>
-                      <RateEditor model={model} info={info} onDone={() => setEditing(null)} />
+    <>
+      <div className="table-scroll">
+        <table className="data">
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Input</th>
+              {provider.hasCacheWrites && <th>Write 5m</th>}
+              {provider.hasCacheWrites && <th>Write 1h</th>}
+              <th>{provider.cacheReadLabel}</th>
+              <th>Output</th>
+              <th>Source</th>
+              <th>
+                <span className="sr-only">Edit</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(({ model, info }) => {
+              const rate = info.rate ?? undefined;
+              const open = editing === model;
+              return (
+                <Fragment key={model}>
+                  <tr>
+                    <td>
+                      <span className="cell-model">
+                        <span
+                          className="model-swatch"
+                          style={{ background: colorOf(model) }}
+                          aria-hidden
+                        />
+                        {displayModel(model)}
+                        {info.source === 'none' && <span className="unpriced-pill">UNPRICED</span>}
+                      </span>
+                    </td>
+                    <td className="num">{price(rate?.input)}</td>
+                    {provider.hasCacheWrites && (
+                      <td className="num">{price(rate?.cacheWrite5m)}</td>
+                    )}
+                    {provider.hasCacheWrites && (
+                      <td className="num">{price(rate?.cacheWrite1h)}</td>
+                    )}
+                    <td className="num">{price(rate?.cacheRead)}</td>
+                    <td className="num">{price(rate?.output)}</td>
+                    <td className="rate-source">{sourceLabel(info)}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="btn btn-small"
+                        aria-expanded={open}
+                        aria-controls={`rate-editor-${slug(model)}`}
+                        onClick={() => setEditing(open ? null : model)}
+                      >
+                        {open ? 'Close' : info.source === 'none' ? 'Set price' : 'Edit'}
+                        <span className="sr-only"> {displayModel(model)}</span>
+                      </button>
                     </td>
                   </tr>
-                )}
-              </Fragment>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+                  {open && (
+                    <tr className="rate-editor-row">
+                      <td colSpan={columns} id={`rate-editor-${slug(model)}`}>
+                        <RateEditor model={model} info={info} onDone={() => setEditing(null)} />
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {[...tiers.values()].map(({ rule, models }) => (
+        <p key={models.join()} className="rate-tier-note">
+          {longContextSentence(rule, models)}
+        </p>
+      ))}
+    </>
   );
 }
 
@@ -137,6 +159,25 @@ function sourceLabel(info: ModelRateInfo): string {
   }
 }
 
+/**
+ * The long-context tier, said under the rates, since the rates alone no longer
+ * give the cost: a long request is billed at a multiple of them. A note rather
+ * than a column, which at 997px pushed the Edit buttons out of the panel.
+ */
+function longContextSentence(rule: LongContextRule, models: string[]): string {
+  const above =
+    rule.aboveInputTokens >= 1000
+      ? `${formatRate(rule.aboveInputTokens / 1000)}K`
+      : String(rule.aboveInputTokens);
+  const names =
+    models.length > 1 ? `${models.slice(0, -1).join(', ')} and ${models.at(-1)}` : models[0];
+  return (
+    `${names}: a request whose prompt is over ${above} tokens is billed at ` +
+    `${formatRate(rule.inputMultiplier)}× the input and cache rates and ` +
+    `${formatRate(rule.outputMultiplier)}× output.`
+  );
+}
+
 /** Up to four decimals, no trailing zeros: 0.175, 3.75, 25. */
 function formatRate(value: number): string {
   return String(Number(value.toFixed(4)));
@@ -146,7 +187,8 @@ function slug(model: string): string {
   return model.replace(/[^A-Za-z0-9]+/g, '-');
 }
 
-type Field = keyof ModelRate;
+/** The rates the editor sets. The long-context tier is the card's alone. */
+type Field = Exclude<keyof ModelRate, 'longContext'>;
 
 const FIELD_LABELS: Record<Field, string> = {
   input: 'Input',
@@ -209,7 +251,15 @@ function RateEditor({
   };
 
   const parsed = (): ModelRate | null => {
-    const out = { input: 0, cacheWrite5m: 0, cacheWrite1h: 0, cacheRead: 0, output: 0 };
+    // A rate the editor does not show - cache writes, for an agent that hides
+    // that column - keeps its current value rather than being saved as 0.
+    const out = {
+      input: 0,
+      cacheWrite5m: info.rate?.cacheWrite5m ?? 0,
+      cacheWrite1h: info.rate?.cacheWrite1h ?? 0,
+      cacheRead: 0,
+      output: 0,
+    };
     for (const field of fields) {
       const text = values[field].trim();
       const n = Number(text);

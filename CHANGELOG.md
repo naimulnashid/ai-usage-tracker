@@ -46,6 +46,14 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   longer carries a `.github/dependabot.yml`.
 
 ### Fixed
+- **Codex's rate card is current, and prices long prompts at OpenAI's long-context
+  rates.** GPT-5.6 Sol is now $4 / $0.40 cached / $20 output (it was $5 / $0.50
+  / $30), and GPT-6.1 Sol is priced, at $2 / $0.10 / $10. A request whose prompt
+  is over 272K tokens costs 2x input and cache and 1.5x output on both, and was
+  priced at the standard rates; it is now decided per request. The Model prices
+  table names the tier, and `npm run parse:codex` counts the requests it
+  applied to. OpenAI's cache-write rates (1.25x input) are on the card too,
+  though Codex has not logged a cache write yet, so they change no figure.
 - **Codex no longer reports an unpriced `(unknown)` model.** A long-running
   auto-review thread that Codex has compacted opens with a token reading before
   it names its model, and that reading carries the running total of the

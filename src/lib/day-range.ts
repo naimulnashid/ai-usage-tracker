@@ -20,6 +20,7 @@
  * Client-safe: no `node:` imports.
  */
 import type { DailyEntry, UsageCell } from './types';
+import { addLongContext } from './usage-math';
 
 export type DayRange = '30' | '60' | '90' | 'all';
 
@@ -158,6 +159,7 @@ function addCell(into: UsageCell, cell: UsageCell): void {
   // Only an agent that reports reasoning has the key; keep it absent for the
   // one that does not, rather than claiming a measured zero. See usage-math.ts.
   if (cell.reasoning !== undefined) into.reasoning = (into.reasoning ?? 0) + cell.reasoning;
+  addLongContext(into, cell);
   into.messages += cell.messages;
   into.runtimeSeconds += cell.runtimeSeconds;
   into.totalTokens += cell.totalTokens;

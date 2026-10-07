@@ -91,6 +91,7 @@ const { addTokens, newBucket, bucketCell, bucketToPlain, dailyToPlain } = usageM
   tracksReasoning: true,
 });
 import type {
+  LongContextRule,
   ParseDiagnostics,
   PricingConfig,
   ProjectSummary,
@@ -303,6 +304,20 @@ function deltaTokens(previous: RawTotals, current: RawTotals, onReset: () => voi
   };
 }
 
+/**
+ * A turn's tokens, marked as long-context when its prompt is over the model's
+ * threshold: the whole request is then billed at the tier's rates, so all five
+ * buckets go into `longContext`. Unchanged for a model with no tier.
+ */
+function withLongContext(event: UsageEvent, rule: LongContextRule | undefined): TokenCounts {
+  if (!rule || event.promptTokens <= rule.aboveInputTokens) return event.tokens;
+  const { input, output, cacheRead, cacheWrite5m, cacheWrite1h } = event.tokens;
+  return {
+    ...event.tokens,
+    longContext: { input, output, cacheRead, cacheWrite5m, cacheWrite1h },
+  };
+}
+
 /** One billed turn, already de-duplicated and mapped onto the shared buckets. */
 interface UsageEvent {
   timestampMs: number | null;
@@ -311,6 +326,14 @@ interface UsageEvent {
   tokens: TokenCounts;
   /** What Codex said this turn cost on its own, for the reconciliation check. */
   reportedTotal: number;
+  /**
+   * The size of this request's prompt, cached part included - what OpenAI's
+   * long-context tier is decided on. Read from `last_token_usage`, the turn on
+   * its own, NOT from the delta: a compacted file's first delta is a running
+   * total carried over from earlier windows (Trap 5), tens of millions of
+   * tokens that no single prompt held.
+   */
+  promptTokens: number;
 }
 
 interface FileRecords {
@@ -499,6 +522,12 @@ async function readFileRecords(
           cwd: currentCwd,
           tokens,
           reportedTotal,
+          // Without Codex's own figure the delta is the best estimate; it is
+          // the same number whenever the file reconciles.
+          promptTokens:
+            typeof lastUsage?.input_tokens === 'number'
+              ? toInt(lastUsage.input_tokens)
+              : tokens.input + tokens.cacheRead,
         });
       }
 
@@ -563,6 +592,7 @@ export async function buildCodexUsageReport(options: CodexParseOptions = {}): Pr
     reconciledFiles: 0,
     reconcileFailures: 0,
     counterResets: 0,
+    longContextRequests: 0,
     unpricedModels: [],
     emptyProjectsHidden: [],
     warnings: [],
@@ -693,7 +723,11 @@ export async function buildCodexUsageReport(options: CodexParseOptions = {}): Pr
 
       const rate = getRate(pricing, model);
       if (!rate) unpricedModels.add(model);
-      const cost = costOf(event.tokens, rate);
+      const tokens = withLongContext(event, rate?.longContext);
+      if (tokens.longContext) {
+        diagnostics.longContextRequests = (diagnostics.longContextRequests ?? 0) + 1;
+      }
+      const cost = costOf(tokens, rate);
 
       const date =
         event.timestampMs !== null
@@ -717,9 +751,9 @@ export async function buildCodexUsageReport(options: CodexParseOptions = {}): Pr
 
       for (const bucket of bucketsFor(projectId, date)) {
         const cell = bucketCell(bucket, model);
-        addTokens(cell, event.tokens, cost);
+        addTokens(cell, tokens, cost);
         if (!rate) cell.unpriced = true;
-        addTokens(bucket.combined, event.tokens, cost);
+        addTokens(bucket.combined, tokens, cost);
       }
 
       sessionMessages += 1;
