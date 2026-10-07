@@ -6,6 +6,8 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-10-07
+
 ### Added
 - **`npm run firewall`** (`scripts/firewall-private-only.ps1`, run once from an
   Administrator shell) blocks the dashboard's port, 7842, on **Public** networks.
