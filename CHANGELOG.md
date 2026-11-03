@@ -6,6 +6,19 @@ versioning is [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+- **Archived Codex days get the long-context surcharge too.** A day stored before
+  0.14.0 and kept by the archive (because some of its transcripts are gone) was
+  re-priced with every request at the standard rate. The next parse now copies
+  the long-context share onto it from the transcripts still on disk, for each
+  model whose token counts match exactly; nothing is estimated.
+- **Stopping and starting the dashboard find its server again.** Windows' TCP
+  table can misreport a listening socket's state, so the stop script said the
+  dashboard was not running while it was, and the launcher's "already
+  running?" check could miss it too. Both now find the listener by its shape
+  (remote port 0, wildcard remote address, a real owning process) rather than
+  its reported state.
+
 ## [0.14.0] - 2026-10-07
 
 ### Added

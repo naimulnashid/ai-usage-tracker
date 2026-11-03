@@ -125,6 +125,9 @@ describe('custom rates over the rate card', () => {
       'through the alias',
     );
     assert.deepEqual(getRate(pricing, 'brand-new'), RATE, 'no tier to keep');
+    // The table describes the rate the parse charges, tier included.
+    const described = describeRates(tiered, { 'cheap-model': RATE }, ['cheap-model']);
+    assert.deepEqual(described['cheap-model'].rate, { ...RATE, longContext: tier });
   });
 
   it('says where each rate came from, and whether a reset leaves one behind', () => {

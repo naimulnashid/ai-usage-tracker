@@ -279,7 +279,14 @@ export function mergeReportIntoHistory(history: HistoryFile, report: UsageReport
     if (entry.date === UNKNOWN_DATE) continue;
 
     const existing = history.days[entry.date];
-    if (existing && existing.combined.messages > entry.combined.messages) continue;
+    if (existing && existing.combined.messages > entry.combined.messages) {
+      backfillLongContext(existing, entry);
+      for (const [id, stored] of Object.entries(existing.projects)) {
+        const fresh = projectDayIndex.get(id)?.get(entry.date);
+        if (fresh) backfillLongContext(stored, fresh);
+      }
+      continue;
+    }
 
     const projects: Record<string, ArchivedBucket> = {};
     for (const project of report.projects) {
@@ -297,6 +304,44 @@ export function mergeReportIntoHistory(history: HistoryFile, report: UsageReport
   history.version = HISTORY_VERSION;
   history.updatedAt = new Date().toISOString();
   return history;
+}
+
+/**
+ * Gives a stored day the long-context subset (`TokenCounts.longContext`) it was
+ * written without, from a fresh parse of the same day.
+ *
+ * Days archived before the subset existed have none, so a re-pricing charges
+ * their long requests at the standard rate. A day the parse rewrites gets it
+ * anyway; this is for the day the merge KEEPS, because its stored copy has more
+ * messages than the transcripts still on disk (some were deleted). Without
+ * this, such a day would undercharge for good.
+ *
+ * Copied per model, and only when that model's five buckets match exactly:
+ * then the stored cell and the fresh one count the same requests, so the
+ * subset is known rather than guessed. A model whose transcripts are partly
+ * gone does not match, and keeps what it has.
+ */
+function backfillLongContext(stored: ArchivedBucket, fresh: ArchivedBucket): void {
+  let changed = false;
+  for (const [model, cell] of Object.entries(stored.perModel)) {
+    const source = fresh.perModel[model];
+    if (cell.longContext || !source?.longContext || !sameBuckets(cell, source)) continue;
+    cell.longContext = { ...source.longContext };
+    changed = true;
+  }
+  if (!changed) return;
+  delete stored.combined.longContext;
+  for (const cell of Object.values(stored.perModel)) addLongContext(stored.combined, cell);
+}
+
+function sameBuckets(a: UsageCell, b: UsageCell): boolean {
+  return (
+    a.input === b.input &&
+    a.output === b.output &&
+    a.cacheRead === b.cacheRead &&
+    a.cacheWrite5m === b.cacheWrite5m &&
+    a.cacheWrite1h === b.cacheWrite1h
+  );
 }
 
 function zeroCell(): UsageCell {

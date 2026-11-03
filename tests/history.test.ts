@@ -245,6 +245,53 @@ describe('history archive', () => {
     );
   });
 
+  it('backfills the subset onto a stored day the merge keeps, only where tokens match', () => {
+    const base = { messages: 0, runtimeSeconds: 0, totalTokens: 0, costUsd: 0, unpriced: false };
+    const tokens = {
+      input: 1_000_000,
+      output: 1_000_000,
+      cacheRead: 0,
+      cacheWrite5m: 0,
+      cacheWrite1h: 0,
+    };
+    const cell = (extra: object) => ({ ...base, ...tokens, ...extra });
+    // Stored before the subset existed, and fuller than what is left on disk:
+    // a second model whose transcript has since gone.
+    const history = emptyHistory();
+    history.days['2026-08-01'] = {
+      date: '2026-08-01',
+      perModel: { 'test-model': cell({ messages: 1 }), 'gone-model': cell({ messages: 5 }) },
+      combined: cell({ messages: 6 }),
+      projects: {
+        'my-app': {
+          perModel: { 'test-model': cell({ messages: 1 }) },
+          combined: cell({ messages: 1 }),
+        },
+      },
+    };
+    const fresh = cell({ messages: 1, longContext: tokens });
+    const report = {
+      global: {
+        daily: [{ date: '2026-08-01', perModel: { 'test-model': fresh }, combined: fresh }],
+      },
+      projects: [
+        {
+          id: 'my-app',
+          name: 'My App',
+          cwd: null,
+          daily: [{ date: '2026-08-01', perModel: { 'test-model': fresh }, combined: fresh }],
+        },
+      ],
+    } as unknown as UsageReport;
+
+    const day = mergeReportIntoHistory(history, report).days['2026-08-01'];
+    assert.equal(day.combined.messages, 6, 'the fuller day is kept');
+    assert.deepEqual(day.perModel['test-model'].longContext, tokens);
+    assert.equal(day.perModel['gone-model'].longContext, undefined);
+    assert.deepEqual(day.combined.longContext, tokens);
+    assert.deepEqual(day.projects['my-app'].perModel['test-model'].longContext, tokens);
+  });
+
   it('refreshes a project’s day-derived activity from the archive', async () => {
     const full = await reportFor([
       { date: '2026-08-01', output: 1 },

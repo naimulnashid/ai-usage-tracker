@@ -179,20 +179,26 @@ export function loadEffectivePricing(provider: ProviderId): PricingConfig {
   );
 }
 
+/**
+ * A custom rate replaces the per-token prices only. The long-context tier is
+ * how the vendor bills a long prompt, which the editor does not set, so it
+ * stays as the card has it - including a tier reached through an alias. Used
+ * for pricing AND for describing the rate, so the table never names fewer
+ * tiered models than the parse charges.
+ */
+function keepCardTier(card: PricingConfig, model: string, rate: ModelRate): ModelRate {
+  const longContext = getRate(card, model)?.longContext;
+  return longContext ? { ...rate, longContext } : rate;
+}
+
 export function withCustomRates(
   card: PricingConfig,
   custom: Record<string, ModelRate>,
 ): PricingConfig {
   const models = Object.keys(custom);
   if (!models.length) return card;
-  // A custom rate replaces the per-token prices only. The long-context tier is
-  // how the vendor bills a long prompt, which the editor does not set, so it
-  // stays as the card has it - including a tier reached through an alias.
   const overrides: Record<string, ModelRate> = {};
-  for (const model of models) {
-    const longContext = getRate(card, model)?.longContext;
-    overrides[model] = longContext ? { ...custom[model], longContext } : custom[model];
-  }
+  for (const model of models) overrides[model] = keepCardTier(card, model, custom[model]);
   return {
     ...card,
     models: { ...card.models, ...overrides },
@@ -217,7 +223,7 @@ export function describeRates(
     const cardRate = getRate(card, model);
     const onCard = cardRate !== null;
     if (custom[model]) {
-      out[model] = { rate: custom[model], source: 'custom', onCard };
+      out[model] = { rate: keepCardTier(card, model, custom[model]), source: 'custom', onCard };
     } else if (card.models[model]) {
       out[model] = { rate: card.models[model], source: 'card', onCard };
     } else if (aliasOf && cardRate) {
